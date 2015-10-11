@@ -21,5 +21,5 @@ def array_1d(array):
                 raise ValueError, 'only 1D arrays are accepted'
     else:
         return True
-    
+
     return True

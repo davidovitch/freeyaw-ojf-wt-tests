@@ -26,41 +26,41 @@ import ojf_post
 def symlink_to_hs_folder(source_folder, path_db, symf='symlinks_hs_mimer/'):
     """
     Create simlinks to the HS camera footage folders on Mimer
-    
+
     source_folder should be the path to to where all the days are saved:
     source_folder = '/x/y/z/02/'
     source_folder = '/x/y/z/04/'
-    
+
     on Mimer, path's to HS footage:
     02/2012-02-12/HS 0212/
     04/2012-04-05/0405_HScamera/
-    
+
     see also make_symlinks_hs further down
     """
-    
+
     # load the database index for the dspace-strain-ojf cases
     FILE = open(path_db + 'db_index_symlinks_all_runid.pkl')
     db_index_runid = pickle.load(FILE)
     FILE.close()
-    
+
     path_db += symf
-    
+
     # create the folder if it doesn't exist
     try:
         os.mkdir(path_db)
     except OSError:
         pass
-    
+
     # -------------------------------------------------------------------------
     # FEBRUARY, LaCie2Big, Lacie
     # -------------------------------------------------------------------------
-    # for Lacie February, we just pass on the folder directly, they are 
+    # for Lacie February, we just pass on the folder directly, they are
     # already grouped in one folder
     if source_folder.endswith('HighSpeedCamera'):
         for result in os.listdir(source_folder):
             # give the same name as the dspace-strain-ojf case
             runid = '_'.join(result.split('_')[0:3])
-            print 
+            print
             print runid
             # if we can not find the case, keep the original name
             try:
@@ -70,7 +70,7 @@ def symlink_to_hs_folder(source_folder, path_db, symf='symlinks_hs_mimer/'):
             except KeyError:
                 resshort = '_'.join(result.split('_')[0:-1])
                 print resshort
-            
+
             source = os.path.join(source_folder, result)
             target = os.path.join(path_db, resshort)
             try:
@@ -81,7 +81,7 @@ def symlink_to_hs_folder(source_folder, path_db, symf='symlinks_hs_mimer/'):
                 print '   target:', resshort
         # and we are done, do not get to the next level
         return
-    
+
     # -------------------------------------------------------------------------
     # ALL OTHER CASES
     # -------------------------------------------------------------------------
@@ -96,9 +96,9 @@ def symlink_to_hs_folder(source_folder, path_db, symf='symlinks_hs_mimer/'):
                 for result in results:
                     # give the same name as the dspace-strain-ojf case
                     runid = '_'.join(result.split('_')[0:3])
-                    print 
+                    print
                     print runid
-                    
+
                     # if we can not find the case, ignore it and just give
                     # maintain its name
                     try:
@@ -108,7 +108,7 @@ def symlink_to_hs_folder(source_folder, path_db, symf='symlinks_hs_mimer/'):
                     except KeyError:
                         resshort = '_'.join(result.split('_')[0:-1])
                         print resshort
-                    
+
                     source = os.path.join(source_folder, day, folder, result)
                     target = os.path.join(path_db, resshort)
                     try:
@@ -120,17 +120,17 @@ def symlink_to_hs_folder(source_folder, path_db, symf='symlinks_hs_mimer/'):
 #                    print source
 #                    print target
 #                    print
-        
+
 
 def symlink_to_folder(source_folder, path_db, **kwargs):
     """
     Create symlinks in one database folder and use consitent naming for the
     OJF, DSpace and strain result files. That makes combining all three
     result files later a breeze.
-    
+
     This is by far the most safe way since the files are not actually renamed.
     """
-    
+
     db_id = kwargs.get('db_id', 'symlinks')
     path_db += db_id + '/'
     # create the folder if it doesn't exist
@@ -138,33 +138,33 @@ def symlink_to_folder(source_folder, path_db, **kwargs):
         os.mkdir(path_db)
     except OSError:
         pass
-    
+
     # TODO: move filtering to the build_db stuff
     # file ignore list, looks if the keyword occurs in the file name
-    fileignore = kwargs.get('fileignore', 
+    fileignore = kwargs.get('fileignore',
         ['zerorun', 'calibration', 'slowdown', 'spindown', 'bladecal', \
          'towercal', 'virbations', 'eigen', 'sweep',  'vibration', 'speedup',\
          'spinup', 'shutdown', 'startup'])
-    
+
     # folder ignore operates on the first 3 characters of the folder name
     folderignore = kwargs.get('folderignore', \
         ['mea', 'dsp', 'tri', 'cal', 'hs ', 'dc_', 'ojf', 'hs_'])
-    
+
     # save a pickled dictionary that holds all the unique base names
     db_index = {}
     # and a short version where only the runid is taken
     db_index_runid = {}
-    
+
     ignore_root = 'NA'
     # cycle through everything we can reach from the target path
     for root, dirs, files in os.walk(source_folder, topdown=True):
         file_dict = {}
-        
+
         # and also ingore any subfolders, only works with topdown approach
         if root.startswith(ignore_root):
             #print 'ignore:', root
             continue
-        
+
         # do not consider content of folders: triggers, Measurement, dSPACE
         folder = root.split('/')[-1]
         # cut them all to the same length
@@ -175,7 +175,7 @@ def symlink_to_folder(source_folder, path_db, **kwargs):
             continue
         else:
             ignore_root = 'NA'
-        
+
         # for each folder, keep all the filenames in a dictionary. On the key
         # keep what we have the same for sure: data_runid
         for name in files:
@@ -183,7 +183,7 @@ def symlink_to_folder(source_folder, path_db, **kwargs):
             ext = name[-4:len(name)]
             if ext in ['.asf', '.avi', '.rar', '.bmp']:
                 continue
-            
+
             # the current file is not allowed to have any item occuring in the
             # ignore list
             nextfile = False
@@ -192,9 +192,9 @@ def symlink_to_folder(source_folder, path_db, **kwargs):
                 if name.find(k) > -1:
                     nextfile = True
                     break
-            
+
             if nextfile: continue
-            
+
             # prepare the dictionary key
             key = name.replace('.log','').replace('.mat','').replace('.csv','')
             # ignore if the first item of the key is not the date
@@ -210,18 +210,18 @@ def symlink_to_folder(source_folder, path_db, **kwargs):
                 # you can't have the same filename in one dir, so no risk
                 # of a previously created key
                 file_dict[key] = {name : root}
-        
-        # and cycle through al the files in the directory that have to be 
+
+        # and cycle through al the files in the directory that have to be
         # renamed consistantly. Each key is the case id, value are the
         # files and their full path
         print root
         for key, values in file_dict.iteritems():
             print '   '+ key
             # only consider for renaming if we have more than one file
-            # but also not more than 3 (than we don't now exactly what is 
+            # but also not more than 3 (than we don't now exactly what is
             # going on)
             if not len(values) > 1 or not len(values) < 4: continue
-            
+
             # first pass over the files with same id
             # always use the mat file as a basis for renaming
             basisname = False
@@ -241,8 +241,8 @@ def symlink_to_folder(source_folder, path_db, **kwargs):
                 db_index[basisname] = runid
             # and also have the inverse index file, probably redundant....
             db_index_runid[runid] = basisname
-            
-            print 
+
+            print
             # second pass for the actual renamed symlink
             for name, rootn in values.iteritems():
                 ext = name[-4:len(name)]
@@ -252,11 +252,11 @@ def symlink_to_folder(source_folder, path_db, **kwargs):
                 else:
                     newname = basisname + ext
                 print '        ' + newname
-                
+
                 # collect all cases as simlinks in the database folder
                 # this holds the lowest risk of destroying the actual data!
                 os.symlink(rootn+'/'+name, path_db + newname)
-                
+
                 ## do not rename a file if the target already exists
                 ## based on stackoverflow answer
                 #try:
@@ -267,10 +267,10 @@ def symlink_to_folder(source_folder, path_db, **kwargs):
                    ##os.rename(root+'/'+name, root+'/'+newname)
                    ## or just create a simlink in the big database folder
                    #print '        ' + newname
-    
+
     # save in the root folder
     path_db = path_db.replace(db_id+'/', '')
-    
+
     # first, update the existing file, so results of february and april merge
     # based on stackoverflow answer, check if the index file exists
     try:
@@ -281,7 +281,7 @@ def symlink_to_folder(source_folder, path_db, **kwargs):
     except IOError:
         # no need to update an existing database file
         pass
-    
+
     try:
         # if it exists, update the file first before saving
         FILE = open(path_db + 'db_index_%s_runid.pkl' % db_id)
@@ -290,12 +290,12 @@ def symlink_to_folder(source_folder, path_db, **kwargs):
     except IOError:
         # no need to update an existing database file
         pass
-    
+
     # and save the database index
     FILE = open(path_db + 'db_index_%s.pkl' % db_id, 'wb')
     pickle.dump(db_index, FILE, protocol=2)
     FILE.close()
-    
+
     # and save the database index
     FILE = open(path_db + 'db_index_%s_runid.pkl' % db_id, 'wb')
     pickle.dump(db_index_runid, FILE, protocol=2)
@@ -312,62 +312,62 @@ def symlinks_to_dcsweep(path_db, db_id):
         os.mkdir(path_db)
     except OSError:
         pass
-    
+
     # save a pickled dictionary that holds all the unique base names
     db_index = {}
     # and a short version where only the runid is taken
     db_index_runid = {}
-    
+
     # becauase each case needs a unique run id
     alphabet = []
     # and make it go from aa, ab, ac, ... yz, zz
     for i in string.ascii_lowercase:
         for j in string.ascii_lowercase:
-            alphabet.append('%s%s' % (i,j)) 
-    
+            alphabet.append('%s%s' % (i,j))
+
     # ignore the ones from February, they are with the alu blades
     folderignore = 'alublades'
-    
+
     # fname  'Measurement_12-Apr-2012_DCycle_0.1_V_8_run_365.mat'
     # folder '2012-02-06_06_alublades'
-    
+
     sf = '/home/dave/PhD_data/OJF_data_edit/dc_sweep/'
     iis = {}
     for root, dirs, files in os.walk(sf, topdown=True):
-        
+
         folder = root.split('/')[-1]
         if folder.find(folderignore) > -1 or len(folder) < 1:
             continue
-        
+
         date = ''.join(folder.split('_')[0].split('-')[1:3])
         case = ('_'.join(folder.split('_')[1:])) + '_dcsweep'
-        
+
         for fname in sorted(files):
-            
+
             if fname.endswith('.log'):
                 continue
-            
+
             print fname, '  ->',
             fname_parts = fname.split('_')
             dc = fname_parts[3]
             wind = fname_parts[5]
             run = fname_parts[7].replace('.mat', '')
             run = format(int(run), '03.0f')
-            
+
             try:
                 iis[run]
             except KeyError:
                 iis[run] = 0
-            
+
             runa = run + alphabet[iis[run]]
             runid = '_'.join([date,'run',runa])
             iis[run] += 1
-            
+
             # new '0209_run_020_15ms_dc10_stiffblades_pwm1000_cal_dashboard'
             new = '_'.join([date,'run',runa,wind+'ms','dc'+dc,case+'.mat'])
             print new
-            
-            # and make a OJF log file with only the wind speed in it            
+
+            # and make a OJF log file with only the wind speed in it
             try:
                 # for some cases we actually have the source
                 logsrc = root+'/'+'_'.join([date, 'run', run])+'.log'
@@ -377,19 +377,19 @@ def symlinks_to_dcsweep(path_db, db_id):
                 ojfline = '0.0	0.0	0.0	0.0	%s\n' % wind
                 FILE = open(root+'/'+logdstname, 'w')
                 FILE.writelines([ojfline]*30)
-            
+
             # and make the symlinks
             os.symlink(root+'/'+fname, path_db+new)
             os.symlink(root+'/'+logdstname, path_db+logdstname)
-            
+
             # save in the index file
             db_index[new.replace('.mat', '')] = runid
             # and also have the inverse index file, probably redundant....
             db_index_runid[runid] = new.replace('.mat', '')
-    
+
     # save in the root folder
     path_db = path_db.replace(db_id+'/', '')
-    
+
     # first, update the existing file, so results of february and april merge
     try:
         # if it exists, update the file first before saving
@@ -401,7 +401,7 @@ def symlinks_to_dcsweep(path_db, db_id):
     except IOError:
         # no need to update an existing database file
         db_index_update = db_index
-    
+
     try:
         # if it exists, update the file first before saving
         FILE = open(path_db + 'db_index_%s_runid.pkl' % db_id)
@@ -412,52 +412,52 @@ def symlinks_to_dcsweep(path_db, db_id):
     except IOError:
         # no need to update an existing database file
         db_index_runid_up = db_index_runid
-    
+
     # and save the database index
     FILE = open(path_db + 'db_index_%s.pkl' % db_id, 'wb')
     pickle.dump(db_index_update, FILE, protocol=2)
     FILE.close()
-    
+
     # and save the database index
     FILE = open(path_db + 'db_index_%s_runid.pkl' % db_id, 'wb')
     pickle.dump(db_index_runid_up, FILE, protocol=2)
     FILE.close()
-    
+
 
 def build_db(path_db, prefix, **kwargs):
     """
     Create the statistics for each OJF case in the index database
     =============================================================
-    
+
     Scan through all cases in the db_index (each case should have symlinks to
-    the results files in the symlink folder) and evaluate the mean values and 
-    the standard deviations of key parameters. 
-    
+    the results files in the symlink folder) and evaluate the mean values and
+    the standard deviations of key parameters.
+
     Yaw laser and tower strain sensors are calibrated.
-    
+
     Parameters
     ----------
-    
+
     path_db : str
         Full path to the to be build database
-    
+
     prefix : str
         Identifier for the database index
-    
+
     output : str, default=prefix
         Identifier for the figures output path, and the db stats file
-    
+
     calibrate : boolean, default=True
         Should the data be calibrated? Set to False if not.
-    
+
     dashplot : boolean, default=False
         If True, a dashboard plot will be made for each case
-    
+
     key_inc : list
         Keywords that should occur in the database, operator is AND
-    
+
     """
-    
+
     output = kwargs.get('output', prefix)
     dashplot = kwargs.get('dashplot', False)
     calibrate = kwargs.get('calibrate', True)
@@ -467,30 +467,30 @@ def build_db(path_db, prefix, **kwargs):
     FILE = open(path_db + db_index_file)
     db_index = pickle.load(FILE)
     FILE.close()
-    
+
     if calibrate:
-        caldict_dspace_02 = ojfresult.CalibrationData.caldict_dspace_02        
+        caldict_dspace_02 = ojfresult.CalibrationData.caldict_dspace_02
         caldict_blade_02  = ojfresult.CalibrationData.caldict_blade_02
         caldict_dspace_04 = ojfresult.CalibrationData.caldict_dspace_04
         caldict_blade_04  = ojfresult.CalibrationData.caldict_blade_04
-    
+
     # respath is where all the symlinks are
     respath = path_db + prefix + '/'
-    
+
     # create the figure folder if it doesn't exist
     try:
         os.mkdir(path_db+'figures_%s/' % output)
     except OSError:
         pass
-    
+
     # save the statistics in a dict
     db_stats = {}
-    
+
     nr, nrfiles = 0, len(db_index)
-    
+
     # and cycle through all the files present
     for resfile in db_index:
-        
+
         # only continue if all the keywords are present in the file name
         ignore = False
         for key in key_inc:
@@ -498,10 +498,10 @@ def build_db(path_db, prefix, **kwargs):
                 ignore = True
         if ignore:
             continue
-        
+
         # if we catch any error, ignore that file for now and go on
         nr += 1
-        print 
+        print
         print '=== %4i/%4i ' % (nr, nrfiles) + 67*'='
         print resfile
         res = ojfresult.ComboResults(respath, resfile, silent=True, sync=True)
@@ -517,7 +517,7 @@ def build_db(path_db, prefix, **kwargs):
                 res._calibrate_blade(caldict_blade_04)
             else:
                 raise ValueError, 'which month?? %s' % resfile
-        
+
         # for the dc-sweep cases, ditch the first 4 seconds where the rotor
         # speed is still changing too much
         if res.dspace.campaign == 'dc-sweep':
@@ -529,16 +529,16 @@ def build_db(path_db, prefix, **kwargs):
             istart = res.dspace.sample_rate*cutoff
             res.dspace.data = res.dspace.data[istart:,:]
             res.dspace.time = res.dspace.time[istart:]-res.dspace.time[istart]
-           
+
         #except:
             #logging.warn('ignored: %s' % resfile)
             #logging.warn(sys.exc_info()[0])
             #continue
-        
+
         # make a dashboard plot
         if dashplot:
             res.dashboard_a3(path_db+'figures_%s/' % output)
-        
+
         # calculate all the means, std, min, max and range for each channel
         res.statistics()
         # stats is already a dictionary
@@ -550,7 +550,7 @@ def build_db(path_db, prefix, **kwargs):
             db_stats[resfile]['ojf labels'] = res.ojf.labels
         except AttributeError:
             pass
-    
+
     # load an existing database first, update
     try:
         # if it exists, update the file first before saving
@@ -562,65 +562,65 @@ def build_db(path_db, prefix, **kwargs):
     except IOError:
         # no need to update an existing database file
         db_stats_update = db_stats
-    
+
     # and save the database stats
     FILE = open(path_db + 'db_stats_%s.pkl' % output, 'wb')
     pickle.dump(db_stats_update, FILE, protocol=2)
     FILE.close()
-    
+
 class ojf_db:
     """
     OJF database class
     ==================
-    
+
     The OJF statistics database has following structure
-    
+
     db_stats = {ojf_resfile : stats_dict}
-        
+
     stats_dict has the following keys:
-    
+
     'blade max', 'blade mean', 'blade min', 'blade range', 'blade std',
     'dspace labels_ch', 'dspace max', 'dspace mean', 'dspace min',
     'dspace range', 'dspace std', 'ojf labels', 'ojf max', 'ojf mean',
     'ojf min', 'ojf range', 'ojf std'
-    
+
     The corresponding values are the statistical values for the channels
     described in the lables keys.
-    
+
     """
-    
+
     def __init__(self, prefix, **kwargs):
         """
         """
-        
+
         debug = kwargs.get('debug', False)
         path_db = kwargs.get('path_db',
                              '/home/dave/PhD_data/OJF_data_edit/database/')
-        
+
         FILE = open(path_db + 'db_stats_%s.pkl' % prefix)
         self.db_stats = pickle.load(FILE)
         FILE.close()
-        
+
         self.path_db = path_db
         self.debug = debug
         self.prefix = prefix
-    
+
     def ct(self, data):
         """
-        
+
         Parameters
         ----------
-        
+
         data : ndarray
             ojf_db.select output
         """
-        data_headers = {'wind':0, 'RPM':1, 'dc':2, 'volt':3, 'amp':4, 'FA':5, 
+        data_headers = {'wind':0, 'RPM':1, 'dc':2, 'volt':3, 'amp':4, 'FA':5,
                    'SS':6, 'yaw':7, 'power':8, 'temp':9, 'B2 root':10,
                    'B2 30':11, 'B1 root':12, 'B1 30':13, 'static_p':14}
-        
+
         ifa = data_headers['FA']
         iwind = data_headers['wind']
-        
+
         # convert the tower FA bending moment to rotor thrust
         thrust = data[ifa,:] / ojf_post.model.momemt_arm_rotor
         # TODO: calculate rho from wind tunnel temperature and static pressure
@@ -629,126 +629,126 @@ class ojf_db:
         V = data[iwind,:]
         # and normalize to get the thrust coefficient
         return thrust / (0.5*rho*V*V*ojf_post.model.A)
-    
+
     def tsr(self, data):
         r"""
         Tip Speed Ratio lambda :math:`\lambda=\frac{V_{tip}}{V}`, or we can
         also write it as :math:`\lambda=\frac{R\Omega_{RPM}\pi/30}{V}`
-        
+
         Parameters
         ----------
-        
+
         data : ndarray
             ojf_db.select output
-        
+
         """
-        data_headers = {'wind':0, 'RPM':1, 'dc':2, 'volt':3, 'amp':4, 'FA':5, 
+        data_headers = {'wind':0, 'RPM':1, 'dc':2, 'volt':3, 'amp':4, 'FA':5,
                    'SS':6, 'yaw':7, 'power':8, 'temp':9, 'B2 root':10,
                    'B2 30':11, 'B1 root':12, 'B1 30':13, 'static_p':14}
-        
+
         irpm = data_headers['RPM']
         iwind = data_headers['wind']
-        
+
         R = ojf_post.model.blade_radius
         return R*data[irpm,:]*np.pi/(data[iwind,:]*30.0)
-    
+
     def select(self, months, include, exclude, valuedict={}, verbose=True,
                runs_inc=[], values_std={}):
         """
         Make an array holding wind, rpm and dc values for each entry in the
         database, filtered with the search terms occuring in case name
-        
+
         Note that the verbose plotting does not show the final merged dc
         column. It shows data available from the dspace field and the dc
         obtained from the case name.
-        
+
         This method allows to search and select the database based on only
         a few values of the results: wind, RPM, dc, volt and amp.
-        
+
         The operator among the search criteria then the following logic
-        needs to be evaluate to True: 
+        needs to be evaluate to True:
             months and include and runs_inc and not exclude
-        
+
         Parameters
         ----------
-        
+
         months : list
             Allowable items are '02' and/or '04'
-        
+
         include : list
             list of strings with keywords that have to be included in the
             case name. Operator is AND
-            
+
         exclude : list
             list of strings with keywords that have to be excluded in the
             case name. Operator is OR
-        
+
         valuedict : dict, default={}
             In- or exclude any mean values in the statistics file. Allowable
-            entries on the keys are wind, RPM, dc, volt, amp, FA, SS, yaw, 
-            power, temp, B2 root, B2 30, B1 root, or B1 30. If the value is a 
-            list, it indicates the upper and lower bounds of the allowed 
+            entries on the keys are wind, RPM, dc, volt, amp, FA, SS, yaw,
+            power, temp, B2 root, B2 30, B1 root, or B1 30. If the value is a
+            list, it indicates the upper and lower bounds of the allowed
             interval. Lower bound is inclusive, upper bound exclusive.
-        
+
         runs_inc : list or set, default=[]
             Run number id's of that need to be included. Operator is OR. The
             list should be populated with strings, and not integers. Note that
             some run id's contain characters, such as 358b for instance.
             Note that sets is faster than a list.
-        
+
         values_std : dict, default={}
             Same as valuedict, but now selection based on the standard
             deviation. Both valuedict and values_std have to evaluate True
             if the case needs to be accepted.
-        
+
         Returns
         -------
-        
+
         data : ndarray(14,n)
             Holding wind, RPM, dc, volt, amp, FA, SS, yaw, power, temp,
             B2 root, B2 30, B1 root, and B1 30. DC is set to -1 if no data is
             available. The Duty Cycle has been constructed from the dc dspace
             field or the one mentioned in the case name if the former was not
             available.
-        
+
         case_arr : ndarray(n)
             Case names corresponding to the data in the data array
-        
+
         data_headers : dict
             Column headers for the data array.
-            {'wind':0, 'RPM':1, 'dc':2, 'volt':3, 'amp':4, 'FA':5, 
+            {'wind':0, 'RPM':1, 'dc':2, 'volt':3, 'amp':4, 'FA':5,
              'SS':6, 'yaw':7, 'power':8, 'temp':9, 'B2 root':10,
              'B2 30':11, 'B1 root':12, 'B1 30':13}
-        
+
         """
-        
+
         def get_data(statval, statpar='mean'):
             """
             Get that statistcal data from one single OJF measurements
-            
-            
-            
+
+
+
             Parameters
             ----------
-            
+
             statval : dict
                 A dictionary holding the statistics for that case
-            
+
             statpar : str, default='mean'
                 Valid entries are max, mean, min, range, std
-            
+
             Returns
             -------
-            
+
             data : list
                 [windspeed, RPM, dc, volt, amp, FA, SS, yaw, power, temp,
                  static_p, blade strain ch1, ch2, ch3, ch4]
             """
-            
+
             if not statpar in ['max', 'mean', 'min', 'range', 'std']:
                 msg = 'statpar can only be either: max, mean, min, range, std'
                 raise ValueError, msg
-            
+
             iwind = 4
             itemp = 1
             ipstatic = 2
@@ -761,7 +761,7 @@ class ojf_db:
             except KeyError:
                 # there was no ojf data
                 pass
-            
+
             dspace_labels = statval['dspace labels_ch']
             ivolt = dspace_labels['Voltage filtered']
             iamp = dspace_labels['Current Filter']
@@ -776,7 +776,7 @@ class ojf_db:
             except KeyError:
                 itss = dspace_labels['Tower Strain Side-Side filtered']
             ipow = dspace_labels['Power']
-            
+
             data = []
             try:
                 data.append(statval['ojf %s' % statpar][iwind])
@@ -790,7 +790,7 @@ class ojf_db:
             # fill in -1 if no recorded dc value is present
             except KeyError:
                 data.append(-1)
-            
+
             # and all other data
             data.append(statval['dspace %s' % statpar][ivolt])
             data.append(statval['dspace %s' % statpar][iamp])
@@ -820,65 +820,65 @@ class ojf_db:
                 data.append(np.nan)
                 data.append(np.nan)
                 data.append(np.nan)
-            
+
             # and the static pressure, added later
             try:
                 data.append(statval['ojf %s' % statpar][ipstatic])
             except:
                 data.append(np.nan)
-            
+
             return data
-        
+
         # convert the valuedict key from text to indices
         # [windspeed, RPM, dc, volt, amp, FA, SS, yaw, power, temp,
         #          blade strain ch1, ch2, ch3, ch4]
-        data_headers = {'wind':0, 'RPM':1, 'dc':2, 'volt':3, 'amp':4, 'FA':5, 
+        data_headers = {'wind':0, 'RPM':1, 'dc':2, 'volt':3, 'amp':4, 'FA':5,
                    'SS':6, 'yaw':7, 'power':8, 'temp':9, 'B2 root':10,
                    'B2 30':11, 'B1 root':12, 'B1 30':13, 'static_p':14}
-        
+
         # guess the size of the obtained statistics, add one more item for
         # the dc from file name
         statsrand = self.db_stats[self.db_stats.keys()[0]]
         size = len(get_data(statsrand, statpar='mean'))
         data_arr = np.ndarray((size+1,len(self.db_stats)))
-        
+
         # now we do not have an extra value for the dc of the file name
         size = len(get_data(statsrand, statpar='std'))
         data_std_arr = np.ndarray((size,len(self.db_stats)))
         caselist = []
-        
+
         # convert from a ch dict with channel names to channel indices
         valuedict_chi = {}
         for key, value in valuedict.iteritems():
             indexkey = data_headers[key]
             valuedict_chi[indexkey] = value
-        
+
         value_std_chi = {}
         for key, value in values_std.iteritems():
             indexkey = data_headers[key]
             value_std_chi[indexkey] = value
-        
+
         #dtypes = [('wind', float), ('RPM', float), ('dc_dspace', float), \
                   #('dc_name', float), ('case', str) ]
         #data_arr = np.recarray((len(self.db_stats),), dtype=dtypes)
-        
+
         i = 0
         for case, statval in self.db_stats.iteritems():
-            
+
             # -----------------------------------------------------------------
             # case name based selection
             # -----------------------------------------------------------------
             # ingore if not the right month
             if not case[:2] in months:
                 continue
-            
+
             # select on run number id
             if len(runs_inc) > 0:
                 runid = case.split('_')[2]
                 # ignore the current case if it is not in the runs_inc list
                 if not runid in runs_inc:
                     continue
-            
+
             # only select the current case if all searchitems are satisfied
             find = True
             for k in include:
@@ -891,7 +891,7 @@ class ojf_db:
                     find = False
             if not find:
                 continue
-            
+
             # if we find any element from exclude, ignore the case
             find = False
             for k in exclude:
@@ -900,7 +900,7 @@ class ojf_db:
                     break
             if find:
                 continue
-            
+
             # -----------------------------------------------------------------
             # load the statistics
             # -----------------------------------------------------------------
@@ -922,12 +922,12 @@ class ojf_db:
             # remember the index number of the manually added index for dc
             # obtained from the case name
             idc = len(data)-1
-            
+
             # if there is no recorded dc, save it to the dc field now, other
             # wise we can not make any selection based on it!
             if data[2] < -0.5:
                 data[2] = data[idc]
-            
+
             # -----------------------------------------------------------------
             # selections based on mean values obtained with get_data
             # -----------------------------------------------------------------
@@ -947,7 +947,7 @@ class ojf_db:
                         break
             if not find:
                 continue
-            
+
             # -----------------------------------------------------------------
             # selections based on std values obtained with get_data
             # -----------------------------------------------------------------
@@ -969,16 +969,16 @@ class ojf_db:
                         break
             if not find:
                 continue
-            
+
             # -----------------------------------------------------------------
             # and finally, all conditions are met, we can save the case
             # -----------------------------------------------------------------
             data_arr[:,i] = data
             data_std_arr[:,i] = data_std
             caselist.append(case)
-            
+
             i += 1
-        
+
         # data_arr was created too big, remove any unused elements
         data_arr = data_arr[:,:i]
         data_std_arr = data_std_arr[:,:i]
@@ -988,7 +988,7 @@ class ojf_db:
             print case_arr.shape
             msg = 'case_arr and data_arr do not have the same nr of items'
             raise IndexError, msg
-        
+
         if len(caselist) > 0:
             # organize the array and do some printing
             isort = case_arr.argsort()
@@ -997,18 +997,18 @@ class ojf_db:
             case_arr = case_arr[isort]
         elif not verbose:
             print 'nothing found in database'
-        
+
         if verbose:
             # print some headers
             #headers = ['wind', 'RPM', 'dc', 'volt', 'amp', 'fa', 'ss', 'case']
             headers = ['   wind', '    RPM', '    yaw', '     dc', '     FA',
-                       '     SS', '  TSR', 
+                       '     SS', '  TSR',
                        '   Vstd', '    RPM', '    YAW', '  case']
-            
+
             isel = [data_headers['wind'], data_headers['RPM'],
-                    data_headers['yaw'],  data_headers['dc'], 
+                    data_headers['yaw'],  data_headers['dc'],
                     data_headers['FA'],   data_headers['SS']]
-            print 
+            print
             print '='*80
             print '    months:', months
             print '   include:', include
@@ -1022,7 +1022,7 @@ class ojf_db:
             for i in xrange(len(case_arr)):
                 # the mean values from
                 print ''.join(['%7.2f' % k for k in data_arr[isel,i]]),
-                
+
 #                # dc from either dspace or name and if they are the same
 #                p = '1.3f'
 #                if data_arr[idc,i] == -1 or data_arr[2,i] == -1:
@@ -1031,79 +1031,79 @@ class ojf_db:
 #                    print '%3s' % 'x',
 #                else:
 #                    print '%3s' % '',
-                    
+
                 # or instead of the dc mismatch name-dspace, print TSR
                 wind = data_arr[data_headers['wind'],i]
                 rpm = data_arr[data_headers['RPM'],i]
                 print '%3.1f' % (np.pi*rpm*0.8/(30.0*wind)),
-                
+
                 # standard deviations for wind (0), RPM (1), yaw (7)
                 print ''.join(['%7.2f' % k for k in data_std_arr[[0,1,7],i]]),
-                
+
                 # and last entry the case name, but limit to 50 characters
                 if len(case_arr[i]) > 48:
                     print ' %s ...' % case_arr[i][:48]
                 else:
                     print ' %s' % case_arr[i]
-        
+
         # any known data is merged into the dc field of idc=2
 #        sel = data_arr[2,:].__le__(-0.5)
 #        data_arr[2,sel] = data_arr[idc,sel]
-        
-        # and ditch the case name based dc column. We only care about the 
+
+        # and ditch the case name based dc column. We only care about the
         # final merged data. Printing stuff is done for debugging purposes
         self.data_arr = data_arr[:len(data)-1,:]
         self.case_arr = case_arr
         self.data_headers = data_headers
         return data_arr[:len(data)-1,:], case_arr, data_headers
 
-    
+
     def load_case(self, resfile, **kwargs):
         """
         Load the result file from a given case name
-        
+
         Returns
         -------
-        
+
         res : ojfresult.ComboResults object
         """
-        
+
         cal = kwargs.get('calibrate', False)
-        
+
         respath = self.path_db + 'symlinks_all/'
-        
+
         return ojfresult.ComboResults(respath, resfile, silent=True, cal=cal)
-        
-    
+
+
     def plot(self, case_arr, **kwargs):
         """
         Plot a selection of the database.
-        
+
         Paremeters
         ----------
-        
+
         case_arr : iterable
             Iterable holding all the case names to be plotted
-        
+
         calibrate : boolean, default=False
         """
-        
+
 #        data_arr = kwargs.get('data_arr', False)
 #        data_headers = kwargs.get('data_headers', False)
         calibrate = kwargs.get('calibrate', False)
-        
+
         respath = self.path_db + 'symlinks_all/'
         figfolder = kwargs.get('figfolder', 'figures_%s/' % self.prefix)
-        
+
         for resfile in case_arr:
             # if we catch any error, ignore that file for now and go on
-            print 
+            print
             print 80*'='
             print resfile
             res = ojfresult.ComboResults(respath, resfile, silent=True,
                                          cal=calibrate)
             res.dashboard_a3(self.path_db + figfolder)
-            
+
 ###############################################################################
 ### PLOTS
 ###############################################################################
@@ -1112,24 +1112,24 @@ def plot_voltage_current(prefix):
     """
     Establish connection between measured current and rotor speed.
     Consider all the cases, aero side is completely irrelevant here.
-    
+
     Also at linear fits to the data
     """
-    
+
     def fit(x, y, deg, res=50):
         pol = np.polyfit(x,y, deg)
         # but generate polyval on equi spaced x grid
         x_grid = np.linspace(x[0], x[-1], res)
         return  x_grid, np.polyval(pol, x_grid)
-        
-    
+
+
     path_db = '/home/dave/PhD_data/OJF_data_edit/database/'
     db = ojf_db(prefix, path_db=path_db)
-    
+
     figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
     figpath += 'overview/'
     scale = 1.5
-    
+
     # --------------------------------------------------------------------
     #ex = ['coning', 'free']
     ex = []
@@ -1137,7 +1137,7 @@ def plot_voltage_current(prefix):
     dc1_02, ca, headers = db.select(['02'], [], ex, valuedict={'dc':1})
     dc0_04, ca, headers = db.select(['04'], [], ex, valuedict={'dc':0})
     dc1_04, ca, headers = db.select(['04'], [], ex, valuedict={'dc':1})
-    
+
     figfile = '%s-volt-vs-current' % prefix
     pa4 = plotting.A4Tuned(scale=scale)
     pa4.setup(figpath+figfile, nr_plots=1, hspace_cm=2., figsize_x=8,
@@ -1153,13 +1153,13 @@ def plot_voltage_current(prefix):
     #ax1.plot(stiff_dc1[0,:], stiff_dc1[1,:], 'g^', label='dc1 stiff')
     #ax1.plot(dc5[0,:], dc5[1,:], 'bd', label='dc0.5')
     #ax1.plot(wind, rpm, 'b*', label='unknown')
-    
+
     # fitting the data
 #    ax1.plot(dc0_02[3,:], fit(dc0_02[3,:], dc0_02[4,:], 1), 'r--')
 #    ax1.plot(dc1_02[3,:], fit(dc1_02[3,:], dc1_02[4,:], 1), 'g--')
 #    ax1.plot(dc0_04[3,:], fit(dc0_04[3,:], dc0_04[4,:], 1), 'b--')
 #    ax1.plot(dc1_04[3,:], fit(dc1_04[3,:], dc1_04[4,:], 1), 'y--')
-    
+
     ax1.legend(loc='upper right')
     ax1.set_title('Feb and Apr, all', size=14*scale)
     ax1.set_xlabel('Voltage [V]')
@@ -1168,8 +1168,8 @@ def plot_voltage_current(prefix):
     ax1.set_ylim([-0.5, 14])
     ax1.grid(True)
     pa4.save_fig()
-    
-    
+
+
     # --------------------------------------------------------------------
     figfile = '%s-rpm-vs-current' % prefix
     pa4 = plotting.A4Tuned(scale=scale)
@@ -1186,13 +1186,13 @@ def plot_voltage_current(prefix):
     #ax1.plot(stiff_dc1[0,:], stiff_dc1[1,:], 'g^', label='dc1 stiff')
     #ax1.plot(dc5[0,:], dc5[1,:], 'bd', label='dc0.5')
     #ax1.plot(wind, rpm, 'b*', label='unknown')
-    
+
     # fitting the data
 #    ax1.plot(dc0_02[1,:], fit(dc0_02[1,:], dc0_02[4,:], 1), 'r--')
 #    ax1.plot(dc1_02[1,:], fit(dc1_02[1,:], dc1_02[4,:], 1), 'g--')
 #    ax1.plot(dc0_04[1,:], fit(dc0_04[1,:], dc0_04[4,:], 1), 'b--')
 #    ax1.plot(dc1_04[1,:], fit(dc1_04[1,:], dc1_04[4,:], 1), 'y--')
-    
+
     ax1.legend(loc='upper left')
     ax1.set_title('Feb and Apr, all', size=14*scale)
     ax1.set_xlabel('RPM')
@@ -1200,7 +1200,7 @@ def plot_voltage_current(prefix):
     #ax1.set_xlim([4, 19])
     ax1.grid(True)
     pa4.save_fig()
-    
+
     # --------------------------------------------------------------------
     figfile = '%s-rpm-vs-volt' % prefix
     pa4 = plotting.A4Tuned(scale=scale)
@@ -1217,13 +1217,13 @@ def plot_voltage_current(prefix):
     #ax1.plot(stiff_dc1[0,:], stiff_dc1[1,:], 'g^', label='dc1 stiff')
     #ax1.plot(dc5[0,:], dc5[1,:], 'bd', label='dc0.5')
     #ax1.plot(wind, rpm, 'b*', label='unknown')
-    
+
     # fitting the data
 #    ax1.plot(dc0_02[1,:], fit(dc0_02[1,:], dc0_02[3,:], 1), 'r--')
 #    ax1.plot(dc1_02[1,:], fit(dc1_02[1,:], dc1_02[3,:], 1), 'g--')
 #    ax1.plot(dc0_04[1,:], fit(dc0_04[1,:], dc0_04[3,:], 1), 'b--')
 #    ax1.plot(dc1_04[1,:], fit(dc1_04[1,:], dc1_04[3,:], 1), 'y--')
-    
+
     ax1.legend(loc='upper left')
     ax1.set_title('Feb and Apr, all', size=14*scale)
     ax1.set_xlabel('RPM')
@@ -1237,25 +1237,25 @@ def plot_voltage_current(prefix):
 def plot_rpm_wind(prefix):
     """
     """
-    
+
     def fit(x, y, deg, res=50):
         pol = np.polyfit(x,y, deg)
         # but generate polyval on equi spaced x grid
         x_grid = np.linspace(x[0], x[-1], res)
         return  x_grid, np.polyval(pol, x_grid)
-    
+
     path_db = '/home/dave/PhD_data/OJF_data_edit/database/'
     db = ojf_db(prefix, path_db=path_db)
-    
+
     figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
     figpath += 'overview/'
     scale = 1.5
-    
+
     # --------------------------------------------------------------------
     ex = ['coning', 'free']
-    flex_dc0, ca, hd = db.select(['02','04'], ['flex'], ex, 
+    flex_dc0, ca, hd = db.select(['02','04'], ['flex'], ex,
                                  valuedict={'dc':0, 'yaw':[-1.0,0.5]})
-    stiff_dc0,ca, hd = db.select(['02','04'], ['stiff'],ex, 
+    stiff_dc0,ca, hd = db.select(['02','04'], ['stiff'],ex,
                                  valuedict={'dc':0, 'yaw':[-1.0,0.5]})
     flex_dc1, ca, hd = db.select(['02','04'], ['flex'], ex,
                                  valuedict={'dc':1, 'yaw':[-1.0,0.5]})
@@ -1263,7 +1263,7 @@ def plot_rpm_wind(prefix):
                                  valuedict={'dc':1, 'yaw':[-1.0,0.5]})
     dc5, ca, hd = db.select(['02','04'], [], ex,
                             valuedict={'dc':0.5, 'yaw':[-1.0,0.5]})
-    
+
     figfile = '%s-rpm-vs-wind-dc0-dc1' % prefix
     pa4 = plotting.A4Tuned(scale=scale)
     pa4.setup(figpath+figfile, nr_plots=1, hspace_cm=2., figsize_x=8,
@@ -1276,7 +1276,7 @@ def plot_rpm_wind(prefix):
     ax1.plot(stiff_dc1[0,:], stiff_dc1[1,:], 'g<', label='dc1 stiff')
     ax1.plot(dc5[0,:], dc5[1,:], 'bd', label='dc0.5')
     #ax1.plot(wind, rpm, 'b*', label='unknown')
-    
+
 #    # fitting the data
 #    x, y = fit(flex_dc0[0,:], flex_dc0[1,:], 1)
 #    ax1.plot(x, y, 'r--', label='dc0 flex')
@@ -1288,7 +1288,7 @@ def plot_rpm_wind(prefix):
 #    ax1.plot(x, y, 'g--', label='dc1 stiff')
 #    x, y = fit(dc5[0,:], dc5[1,:], 1)
 #    ax1.plot(x, y, 'b--', label='dc0.5')
-    
+
     # plot the tip speed ratio's as contour lines on the background
     # iso TSR lines
     RPMs = np.arange(0, 1300, 100)
@@ -1297,14 +1297,14 @@ def plot_rpm_wind(prefix):
     RPM_grid, V_grid = np.meshgrid(RPMs, Vs)
     TSR = R*RPM_grid*np.pi/(V_grid*30.0)
     contours = [9, 8, 7, 6, 5, 4, 3, 2, 1]
-    cs = ax1.contour(V_grid, RPM_grid, TSR, contours, colors='grey', 
+    cs = ax1.contour(V_grid, RPM_grid, TSR, contours, colors='grey',
                      linewidth=0.5, linestyles='dashdot', label='TSR')
     # set the labels
     lablocs = [(10.5,1100), (12,1150), (12,1000), (12,850), (12, 700),
                (  12, 580), (12, 420), (12, 300), (16,200)]
     ax1.clabel(cs, fontsize=9*scale, inline=1, fmt='%1.0f', manual=lablocs,
                colors='k')
-    
+
     ax1.legend(loc='upper right')
     ax1.set_title('Feb and Apr, fixed zero yaw', size=14*scale)
     ax1.set_xlabel('Wind speed [m/s]')
@@ -1312,7 +1312,7 @@ def plot_rpm_wind(prefix):
     ax1.set_xlim([4, 19])
     ax1.grid(True)
     pa4.save_fig()
-    
+
     # --------------------------------------------------------------------
     ex = ['coning', 'free']
     dc_p0,ca,hd = db.select(['02','04'], [], ex,
@@ -1323,7 +1323,7 @@ def plot_rpm_wind(prefix):
                             valuedict={'dc':[0.5 , 0.75], 'yaw':[-1.0,0.5]})
     dc_p3,ca,hd = db.select(['02','04'], [], ex,
                             valuedict={'dc':[0.75, 1.1], 'yaw':[-1.0,0.5]})
-    
+
     figfile = '%s-rpm-vs-wind-dc-all' % prefix
     pa4 = plotting.A4Tuned(scale=scale)
     pa4.setup(figpath+figfile, nr_plots=1, hspace_cm=2., figsize_x=8,
@@ -1341,28 +1341,28 @@ def plot_rpm_wind(prefix):
     ax1.set_xlim([4, 19])
     ax1.grid(True)
     pa4.save_fig()
-    
+
     # --------------------------------------------------------------------
     # and now for each wind speed, see the dc-rpm plot
-    
+
     figfile = '%s-rpm-vs-dc-all' % prefix
     pa4 = plotting.A4Tuned(scale=scale)
     pa4.setup(figpath+figfile, nr_plots=1, hspace_cm=2., figsize_x=8,
                    grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
                    wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
     ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
-    
+
     colors = ['rs', 'bo', 'g*', 'y^', 'gd', 'm*', 'ys', '', '']
-    
+
     for k in range(5,12):
         low = k - 0.2
         up = k + 0.2
-        data,ca,hd = db.select(['02','04'], [], ex, 
+        data,ca,hd = db.select(['02','04'], [], ex,
                                valuedict={'wind':[low,up], 'yaw':[-1.0,0.5]})
-    
+
         label = '$%i m/s$' % k
         ax1.plot(data[2,:], data[1,:], colors[k-5], label=label)
-    
+
     ax1.legend(bbox_to_anchor=(1.05,1.1), ncol=3)
     ax1.set_xlabel('duty cycle [-]]')
     ax1.set_ylabel('Rotor speed [RPM]')
@@ -1378,27 +1378,27 @@ def plot_rpm_vs_towerstrain(prefix):
     the data recorded for some very strange reason...after the analogue
     filter was installed the recording stopped.
     """
-    
+
     cal = True
     path_db = '/home/dave/PhD_data/OJF_data_edit/database/'
     db = ojf_db(prefix, debug=True, path_db=path_db)
-    
+
     figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
     figpath += 'overview/'
     scale = 1.5
-    
+
     ex = ['coning', 'free', 'samoerai']
     apr10,ca,hd = db.select(['04'], [], ex,
                             valuedict={'wind':[9.82, 10.18],'yaw':[-1.0,0.5]})
-    apr9,ca,hd = db.select(['04'], [], ex, 
+    apr9,ca,hd = db.select(['04'], [], ex,
                            valuedict={'wind':[8.82, 9.18],'yaw':[-1.0,0.5]})
-    apr8,ca,hd = db.select(['04'], [], ex, 
+    apr8,ca,hd = db.select(['04'], [], ex,
                            valuedict={'wind':[7.82, 8.18],'yaw':[-1.0,0.5]})
-    apr7,ca,hd = db.select(['04'], [], ex, 
+    apr7,ca,hd = db.select(['04'], [], ex,
                            valuedict={'wind':[6.82, 7.18],'yaw':[-1.0,0.5]})
-    apr6,ca,hd = db.select(['04'], [], ex, 
+    apr6,ca,hd = db.select(['04'], [], ex,
                            valuedict={'wind':[5.82, 6.18],'yaw':[-1.0,0.5]})
-    apr5,ca,hd = db.select(['04'], [], ex, 
+    apr5,ca,hd = db.select(['04'], [], ex,
                            valuedict={'wind':[4.82, 5.18],'yaw':[-1.0,0.5]})
 #    apr4,ca,hd = db.select(['04'], [], ex, valuedict={'wind':[3.82, 4.18]})
     ifa = hd['FA']
@@ -1414,7 +1414,7 @@ def plot_rpm_vs_towerstrain(prefix):
                    grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
                    wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
     ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
-    
+
     ax1.plot(apr10[irpm,:], apr10[ifa,:], 'bo', label='10 m/s')
     ax1.plot(apr9[irpm,:], apr9[ifa,:], 'rs', label='9 m/s')
     ax1.plot(apr8[irpm,:], apr8[ifa,:], 'gv', label='8 m/s')
@@ -1422,7 +1422,7 @@ def plot_rpm_vs_towerstrain(prefix):
     ax1.plot(apr6[irpm,:], apr6[ifa,:], 'c^', label='6 m/s')
     ax1.plot(apr5[irpm,:], apr5[ifa,:], 'y>', label='5 m/s')
 #    ax1.plot(apr4[irpm,:], apr4[ifa,:], 'bo', label='4 m/s')
-    
+
     leg = ax1.legend(loc='best')
     leg.get_frame().set_alpha(0.5)
     ax1.set_title('April, fixed zero yaw', size=14*scale)
@@ -1443,7 +1443,7 @@ def plot_rpm_vs_towerstrain(prefix):
                    grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
                    wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
     ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
-    
+
     ax1.plot(apr10[irpm,:], apr10[iss,:], 'bo', label='10 m/s')
     ax1.plot(apr9[irpm,:], apr9[iss,:], 'rs', label='9 m/s')
     ax1.plot(apr8[irpm,:], apr8[iss,:], 'gv', label='8 m/s')
@@ -1451,7 +1451,7 @@ def plot_rpm_vs_towerstrain(prefix):
     ax1.plot(apr6[irpm,:], apr6[iss,:], 'c^', label='6 m/s')
     ax1.plot(apr5[irpm,:], apr5[iss,:], 'y>', label='5 m/s')
 #    ax1.plot(apr4[irpm,:], apr4[iss,:], 'bo', label='4 m/s')
-    
+
     leg = ax1.legend(loc='best')
     leg.get_frame().set_alpha(0.5)
     ax1.set_title('April, fixed yaw', size=14*scale)
@@ -1472,7 +1472,7 @@ def plot_rpm_vs_towerstrain(prefix):
                    grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
                    wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
     ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
-    
+
     ax1.plot(apr10[ifa,:], apr10[iss,:], 'bo', label='10 m/s')
     ax1.plot(apr9[ifa,:], apr9[iss,:], 'rs', label='9 m/s')
     ax1.plot(apr8[ifa,:], apr8[iss,:], 'gv', label='8 m/s')
@@ -1480,7 +1480,7 @@ def plot_rpm_vs_towerstrain(prefix):
     ax1.plot(apr6[ifa,:], apr6[iss,:], 'c^', label='6 m/s')
     ax1.plot(apr5[ifa,:], apr5[iss,:], 'y>', label='5 m/s')
 #    ax1.plot(apr4[irpm,:], apr4[iss,:], 'bo', label='4 m/s')
-    
+
     leg = ax1.legend(loc='best')
     leg.get_frame().set_alpha(0.5)
     ax1.set_title('April, fixed zero yaw', size=14*scale)
@@ -1502,7 +1502,7 @@ def plot_rpm_vs_towerstrain(prefix):
                    grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
                    wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
     ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
-    
+
     ax1.plot(apr10[iyaw,:], apr10[iss,:], 'bo', label='10 m/s')
     ax1.plot(apr9[iyaw,:], apr9[iss,:], 'rs', label='9 m/s')
     ax1.plot(apr8[iyaw,:], apr8[iss,:], 'gv', label='8 m/s')
@@ -1510,7 +1510,7 @@ def plot_rpm_vs_towerstrain(prefix):
     ax1.plot(apr6[iyaw,:], apr6[iss,:], 'c^', label='6 m/s')
     ax1.plot(apr5[iyaw,:], apr5[iss,:], 'y>', label='5 m/s')
 #    ax1.plot(apr4[irpm,:], apr4[iss,:], 'bo', label='4 m/s')
-    
+
     leg = ax1.legend(loc='best')
     leg.get_frame().set_alpha(0.5)
     ax1.set_title('April, fixed yaw', size=14*scale)
@@ -1524,21 +1524,21 @@ def plot_rpm_vs_towerstrain(prefix):
     ax1.grid(True)
     pa4.save_fig()
     # ========================================================================
-    
+
 
 def plot_rpm_vs_tower_allfeb(prefix):
     """
     It looks like something went wrong with the tower strain in February??
     After the installation of the analogue filters, no more strain signal...
     """
-    
+
     path_db = '/home/dave/PhD_data/OJF_data_edit/database/'
     db = ojf_db(prefix, debug=True, path_db=path_db)
-    
+
     figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
     figpath += 'overview/'
     scale = 1.5
-    
+
     ex = []
     inc = []
     feb, ca, headers = db.select(['02'], inc, ex, valuedict={})
@@ -1552,10 +1552,10 @@ def plot_rpm_vs_tower_allfeb(prefix):
                    grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
                    wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
     ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
-    
+
     ax1.plot(feb[irpm,:], feb[ifa,:], 'ks', label='fa')
     ax1.plot(feb[irpm,:], feb[iss,:], 'bo', label='ss')
-    
+
     leg = ax1.legend(loc='best')
     leg.get_frame().set_alpha(0.5)
     ax1.set_title('all Feb, calibrated', size=14*scale)
@@ -1567,26 +1567,26 @@ def plot_rpm_vs_tower_allfeb(prefix):
 def plot_rpm_vs_blade(prefix, blade):
     """
     """
-    
+
     figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
     figpath += 'overview/'
     scale = 1.5
-    
+
     def doplot(figfile, iblade, title, ylabel):
-        
+
         pa4 = plotting.A4Tuned(scale=scale)
         pa4.setup(figpath+figfile, nr_plots=1, hspace_cm=2., figsize_x=8,
                        grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
                        wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
         ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
-        
+
         ax1.plot(apr10[irpm,:],apr10[iblade,:],'bo', label='10 m/s')
         ax1.plot(apr9[irpm,:], apr9[iblade,:], 'rs', label='9 m/s')
         ax1.plot(apr8[irpm,:], apr8[iblade,:], 'gv', label='8 m/s')
         ax1.plot(apr7[irpm,:], apr7[iblade,:], 'm<', label='7 m/s')
         ax1.plot(apr6[irpm,:], apr6[iblade,:], 'c^', label='6 m/s')
         ax1.plot(apr5[irpm,:], apr5[iblade,:], 'y>', label='5 m/s')
-        
+
         leg = ax1.legend(loc='best')
         leg.get_frame().set_alpha(0.5)
         ax1.set_title(title, size=14*scale)
@@ -1594,7 +1594,7 @@ def plot_rpm_vs_blade(prefix, blade):
         ax1.set_ylabel(ylabel)
         ax1.grid(True)
         pa4.save_fig()
-    
+
     # =======================================================================
     # FEB AND APRIL
     db = ojf_db(prefix, debug=True, path_db=path_db)
@@ -1614,7 +1614,7 @@ def plot_rpm_vs_blade(prefix, blade):
     apr5,ca,hd = db.select(['04', '02'], inc, exc, values_std=std,
                            valuedict={'wind':[4.82, 5.18],'yaw':[-1.0,0.5]})
     irpm = hd['RPM']
-    
+
     # --------------------------------------------------------------------
     # BLADE1_root-LAMBDA
     # --------------------------------------------------------------------
@@ -1649,14 +1649,14 @@ def plot_ct_vs_lambda_rotors(prefix):
     """
     Compare the CT of the swept, and non swept blades
     """
-    
+
     path_db = '/home/dave/PhD_data/OJF_data_edit/database/'
     db = ojf_db(prefix, debug=True, path_db=path_db)
-    
+
     figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
     figpath += 'overview/'
     scale = 1.5
-    
+
     exc = ['coning']
     std = {'RPM':[0,10], 'yaw':[0, 0.5], 'wind':[0, 0.1]}
     apr10,ca,hd = db.select(['04'], [], exc, values_std=std,
@@ -1672,7 +1672,7 @@ def plot_ct_vs_lambda_rotors(prefix):
     apr5,ca,hd = db.select(['04'], [], exc, values_std=std,
                            valuedict={'wind':[4.82, 5.18],'yaw':[-1.0,0.5]})
 #    apr4,ca,hd = db.select(['04'], [], ex, valuedict={'wind':[3.82, 4.18]})
-    
+
     # --------------------------------------------------------------------
     # CT-LAMBDA
     # --------------------------------------------------------------------
@@ -1682,7 +1682,7 @@ def plot_ct_vs_lambda_rotors(prefix):
                    grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
                    wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
     ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
-    
+
     ax1.plot(db.tsr(apr10), db.ct(apr10), 'bo', label='10 m/s')
     ax1.plot(db.tsr(apr9), db.ct(apr9), 'rs', label='9 m/s')
     ax1.plot(db.tsr(apr8), db.ct(apr8), 'gv', label='8 m/s')
@@ -1690,7 +1690,7 @@ def plot_ct_vs_lambda_rotors(prefix):
     ax1.plot(db.tsr(apr6), db.ct(apr6), 'c^', label='6 m/s')
     ax1.plot(db.tsr(apr5), db.ct(apr5), 'y>', label='5 m/s')
 #    ax1.plot(apr4), apr4), 'bo', label='4 m/s')
-    
+
     leg = ax1.legend(loc='best')
     leg.get_frame().set_alpha(0.5)
     ax1.set_title('April, fixed yaw', size=14*scale)
@@ -1699,7 +1699,7 @@ def plot_ct_vs_lambda_rotors(prefix):
 #    ax1.set_xlim([4, 19])
     ax1.grid(True)
     pa4.save_fig()
-    
+
     # --------------------------------------------------------------------
     # THRUST-LAMBDA
     # --------------------------------------------------------------------
@@ -1710,14 +1710,14 @@ def plot_ct_vs_lambda_rotors(prefix):
                    grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
                    wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
     ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
-    
+
     ax1.plot(db.tsr(apr10),apr10[ifa,:],'bo', label='10 m/s')
     ax1.plot(db.tsr(apr9), apr9[ifa,:], 'rs', label='9 m/s')
     ax1.plot(db.tsr(apr8), apr8[ifa,:], 'gv', label='8 m/s')
     ax1.plot(db.tsr(apr7), apr7[ifa,:], 'm<', label='7 m/s')
     ax1.plot(db.tsr(apr6), apr6[ifa,:], 'c^', label='6 m/s')
     ax1.plot(db.tsr(apr5), apr5[ifa,:], 'y>', label='5 m/s')
-    
+
     leg = ax1.legend(loc='best')
     leg.get_frame().set_alpha(0.5)
     ax1.set_title('April, fixed zero yaw', size=14*scale)
@@ -1731,14 +1731,14 @@ def plot_ct_vs_lambda(prefix):
     Have all the relevant stuff plotted versus the tip speed ratio lambda!
     That will gave a better understanding of the stuff
     """
-    
+
     path_db = '/home/dave/PhD_data/OJF_data_edit/database/'
     db = ojf_db(prefix, debug=True, path_db=path_db)
-    
+
     figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
     figpath += 'overview/'
     scale = 1.5
-    
+
     exc = ['coning', 'samoerai']
     std = {'RPM':[0,10], 'yaw':[0, 0.5], 'wind':[0, 0.1]}
     apr10,ca,hd = db.select(['04'], [], exc, values_std=std,
@@ -1754,7 +1754,7 @@ def plot_ct_vs_lambda(prefix):
     apr5,ca,hd = db.select(['04'], [], exc, values_std=std,
                            valuedict={'wind':[4.82, 5.18],'yaw':[-1.0,0.5]})
 #    apr4,ca,hd = db.select(['04'], [], ex, valuedict={'wind':[3.82, 4.18]})
-    
+
     # --------------------------------------------------------------------
     # CT-LAMBDA
     # --------------------------------------------------------------------
@@ -1764,7 +1764,7 @@ def plot_ct_vs_lambda(prefix):
                    grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
                    wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
     ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
-    
+
     ax1.plot(db.tsr(apr10), db.ct(apr10), 'bo', label='10 m/s')
     ax1.plot(db.tsr(apr9), db.ct(apr9), 'rs', label='9 m/s')
     ax1.plot(db.tsr(apr8), db.ct(apr8), 'gv', label='8 m/s')
@@ -1772,7 +1772,7 @@ def plot_ct_vs_lambda(prefix):
     ax1.plot(db.tsr(apr6), db.ct(apr6), 'c^', label='6 m/s')
     ax1.plot(db.tsr(apr5), db.ct(apr5), 'y>', label='5 m/s')
 #    ax1.plot(apr4), apr4), 'bo', label='4 m/s')
-    
+
     leg = ax1.legend(loc='best')
     leg.get_frame().set_alpha(0.5)
     ax1.set_title('April, fixed yaw', size=14*scale)
@@ -1781,7 +1781,7 @@ def plot_ct_vs_lambda(prefix):
 #    ax1.set_xlim([4, 19])
     ax1.grid(True)
     pa4.save_fig()
-    
+
     # --------------------------------------------------------------------
     # THRUST-LAMBDA
     # --------------------------------------------------------------------
@@ -1792,14 +1792,14 @@ def plot_ct_vs_lambda(prefix):
                    grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
                    wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
     ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
-    
+
     ax1.plot(db.tsr(apr10),apr10[ifa,:],'bo', label='10 m/s')
     ax1.plot(db.tsr(apr9), apr9[ifa,:], 'rs', label='9 m/s')
     ax1.plot(db.tsr(apr8), apr8[ifa,:], 'gv', label='8 m/s')
     ax1.plot(db.tsr(apr7), apr7[ifa,:], 'm<', label='7 m/s')
     ax1.plot(db.tsr(apr6), apr6[ifa,:], 'c^', label='6 m/s')
     ax1.plot(db.tsr(apr5), apr5[ifa,:], 'y>', label='5 m/s')
-    
+
     leg = ax1.legend(loc='best')
     leg.get_frame().set_alpha(0.5)
     ax1.set_title('April, fixed zero yaw', size=14*scale)
@@ -1812,26 +1812,26 @@ def plot_blade_vs_lambda(prefix, blade):
     """
     Plot blade loads as function of tip speed ratio lambda
     """
-    
+
     figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
     figpath += 'overview/'
     scale = 1.5
-    
+
     def doplot(figfile, iblade, title, ylabel):
-        
+
         pa4 = plotting.A4Tuned(scale=scale)
         pa4.setup(figpath+figfile, nr_plots=1, hspace_cm=2., figsize_x=8,
                        grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
                        wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
         ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
-        
+
         ax1.plot(db.tsr(apr10),apr10[iblade,:],'bo', label='10 m/s')
         ax1.plot(db.tsr(apr9), apr9[iblade,:], 'rs', label='9 m/s')
         ax1.plot(db.tsr(apr8), apr8[iblade,:], 'gv', label='8 m/s')
         ax1.plot(db.tsr(apr7), apr7[iblade,:], 'm<', label='7 m/s')
         ax1.plot(db.tsr(apr6), apr6[iblade,:], 'c^', label='6 m/s')
         ax1.plot(db.tsr(apr5), apr5[iblade,:], 'y>', label='5 m/s')
-        
+
         leg = ax1.legend(loc='best')
         leg.get_frame().set_alpha(0.5)
         ax1.set_title(title, size=14*scale)
@@ -1839,7 +1839,7 @@ def plot_blade_vs_lambda(prefix, blade):
         ax1.set_ylabel(ylabel)
         ax1.grid(True)
         pa4.save_fig()
-    
+
     path_db = '/home/dave/PhD_data/OJF_data_edit/database/'
     db = ojf_db(prefix, debug=True, path_db=path_db)
     inc = [blade]
@@ -1858,7 +1858,7 @@ def plot_blade_vs_lambda(prefix, blade):
     apr5,ca,hd = db.select(['04'], inc, exc, values_std=std,
                            valuedict={'wind':[4.82, 5.18],'yaw':[-1.0,0.5]})
 #    apr4,ca,hd = db.select(['04'], [], ex, valuedict={'wind':[3.82, 4.18]})
-    
+
     # --------------------------------------------------------------------
     # BLADE1_root-LAMBDA
     # --------------------------------------------------------------------
@@ -1888,7 +1888,7 @@ def plot_blade_vs_lambda(prefix, blade):
     ylabel = 'Blade 2 30\% bending [Nm]'
     iblade = hd['B2 30']
     doplot(figfile, iblade, title, ylabel)
-    
+
     # =======================================================================
     # FEB AND APRIL
     db = ojf_db(prefix, debug=True, path_db=path_db)
@@ -1938,28 +1938,28 @@ def plot_blade_vs_lambda(prefix, blade):
     doplot(figfile, iblade, title, ylabel)
 
 def plot_yawerr_vs_lambda(prefix):
-    
+
     figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/overview/'
-    
+
     # the forced series is when different yaw errors are applied in one session
     db = ojf_db(prefix, debug=True)
-    
+
     inc = ['force', '_STC_']
     exc = []
-    
+
     data, ca, hd = db.select(['04'], inc, exc, values_std={}, valuedict={})
-    
+
 #    mean = {'wind':[7.40, 7.60]}
 #    v75, ca, hd = db.select(['04'], inc, exc, values_std={}, valuedict=mean)
 #    mean = {'wind':[7.89, 8.11]}
 #    v80, ca, hd = db.select(['04'], inc, exc, values_std={}, valuedict=mean)
 #    mean = {'wind':[8.89, 9.11]}
 #    v90, ca, hd = db.select(['04'], inc, exc, values_std={}, valuedict=mean)
-    
+
     # --------------------------------------------------------------------
     # CT-LAMBDA as function of yaw error
     # --------------------------------------------------------------------
-    
+
     scale = 1.5
     figfile = '%s-yawerror-vs-ct-april' % prefix
     pa4 = plotting.A4Tuned(scale=scale)
@@ -1967,7 +1967,7 @@ def plot_yawerr_vs_lambda(prefix):
                    grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
                    wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
     ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
-    
+
 #    ax1.plot(db.tsr(v90, hd), db.ct(v90, hd), 'rs', label='9 m/s')
 #    ax1.plot(db.tsr(v80, hd), db.ct(v80, hd), 'gv', label='8 m/s')
 #    ax1.plot(db.tsr(v75, hd), db.ct(v75, hd), 'm<', label='7.5 m/s')
@@ -1975,7 +1975,7 @@ def plot_yawerr_vs_lambda(prefix):
 #    ax1.set_ylabel('thrust coefficient $C_T$')
 #    leg = ax1.legend(loc='best')
 #    leg.get_frame().set_alpha(0.5)
-    
+
 #    ax1.plot(v90[hd['yaw'],:], db.ct(v90, hd), 'rs', label='9 m/s')
 #    ax1.plot(v80[hd['yaw'],:], db.ct(v80, hd), 'gv', label='8 m/s')
 #    ax1.plot(v75[hd['yaw'],:], db.ct(v75, hd), 'm<', label='7.5 m/s')
@@ -1983,7 +1983,7 @@ def plot_yawerr_vs_lambda(prefix):
 #    ax1.set_ylabel('thrust coefficient $C_T$')
 #    leg = ax1.legend(loc='best')
 #    leg.get_frame().set_alpha(0.5)
-    
+
     # or bin on TSR instead of wind speed
     tsr = db.tsr(data)
     i4 = tsr.__le__(5.0)
@@ -1999,7 +1999,7 @@ def plot_yawerr_vs_lambda(prefix):
     ax1.plot(data[iyaw,i6], db.ct(data[:,i6]),'m<',label='$6<\lambda<7$')
     ax1.plot(data[iyaw,i5], db.ct(data[:,i5]),'c^',label='$5<\lambda<6$')
     ax1.plot(data[iyaw,i4], db.ct(data[:,i4]),'y>',label='$\lambda<5$')
-    
+
     # add some cos or cos**2 fits
     angles = np.arange(-40.0, 40.0, 0.1)
     angles_rad = angles.copy() * np.pi/180.0
@@ -2011,23 +2011,23 @@ def plot_yawerr_vs_lambda(prefix):
     ax1.plot(angles, cos*cos*max_up, 'r-')
     ax1.plot(angles, cos*cos*max_mid, 'c-')
     ax1.plot(angles, cos*cos*max_low, 'y-')
-    
+
     ax1.set_xlabel('yaw angle $\psi$')
     ax1.set_ylabel('thrust coefficient $C_T$')
     leg = ax1.legend(loc='center')
     leg.get_frame().set_alpha(0.5)
-    
+
     ax1.set_title('April, forced yaw error', size=14*scale)
     ax1.grid(True)
     pa4.save_fig()
-    
+
     # --------------------------------------------------------------------
     # YawError-CT-LAMBDA as function of yaw error (CONTOUR PLOT)
     # --------------------------------------------------------------------
     # ignore the low RPM's
     vals = {'RPM':[200,1100]}
     data, ca, hd = db.select(['04'], inc, exc, values_std={}, valuedict=vals)
-    
+
     scale = 1.5
     figfile = '%s-yawerror-vs-ct-vs-lambda-contour-april' % prefix
     pa4 = plotting.A4Tuned(scale=scale)
@@ -2035,9 +2035,9 @@ def plot_yawerr_vs_lambda(prefix):
                    grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
                    wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
     ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
-    
+
     # prep the data for contour plotting
-    z = db.tsr(data) # tsr    
+    z = db.tsr(data) # tsr
     x = data[hd['yaw'],:] # yawerror
     y = db.ct(data) # ct
     # define the grid
@@ -2053,7 +2053,7 @@ def plot_yawerr_vs_lambda(prefix):
     pa4.fig.colorbar(ct) # draw colorbar
     # plot data points
     ax1.scatter(x,y, marker='+', c='k')
-    
+
     ax1.set_title('April, forced yaw error', size=14*scale)
     ax1.grid(True)
     pa4.save_fig()
@@ -2069,21 +2069,21 @@ def make_symlinks_hs():
     """
     First create make_symlinks_all(). This one uses its index file
     """
-    
+
     # =========================================================================
     # CREATE SYMLINKS FOR THE HIGH SPEED CAMERA FOLDERS
     path_db = '/home/dave/PhD_data/OJF_data_edit/database/'
-    
+
 #    sf = '/mnt/mimer/backup_dave/PhD_archive/OJF_data_orig/02/'
 #    symlink_to_hs_folder(sf, path_db, symf='symlinks_hs_mimer/')
 #    sf = '/mnt/mimer/backup_dave/PhD_archive/OJF_data_orig/04/'
 #    symlink_to_hs_folder(sf, path_db, symf='symlinks_hs_mimer/')
-    
+
 #    sf = '/run/media/dave/LaCie2big/backup_dave/PhD_archive/OJF_data_orig/02'
 #    symlink_to_hs_folder(sf, path_db, symf='symlinks_hs_lacie2big/')
 #    sf = '/run/media/dave/LaCie2big/backup_dave/PhD_archive/OJF_data_orig/04'
 #    symlink_to_hs_folder(sf, path_db, symf='symlinks_hs_lacie2big/')
-    
+
     sf = '/run/media/dave/LaCie/DATA/OJF_data_orig/04'
     symlink_to_hs_folder(sf, path_db, symf='symlinks_hs_lacie/')
     sf = '/run/media/dave/LaCie/DATA/OJF_data_orig/02/HighSpeedCamera'
@@ -2093,7 +2093,7 @@ def make_symlinks_hs():
 def make_symlinks_filtered():
     """
     """
-    
+
     # -------------------------------------------------------------------------
     # SYMLINKS, DATABASE FOR THE DSPACE, BLADE, AND WIND TUNNEL RESULTS
     path_db = '/home/dave/PhD_data/OJF_data_edit/database/'
@@ -2111,9 +2111,9 @@ def make_symlinks_all():
     # SYMLINKS for all results files, no filtering
     path_db = '/home/dave/PhD_data/OJF_data_edit/database/'
     db_id = 'symlinks_all'
-    
+
     symlinks_to_dcsweep(path_db, db_id)
-    
+
     source_folder = '/home/dave/PhD_data/OJF_data_edit/02/'
     symlink_to_folder(source_folder, path_db, db_id=db_id, fileignore=[])
     source_folder = '/home/dave/PhD_data/OJF_data_edit/04/'
@@ -2129,26 +2129,26 @@ def steady_rpms():
     For all steady RPM's, find the corresponding other steady parematers: yaw,
     FA, SS, blade load. Save those time series in a seperate datafile
     """
-    
-    
-    
-    
+
+
+
+
 
 if __name__ == '__main__':
-    
+
     # the path to the database is not going to change anymore...
     # so it is safe to set as a globa variable, right?
     path_db = '/home/dave/PhD_data/OJF_data_edit/database/'
-    
+
     dummy = None
-    
+
 #    make_symlinks_all()
     make_symlinks_hs()
-    
+
 #    build_db(path_db, 'symlinks_all', calibrate=True, dashplot=True)
 #    build_db(path_db, 'symlinks_all', calibrate=True, dashplot=True,
 #             output='symlinks_all_psicor', key_inc=['dcsweep'])
-    
+
 #    prefix = 'symlinks_all_psicor'
 #    plot_rpm_wind(prefix)
 #    plot_voltage_current(prefix)
@@ -2160,14 +2160,13 @@ if __name__ == '__main__':
 #    plot_blade_vs_lambda(prefix, 'stiff')
 #    plot_rpm_vs_blade(prefix, 'flex')
 #    plot_rpm_vs_blade(prefix, 'stiff')
-    
-    
+
+
     # read a single file for debugging/checking
 #    path_db = '/home/dave/PhD_data/OJF_data_edit/database/'
 #    case = '0213_run_108_8.0ms_dc1_samoerai_fixyaw_pwm1000_highrpm'
 #    res = ojfresult.ComboResults(path_db+'symlinks/', case)
 #    stats = res.statistics()
-    
-    
-    
-    
+
+
+

@@ -10,6 +10,7 @@ Library for general stuff
 from xlrd import open_workbook
 import numpy as np
 import scipy as sp
+from scipy.interpolate import griddata as interp
 import wafo
 import pylab as plt
 import matplotlib as mpl
@@ -797,6 +798,25 @@ def damping(time, data, checkplot=False, offset_start=100, offset_end=200,
             raise ValueError, msg
 
     return i_peaks, i_bloks, damp_blocks, fit_blocks, fn5, psd_blocks
+
+
+def _linear_distr_blade(blade):
+    """
+    Interpolate the blade.dat data onto linearly distributed radial
+    positions
+    """
+
+    nr_points = blade.shape[0]
+    # make a linear distribution of radial positions
+    radius = np.linspace(blade[0,0], blade[-1,0], num=nr_points)
+    blade_new = sp.zeros(blade.shape)
+    blade_new[:,0] = radius
+    # and interpolate all points from the hawtopt result on a linear grid
+    for k in range(1,blade.shape[1]):
+        blade_new[:,k] = interp(blade[:,0], blade[:,k], radius)
+
+    return blade_new
+
 
 if __name__ == '__main__':
 

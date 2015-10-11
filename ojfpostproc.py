@@ -30,9 +30,9 @@ import wafo
 import plotting
 import HawcPy
 #import cython_func
-import ojfdesign
-import airfoil as air
-import lamtheo
+#import ojfdesign
+import bladeprop
+import materials
 import Simulations as sim
 import misc
 import ojfresult
@@ -766,7 +766,7 @@ def structural_prop():
     quasi_dat='/home/dave/PhD/Projects/Hawc2Models/ojf_post/blade_hawtopt/'
     blade = np.loadtxt(quasi_dat + 'blade.dat')
     blade[:,0] = blade[:,0] - blade[0,0]
-    blade = ojfdesign._linear_distr_blade(blade)
+    blade = misc._linear_distr_blade(blade)
     twist = blade[:,2]
 
     # prepare the st object
@@ -782,18 +782,22 @@ def structural_prop():
 
     # calculate the case for the airfoil shape full of foam
     figpath = quasi_dat + 'foamonly_cross/'
-    bl = air.Blade(figpath=figpath, plot=False)
+    bl = bladeprop.Blade(figpath=figpath, plot=False)
     # blade: [r, chord, t/c, twist]
+    s822, t822 = bladeprop.S822_coordinates()
+    s823, t823 = bladeprop.S823_coordinates()
+    airfoils = ['S823', s823, t823, 'S822', s822, t822]
+    #['S823','S822']
     blade_hr, volume, area, x_na, y_na, Ixx, Iyy, st_arr, strainpos \
-            = bl.build(blade[:,[0,1,3,2]],['S823','S822'],res=None,step=None,\
+            = bl.build(blade[:,[0,1,3,2]],airfoils,res=None,step=None,\
                        plate=False, tw1_t=0, tw2_t=0)
 
     # and save in st-array format
     st_airf = np.ndarray((len(area),19))
     st_airf[:,:] = st_arr
     # material properties from PVC foam
-    #st_airf[:,sti.E] = lamtheo.Materials().cores['PVC_H200'][1]
-    st_airf[:,sti.G] = lamtheo.Materials().cores['PVC_H200'][3]
+    #st_airf[:,sti.E] = materials.Materials().cores['PVC_H200'][1]
+    st_airf[:,sti.G] = materials.Materials().cores['PVC_H200'][3]
     # the chord
     st_airf[:,sti.r] = blade[:,0]
     # set shear factor
@@ -863,10 +867,13 @@ def structural_prop():
         #figpath = quasi_dat + 'foambeam_st%i_cross_LE/' %k
         # half chord point coordinates
         figpath = quasi_dat + 'foambeam_st%i_cross_c2/' %k
-        bl = air.Blade(figpath=figpath, plot=True)
+        bl = bladeprop.Blade(figpath=figpath, plot=True)
+        s822, t822 = bladeprop.S822_coordinates()
+        s823, t823 = bladeprop.S823_coordinates()
+        airfoils = ['S823', s823, t823, 'S822', s822, t822]
         # blade: [r, chord, t/c, twist]
         blade_hr, volume, area, x_na, y_na, Ixx, Iyy, st_arr, strainpos \
-            = bl.build(blade[:,[0,1,3,2]],['S823','S822'],res=None,step=None,\
+            = bl.build(blade[:,[0,1,3,2]], airfoils, res=None,step=None,\
                        plate=True, tw1_t=tw_t, tw2_t=tw_t, st_arr_tw=st_beam)
         #blade_hr : radial stations, [radius, chord, t/c, twist]
 
@@ -2714,38 +2721,6 @@ def presentation_risoe_june():
     res.dashb_blade_yaw(figpath, 'free yaw, 9 m/s speedup', time=[30, 60])
     res.dashb_blade_yaw(figpath, 'free yaw, 9 m/s speedup', time=[0, 30])
 
-def presentation_3e_sept():
-    """
-    Some additional plots for the OJF overview presentation, updated from June
-    """
-
-    calpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
-    ycp02 = calpath + 'YawLaserCalibration/' + 'runs_050_051.yawcal-pol10'
-    ycp04 = calpath + 'YawLaserCalibration-04/' + 'runs_289_295.yawcal-pol10'
-    tfacp = calpath + 'TowerStrainCal-04/' + 'towercal_249_250_251.cal-pol1'
-    tsscp = calpath + 'TowerStrainCal-04/' + 'towercal_249_250_251.cal-pol1'
-    caldict_dspace_04 = dict()
-    caldict_dspace_04['Yaw Laser'] = ycp04
-    caldict_dspace_04['Tower Strain For-Aft'] = tfacp
-    caldict_dspace_04['Tower Strain Side-Side'] = tsscp
-
-    # illustrate how critical and difficult it is to get by reliable airfoil
-    # data, dependency on Reynolds number
-    db = air.AirfoilDB(Re=2e5, airfoilname='S822', run='', table='runs',
-                   verplot=False, verbose=False, re_acc=1e5)
-    db.plot(cl_pot=False)
-    db.h5f.close()
-
-
-    figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
-    figpath += 'spinup/'
-    # illustrate yawing and blade loads
-    respath = '/home/dave/PhD_data/OJF_data_edit/04/2012-04-05/0405_data/'
-    resfile = '0405_run_246_9.0ms_dc0_flexies_fixyaw_highrpm_shutdown'
-    res = ojfresult.ComboResults(respath, resfile)
-    res._calibrate_dspace(caldict_dspace_04, rem_wind=True)
-    res.dashb_blade_yaw(figpath, 'fix yaw, 9 m/s shutdown', time=[0, 40])
-    #res.dashb_blade_yaw(figpath, 'fix yaw, 9 m/s shutdown', time=[0, 30])
 
 def speedup_cases():
     """
@@ -2812,7 +2787,7 @@ if __name__ == '__main__':
 
     dummy = None
 
-    speedup_cases()
+#    speedup_cases()
 
     # -------------------------------------------------------------
     # Create proper model for the OJF blade

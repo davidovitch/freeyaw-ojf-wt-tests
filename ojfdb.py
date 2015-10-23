@@ -301,7 +301,7 @@ def symlink_to_folder(source_folder, path_db, **kwargs):
     pickle.dump(db_index_runid, FILE, protocol=2)
     FILE.close()
 
-def symlinks_to_dcsweep(path_db, db_id):
+def symlinks_to_dcsweep(source_folder, path_db, db_id):
     """
     The dc-sweep cases are already grouped in a different folder, now put them
     on the same pile as all the rest
@@ -331,9 +331,8 @@ def symlinks_to_dcsweep(path_db, db_id):
     # fname  'Measurement_12-Apr-2012_DCycle_0.1_V_8_run_365.mat'
     # folder '2012-02-06_06_alublades'
 
-    sf = '/home/dave/PhD_data/OJF_data_edit/dc_sweep/'
     iis = {}
-    for root, dirs, files in os.walk(sf, topdown=True):
+    for root, dirs, files in os.walk(source_folder, topdown=True):
 
         folder = root.split('/')[-1]
         if folder.find(folderignore) > -1 or len(folder) < 1:
@@ -568,6 +567,7 @@ def build_db(path_db, prefix, **kwargs):
     pickle.dump(db_stats_update, FILE, protocol=2)
     FILE.close()
 
+
 class ojf_db:
     """
     OJF database class
@@ -594,8 +594,7 @@ class ojf_db:
         """
 
         debug = kwargs.get('debug', False)
-        path_db = kwargs.get('path_db',
-                             '/home/dave/PhD_data/OJF_data_edit/database/')
+        path_db = kwargs.get('path_db', 'database/')
 
         FILE = open(path_db + 'db_stats_%s.pkl' % prefix)
         self.db_stats = pickle.load(FILE)
@@ -1123,11 +1122,10 @@ def plot_voltage_current(prefix):
         return  x_grid, np.polyval(pol, x_grid)
 
 
-    path_db = '/home/dave/PhD_data/OJF_data_edit/database/'
+    path_db = 'database/'
     db = ojf_db(prefix, path_db=path_db)
 
-    figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
-    figpath += 'overview/'
+    figpath = 'figures/overview/'
     scale = 1.5
 
     # --------------------------------------------------------------------
@@ -1244,11 +1242,10 @@ def plot_rpm_wind(prefix):
         x_grid = np.linspace(x[0], x[-1], res)
         return  x_grid, np.polyval(pol, x_grid)
 
-    path_db = '/home/dave/PhD_data/OJF_data_edit/database/'
+    path_db = 'database/'
     db = ojf_db(prefix, path_db=path_db)
 
-    figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
-    figpath += 'overview/'
+    figpath = 'figures/overview/'
     scale = 1.5
 
     # --------------------------------------------------------------------
@@ -1380,11 +1377,10 @@ def plot_rpm_vs_towerstrain(prefix):
     """
 
     cal = True
-    path_db = '/home/dave/PhD_data/OJF_data_edit/database/'
+    path_db = 'database/'
     db = ojf_db(prefix, debug=True, path_db=path_db)
 
-    figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
-    figpath += 'overview/'
+    figpath = 'figures/overview/'
     scale = 1.5
 
     ex = ['coning', 'free', 'samoerai']
@@ -1532,11 +1528,10 @@ def plot_rpm_vs_tower_allfeb(prefix):
     After the installation of the analogue filters, no more strain signal...
     """
 
-    path_db = '/home/dave/PhD_data/OJF_data_edit/database/'
+    path_db = 'database/'
     db = ojf_db(prefix, debug=True, path_db=path_db)
 
-    figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
-    figpath += 'overview/'
+    figpath = 'figures/overview/'
     scale = 1.5
 
     ex = []
@@ -1568,8 +1563,7 @@ def plot_rpm_vs_blade(prefix, blade):
     """
     """
 
-    figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
-    figpath += 'overview/'
+    figpath = 'figures/overview/'
     scale = 1.5
 
     def doplot(figfile, iblade, title, ylabel):
@@ -1650,11 +1644,10 @@ def plot_ct_vs_lambda_rotors(prefix):
     Compare the CT of the swept, and non swept blades
     """
 
-    path_db = '/home/dave/PhD_data/OJF_data_edit/database/'
+    path_db = 'database/'
     db = ojf_db(prefix, debug=True, path_db=path_db)
 
-    figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
-    figpath += 'overview/'
+    figpath = 'figures/overview/'
     scale = 1.5
 
     exc = ['coning']
@@ -1732,11 +1725,10 @@ def plot_ct_vs_lambda(prefix):
     That will gave a better understanding of the stuff
     """
 
-    path_db = '/home/dave/PhD_data/OJF_data_edit/database/'
+    path_db = 'database/'
     db = ojf_db(prefix, debug=True, path_db=path_db)
 
-    figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
-    figpath += 'overview/'
+    figpath = 'figures/overview/'
     scale = 1.5
 
     exc = ['coning', 'samoerai']
@@ -1813,8 +1805,7 @@ def plot_blade_vs_lambda(prefix, blade):
     Plot blade loads as function of tip speed ratio lambda
     """
 
-    figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
-    figpath += 'overview/'
+    figpath = 'figures/overview/'
     scale = 1.5
 
     def doplot(figfile, iblade, title, ylabel):
@@ -1840,7 +1831,7 @@ def plot_blade_vs_lambda(prefix, blade):
         ax1.grid(True)
         pa4.save_fig()
 
-    path_db = '/home/dave/PhD_data/OJF_data_edit/database/'
+    path_db = 'database/'
     db = ojf_db(prefix, debug=True, path_db=path_db)
     inc = [blade]
     exc = ['coning', 'samoerai']
@@ -1939,7 +1930,7 @@ def plot_blade_vs_lambda(prefix, blade):
 
 def plot_yawerr_vs_lambda(prefix):
 
-    figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/overview/'
+    figpath = 'figures/overview/'
 
     # the forced series is when different yaw errors are applied in one session
     db = ojf_db(prefix, debug=True)
@@ -2072,7 +2063,7 @@ def make_symlinks_hs():
 
     # =========================================================================
     # CREATE SYMLINKS FOR THE HIGH SPEED CAMERA FOLDERS
-    path_db = '/home/dave/PhD_data/OJF_data_edit/database/'
+    path_db = 'database/'
 
 #    sf = '/mnt/mimer/backup_dave/PhD_archive/OJF_data_orig/02/'
 #    symlink_to_hs_folder(sf, path_db, symf='symlinks_hs_mimer/')
@@ -2096,7 +2087,7 @@ def make_symlinks_filtered():
 
     # -------------------------------------------------------------------------
     # SYMLINKS, DATABASE FOR THE DSPACE, BLADE, AND WIND TUNNEL RESULTS
-    path_db = '/home/dave/PhD_data/OJF_data_edit/database/'
+    path_db = 'database/'
     source_folder = '/home/dave/PhD_data/OJF_data_edit/02/'
     symlink_to_folder(source_folder, path_db)
     source_folder = '/home/dave/PhD_data/OJF_data_edit/04/'
@@ -2104,19 +2095,19 @@ def make_symlinks_filtered():
     build_db(path_db, calibrate=False, dashplot=False)
     # -------------------------------------------------------------------------
 
-def make_symlinks_all():
+def make_symlinks_all(path_db, data_source_root):
     """
     """
     # -------------------------------------------------------------------------
     # SYMLINKS for all results files, no filtering
-    path_db = '/home/dave/PhD_data/OJF_data_edit/database/'
     db_id = 'symlinks_all'
 
-    symlinks_to_dcsweep(path_db, db_id)
+    source_folder = os.path.join(data_source_root, 'dc_sweep/')
+    symlinks_to_dcsweep(source_folder, path_db, db_id)
 
-    source_folder = '/home/dave/PhD_data/OJF_data_edit/02/'
+    source_folder = os.path.join(data_source_root, '02/')
     symlink_to_folder(source_folder, path_db, db_id=db_id, fileignore=[])
-    source_folder = '/home/dave/PhD_data/OJF_data_edit/04/'
+    source_folder = os.path.join(data_source_root, '04/')
     symlink_to_folder(source_folder, path_db, db_id=db_id, fileignore=[])
     # -------------------------------------------------------------------------
 
@@ -2138,12 +2129,12 @@ if __name__ == '__main__':
 
     # the path to the database is not going to change anymore...
     # so it is safe to set as a globa variable, right?
-    path_db = '/home/dave/PhD_data/OJF_data_edit/database/'
+#    path_db = 'database/'
 
     dummy = None
 
 #    make_symlinks_all()
-    make_symlinks_hs()
+#    make_symlinks_hs()
 
 #    build_db(path_db, 'symlinks_all', calibrate=True, dashplot=True)
 #    build_db(path_db, 'symlinks_all', calibrate=True, dashplot=True,
@@ -2167,6 +2158,3 @@ if __name__ == '__main__':
 #    case = '0213_run_108_8.0ms_dc1_samoerai_fixyaw_pwm1000_highrpm'
 #    res = ojfresult.ComboResults(path_db+'symlinks/', case)
 #    stats = res.statistics()
-
-
-

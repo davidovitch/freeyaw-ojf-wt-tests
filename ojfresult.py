@@ -8,7 +8,7 @@ Created on Wed Aug  8 09:03:47 2012
 from __future__ import division
 import math
 import os
-import sys
+#import sys
 #import timeit
 import logging
 import pickle
@@ -63,7 +63,7 @@ class CalibrationData:
 
     # ---------------------------------------------------------------------
     # definition of the calibration files for February
-    calpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+    calpath = 'data/'
     ycp = calpath + 'YawLaserCalibration/runs_050_051.yawcal-pol10'
     caldict_dspace_02 = {}
     caldict_dspace_02['Yaw Laser'] = ycp
@@ -74,7 +74,7 @@ class CalibrationData:
     #caldict_dspace_02['Tower Strain Side-Side'] = tsscp
 
     caldict_blade_02 = {}
-    bcp='/home/dave/PhD/Projects/PostProcessing/OJF_tests/BladeStrainCal/'
+    bcp='data/BladeStrainCal/'
     caldict_blade_02[0] = bcp + '0214_run_172_ch1_0214_run_173_ch1.pol1'
     caldict_blade_02[1] = bcp + '0214_run_172_ch2_0214_run_173_ch2.pol1'
     caldict_blade_02[2] = bcp + '0214_run_172_ch3_0214_run_173_ch3.pol1'
@@ -105,7 +105,7 @@ class CalibrationData:
     caldict_dspace_04['psi_ss_0'] = target_ss
 
     caldict_blade_04 = {}
-    bcp='/home/dave/PhD/Projects/PostProcessing/OJF_tests/BladeStrainCal/'
+    bcp='data/BladeStrainCal/'
     caldict_blade_04[0] = bcp + '0412_run_357_ch1_0412_run_358_ch1.pol1'
     caldict_blade_04[1] = bcp + '0412_run_357_ch2_0412_run_358_ch2.pol1'
     caldict_blade_04[2] = bcp + '0412_run_356_ch3_0412_run_358_ch3.pol1'
@@ -1215,8 +1215,7 @@ class ComboResults(BladeStrainFile, OJFLogFile, DspaceMatFile):
             If only one argument is passed on, it is assumed to be the runid
 
         database : str, default='symlinks_all'
-            In '/home/dave/PhD_data/OJF_data_edit/database/' different symlink
-            databases exist. Specify which one.
+            In 'database/' different symlink databases exist. Specify which one.
 
         Other Parameters
         -----------------
@@ -1235,10 +1234,9 @@ class ComboResults(BladeStrainFile, OJFLogFile, DspaceMatFile):
         sync = kwargs.get('sync', False)
         silent = kwargs.get('silent', False)
         # default path for the saved HS analysis
-        tmp = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
-        hsanalysis_path = tmp + 'HighSpeedCamera/raw/'
+        hsanalysis_path = 'data/HighSpeedCamera/raw/'
         self.hsanalysis_path = kwargs.get('hsanalysis_path', hsanalysis_path)
-        db_path = '/home/dave/PhD_data/OJF_data_edit/database/'
+        db_path = 'database/'
         hs_symlinks = kwargs.get('hs_symlinks', 'symlinks_hs_mimer')
         cal = kwargs.get('cal', False)
         self.hs_respath = db_path + hs_symlinks + '/'
@@ -1252,7 +1250,7 @@ class ComboResults(BladeStrainFile, OJFLogFile, DspaceMatFile):
             self.respath = respath
         elif len(args) == 1:
             runid = args[0]
-            path_db = '/home/dave/PhD_data/OJF_data_edit/database/'
+            path_db = 'database/'
             database = kwargs.get('database', 'symlinks_all')
             self.respath = path_db + database + '/'
             respath = self.respath
@@ -1635,7 +1633,7 @@ class ComboResults(BladeStrainFile, OJFLogFile, DspaceMatFile):
         # do this before applying the force calibration
         if rem_wind:
             logging.warn('wind strain correction not available, remember?')
-#            polpath =  '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+#            polpath =  'data/'
 #            polpath += 'TowerWind/0203_tower_norotor_wire_0_4_20.cal-pol4'
 #            pol = np.loadtxt(polpath)
 #            # only consider the average wind speed
@@ -3555,6 +3553,15 @@ class ComboResults(BladeStrainFile, OJFLogFile, DspaceMatFile):
         # -------------------------------------------------
         pa4.save_fig()
 
+    def save(self):
+        """
+        Save the callibrated and combined result file as a pandas DataFrame.
+        """
+        slice_dspace, slice_ojf, slice_blade, window_dspace, window_ojf, \
+                window_blade, zoomtype, time_range = self._data_window()
+
+
+
 class BladeContour:
     """
     The array result files are named as follows:
@@ -4068,9 +4075,8 @@ class BladeCgMass:
         """
         """
         # set where the files are found
-        self.fpath = kwargs.get('fpath', '/home/dave/PhD_data/OJF_data_edit/')
-        tmp = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
-        tmp += 'blademassproperties/'
+        self.fpath = kwargs.get('fpath', 'data/')
+        tmp = 'data/blademassproperties/'
         self.figpath = kwargs.get('figpath',tmp)
 
         # make an easy entry point, just select blade name and number
@@ -4570,7 +4576,7 @@ class HighSpeedCamera:
         # two scenario's: runid or fpath
         if not fpath.startswith('/'):
             runid = fpath
-            path_db = '/home/dave/PhD_data/OJF_data_edit/database/'
+            path_db = 'database/'
             database = 'symlinks_all' #kwargs.get('database', 'symlinks_all')
             respath = path_db + database + '/'
             # and load the full file name from the database index
@@ -4701,8 +4707,7 @@ class HighSpeedCamera:
         res = res[:,:i]
 
         # and save the results array
-        respath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
-        respath += 'HighSpeedCamera/raw/'
+        respath = 'data/HighSpeedCamera/raw/'
         # for the id of the run, take a random file and subtrackt
         resname = '_'.join(files[0].split('_')[:3])
         print 'saving HS image analysis:'
@@ -5306,7 +5311,7 @@ def check_case():
 
     # ---------------------------------------------------------------------
     # definition of the calibration files for February
-    calpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+    calpath = 'data/'
     ycp = calpath + 'YawLaserCalibration/runs_050_051.yawcal-pol10'
     caldict_dspace_02 = {}
     caldict_dspace_02['Yaw Laser'] = ycp
@@ -5317,7 +5322,7 @@ def check_case():
     #caldict_dspace_02['Tower Strain Side-Side'] = tsscp
 
     caldict_blade_02 = {}
-    bcp='/home/dave/PhD/Projects/PostProcessing/OJF_tests/BladeStrainCal/'
+    bcp = 'data/BladeStrainCal/'
     caldict_blade_02[0] = bcp + '0214_run_172_ch1_0214_run_173_ch1.pol1'
     caldict_blade_02[1] = bcp + '0214_run_172_ch2_0214_run_173_ch2.pol1'
     caldict_blade_02[2] = bcp + '0214_run_172_ch3_0214_run_173_ch3.pol1'
@@ -5348,7 +5353,7 @@ def check_case():
     caldict_dspace_04['psi_ss_0'] = target_ss
 
     caldict_blade_04 = {}
-    bcp='/home/dave/PhD/Projects/PostProcessing/OJF_tests/BladeStrainCal/'
+    bcp = 'data/BladeStrainCal/'
     caldict_blade_04[0] = bcp + '0412_run_357_ch1_0412_run_358_ch1.pol1'
     caldict_blade_04[1] = bcp + '0412_run_357_ch2_0412_run_358_ch2.pol1'
     caldict_blade_04[2] = bcp + '0412_run_356_ch3_0412_run_358_ch3.pol1'
@@ -5370,7 +5375,7 @@ def check_case():
     resfile = '0405_run_246_9.0ms_dc0_flexies_fixyaw_highrpm_shutdown'
     resfile = '0413_run_419_8ms_dc0.6_stiffblades_freeyaw_forced'
 
-    respath = '/home/dave/PhD_data/OJF_data_edit/database/symlinks_all/'
+    respath = 'database/symlinks_all/'
     res = ComboResults(respath, resfile, silent=False, sync=True)
     res.dspace.remove_rpm_spike(plot=False)
     # RPM from pulse only returns the pulses, nothing else is done
@@ -5378,11 +5383,9 @@ def check_case():
     res._calibrate_dspace(caldict_dspace_04)
     res._calibrate_blade(caldict_blade_04)
     res.dspace.remove_rpm_spike()
-#    res.statistics()
-#    res.dashboard_a3('/home/dave/Desktop/')
 
     # and see if the staircase filter can get what we want
-    figpath = '/home/dave/PhD_data/OJF_data_edit/database/steady_rpm_points/'
+    figpath = 'database/steady_rpm_points/'
     irpm = res.dspace.labels_ch['RPM']
     iyaw = res.dspace.labels_ch['Yaw Laser']
     ifa = res.dspace.labels_ch['Tower Strain For-Aft']
@@ -5420,15 +5423,3 @@ def check_case():
 if __name__ == '__main__' :
 
     dummy = None
-
-#    check_case()
-
-    #respath = '/home/dave/PhD_data/OJF_data_edit/extension_drag/'
-    #run = '805_flex_B2.csv'
-    #blade = BladeStrainFile(respath + run, debug=True)
-
-    #filepath = '/home/dave/PhD_data/OJF_data_edit/blade_contour/'
-    #bc = BladeContour()
-    ##bc.xls_to_txt(filepath)
-    #gg = bc.mean_defl(filepath, 'flex', 'B1' ,'256')
-

@@ -31,6 +31,7 @@ import matplotlib as mpl
 #from matplotlib.ticker import FormatStrFormatter
 import pylab as plt
 import cv2
+import pandas as pd
 
 import progressbar as progbar
 
@@ -1426,8 +1427,19 @@ class ComboResults(BladeStrainFile, OJFLogFile, DspaceMatFile):
         self.dspace.time = tnew
         self.dspace.data = dnew
 
+        # OJF data: is irrelevant, but for the convience of having them in the
+        # same DataFrame
+        # and reset all the dspace data
+        dnew = np.ndarray( (len(tnew),self.ojf.data.shape[1]),
+                          dtype=np.float64)
+        for i in range(self.ojf.data.shape[1]):
+            dnew[:,i] = np.interp(tnew, self.ojf.time,self.ojf.data[:,i])
+        self.ojf.time = tnew
+        self.ojf.data = dnew
+
         self.blade.sample_rate = SPS
         self.dspace.sample_rate = SPS
+        self.ojf.sample_rate = SPS
 
         self.data_resampled = True
 
@@ -1445,8 +1457,8 @@ class ComboResults(BladeStrainFile, OJFLogFile, DspaceMatFile):
 
             * do some frequency analysis on the full, confirm with the 5 rev
 
-        Paramters
-        ---------
+        Parameters
+        ----------
 
         nr_rev : int, default=None
 
@@ -2033,6 +2045,9 @@ class ComboResults(BladeStrainFile, OJFLogFile, DspaceMatFile):
             same way as used in sync_strain_dspace
         """
 
+        if self.data_resampled:
+            raise ValueError('reset_azimuth only works before resampling')
+
         if type(i_peaks).__name__ == 'bool':
             # channel of the pulse signal in dspace
             ch = self.dspace.labels_ch['RPM Pulse']
@@ -2147,6 +2162,9 @@ class ComboResults(BladeStrainFile, OJFLogFile, DspaceMatFile):
 
     def _tune_blade_sample_rate(self):
         """
+        Optimize for sample rate Fs, such that the PSD analysis of the blade
+        strain signal has the same 1P frequency as the rotor speed
+        initial value for Fs is set to 512
         """
 #        # convert to wafo time object
 #        data = self.blade.data[:,0]
@@ -3032,23 +3050,11 @@ class ComboResults(BladeStrainFile, OJFLogFile, DspaceMatFile):
         # -------------------------------------------------
         pa4.save_fig()
 
-
-    def dashboard_a3(self, figpath, **kwargs):
+    def _mod_labels_sel_chans(self, forplots=True):
         """
-        Plot OJF test dashboard on A3 paper size
-        ========================================
-
-        This includes all data and puts dSPACE, OJF and blade data in just
-        one plot. No calibration is performed. If the data has been
-        calibrated before, it is tagged as such in the filename.
-
+        Consistent labels acrross February/April campaigns, and select
+        which channels to take from the dSPACE results
         """
-        eps = kwargs.get('eps', False)
-        nr_rev = kwargs.get('nr_rev', None)
-        time = kwargs.get('time', None)
-        slice_dspace, slice_ojf, slice_blade, window_dspace, \
-                window_ojf, window_blade, zoomtype, time_range \
-                = self._data_window(nr_rev=nr_rev, time=time)
 
         if not self.dspace_is_cal and not self.blade_is_cal:
             rawdata = '_raw'
@@ -3069,24 +3075,6 @@ class ComboResults(BladeStrainFile, OJFLogFile, DspaceMatFile):
                 ylabels[ss_key] = 'Tower base $\psi_{90}$ moment [Nm]'
 
         # -------------------------------------------------
-        # setup the figure
-        # -------------------------------------------------
-        if self.dspace.campaign == 'February':
-            nr_plots = 10
-            nr_plots = 7
-        else:
-            nr_plots = 11
-            nr_plots = 8
-
-        pa4 = plotting.A4Tuned()
-        fig_descr = rawdata + '_dashboard' + zoomtype
-        # escape any underscores in the file name for latex printing
-        grandtitle = self.resfile.replace('_', '\_')
-        pa4.setup(figpath + self.resfile + fig_descr, nr_plots=nr_plots,
-                   grandtitle=grandtitle, wsleft_cm=2., wsright_cm=1.0,
-                   hspace_cm=2., wspace_cm=4.2)
-
-        # -------------------------------------------------
         # data selection from dSPACE
         # -------------------------------------------------
         channels = []
@@ -3105,9 +3093,51 @@ class ComboResults(BladeStrainFile, OJFLogFile, DspaceMatFile):
             channels.append(self.dspace.labels_ch[key])
             key = 'Tower Strain Side-Side filtered'
             channels.append(self.dspace.labels_ch[key])
-#        channels.append(self.dspace.labels_ch['Tower Top acc Y (FA)'])
-#        channels.append(self.dspace.labels_ch['Tower Top acc X (SS)'])
-#        channels.append(self.dspace.labels_ch['Tower Top acc Z'])
+        if not forplots:
+            channels.append(self.dspace.labels_ch['Tower Top acc Y (FA)'])
+            channels.append(self.dspace.labels_ch['Tower Top acc X (SS)'])
+            channels.append(self.dspace.labels_ch['Tower Top acc Z'])
+            channels.append(self.dspace.labels_ch['Voltage filtered'])
+            channels.append(self.dspace.labels_ch['Current filtered'])
+
+        return ylabels, rawdata, channels
+
+    def dashboard_a3(self, figpath, **kwargs):
+        """
+        Plot OJF test dashboard on A3 paper size
+        ========================================
+
+        This includes all data and puts dSPACE, OJF and blade data in just
+        one plot. No calibration is performed. If the data has been
+        calibrated before, it is tagged as such in the filename.
+
+        """
+        eps = kwargs.get('eps', False)
+        nr_rev = kwargs.get('nr_rev', None)
+        time = kwargs.get('time', None)
+        slice_dspace, slice_ojf, slice_blade, window_dspace, \
+                window_ojf, window_blade, zoomtype, time_range \
+                = self._data_window(nr_rev=nr_rev, time=time)
+
+        ylabels, rawdata, channels = self._mod_labels_sel_chans(forplots=True)
+
+        # -------------------------------------------------
+        # setup the figure
+        # -------------------------------------------------
+        if self.dspace.campaign == 'February':
+            nr_plots = 10
+            nr_plots = 7
+        else:
+            nr_plots = 11
+            nr_plots = 8
+
+        pa4 = plotting.A4Tuned()
+        fig_descr = rawdata + '_dashboard' + zoomtype
+        # escape any underscores in the file name for latex printing
+        grandtitle = self.resfile.replace('_', '\_')
+        pa4.setup(figpath + self.resfile + fig_descr, nr_plots=nr_plots,
+                   grandtitle=grandtitle, wsleft_cm=2., wsright_cm=1.0,
+                   hspace_cm=2., wspace_cm=4.2)
 
         # -------------------------------------------------
         # plotting dSPACE selection
@@ -3553,12 +3583,64 @@ class ComboResults(BladeStrainFile, OJFLogFile, DspaceMatFile):
         # -------------------------------------------------
         pa4.save_fig()
 
-    def save(self):
+    def to_df(self, fpath):
         """
-        Save the callibrated and combined result file as a pandas DataFrame.
+        Convert the callibrated and combined result file into pandas DataFrame.
         """
+
+        df = pd.DataFrame()
+
         slice_dspace, slice_ojf, slice_blade, window_dspace, window_ojf, \
                 window_blade, zoomtype, time_range = self._data_window()
+
+
+        ylabels, rawdata, chans = self._mod_labels_sel_chans(forplots=False)
+
+        chans.append(self.dspace.labels_ch['HS trigger'])
+        if self.dspace.campaign == 'April':
+
+            try:
+                chans.append(self.dspace.labels_ch['HS trigger start-end'])
+            except KeyError:
+                pass
+            chans.append(self.dspace.labels_ch['RPM Pulse'])
+            if self.dspace_strain_is_synced:
+                title += ', synchronized'
+            else:
+                title += ', synchronization failed'
+
+        df['time'] = self.dspace.time[slice_dspace]
+        data = self.dspace.data[slice_dspace,:]
+        for ch in chans:
+            try:
+                colname = ylabels[self.dspace.labels[ch]]
+            except KeyError:
+                colname = self.dspace.labels[ch]
+            df[colname] = self.dspace.data[slice_dspace,ch]
+
+        if self.isojfdata:
+            for ch in [1, 4, 2]:
+            time = self.ojf.time[slice_ojf]
+            data = self.ojf.data[slice_ojf,:]
+
+            self.ojf.labels[ch_w]
+
+
+#        fname_descr = rawdata + '_dashboard' + zoomtype
+#        fname = os.path.join(fpath, self.resfile + fname_descr)
+#
+#        # dspace
+#        self.dspace.labels
+#        self.dspace.labels_ch
+#
+#        # OJF
+#        time, data, labels
+#
+#        # BLADE
+#
+#
+#        for channel, chi in self.dspace.labels_ch.iteritems():
+
 
 
 

@@ -163,20 +163,12 @@ class BladeStrainFile:
                 self.time, self.data = self._tune_trig(self.time, self.data,
                                                        checkpulse=checkpulse)
 
-        # split strainfile into respath and resfile
-        #self.respath
-        self.resfile = self.strainfile.split('/')[-1]
+            # split strainfile into respath and resfile
+            #self.respath
+            self.resfile = self.strainfile.split('/')[-1]
 
-#    def fir(self):
-#        """
-#        Filter the signal
-#        """
-#
-#        filt = Filters()
-#        data_filt, N, delay = filt.fir(time, data, ripple_db=20,
-#                        freq_trans_width=0.5, cutoff_hz=0.3, plot=False,
-#                        figpath=figpath, figfile=figfile + 'filter_design',
-#                        sample_rate=sample_rate)
+        self.cnames = ['blade2_root', 'blade2_30pc',
+                       'blade1_root', 'blade1_30pc', 'blade_rpm_pulse']
 
     def _add_missing_point(self, time, data):
         """
@@ -597,8 +589,12 @@ class OJFLogFile:
 
         self.ojffile = ojffile
 
+        self.cnames = ['RPM_fan', 'temperature', 'static_p', 'delta_p'
+                       'wind_speed']
+
         if ojffile:
             self.time, self.data, self.labels = self.read(ojffile)
+            self.cnames = [str(k).replace(' ', '_') for k in self.labels]
 
         # sample rate is fixed
         self.sample_rate = 4
@@ -797,12 +793,58 @@ class DspaceMatFile:
         self.ch_dict['"Model Root"/"Tigger_Signal"/"Trigger_signal"/"Dummy"']\
                     = 'HS trigger start-end'
 
+        self.cnames = {}
+        self.cnames['"Model Root"/"Duty_Cycle"/"Value"'] = 'duty_cycle'
+        self.cnames['"Model Root"/"Rotorspeed_Estimator"/"Rotor_freq_RPM"']\
+                    = 'rpm_est_v1'
+        # make it twice for easy RPM channel selection when mixing results
+        # from April
+        self.cnames['"Model Root"/"Rotorspeed_Estimator"/"Rotor_freq_RPM"']\
+                    = 'rpm'
+        self.cnames['"Model Root"/"Rotorspeed_Estimator"/"Rotor_freq_RPM1"'] \
+                    = 'rpm_est_v2'
+        # or is this the blade strain trigger?
+        self.cnames['"Model Root"/"Rotorspeed_Estimator"/"Trigger"'] \
+                    = 'hs_trigger'
+        self.cnames['"Model Root"/"Sensors"/"50mA_v"/"Out1"'] = 'current'
+        self.cnames['"Model Root"/"Sensors"/"Current_Filter"']='current_filt'
+        self.cnames['"Model Root"/"Sensors"/"FA_gain"/"Out1"'] \
+                    = 'tower_strain_fa'
+        self.cnames['"Model Root"/"Sensors"/"Power"'] = 'power'
+        self.cnames['"Model Root"/"PWM_GEN"/"PWM_GEN_Out"'] = 'power2'
+        self.cnames['"Model Root"/"Sensors"/"SS_gain"/"Out1"'] \
+                    = 'tower_strain_ss'
+        self.cnames['"Model Root"/"Sensors"/"TWRFA1"'] \
+                    = 'tower_strain_fa_filt'
+        self.cnames['"Model Root"/"Sensors"/"TWRSS1"'] \
+                    = 'tower_strain_ss_filt'
+        self.cnames['"Model Root"/"Sensors"/"Voltage_Filter"'] \
+                    = 'voltage_filt'
+        # at least in april, accZ is actually SS
+        self.cnames['"Model Root"/"Sensors"/"accX"'] = 'towertop_acc_z'
+        self.cnames['"Model Root"/"Sensors"/"accY"'] = 'towertop_acc_fa'
+        self.cnames['"Model Root"/"Sensors"/"accZ"'] = 'towertop_acc_ss'
+        # RPM pulse is for April the wireless strain sensor pulse
+        self.cnames['"Model Root"/"Sensors"/"pulse1"'] = 'rpm_pulse'
+        self.cnames['"Model Root"/"Sensors"/"Dummy"'] = 'yaw_angle'
+        # for February 14, Dummy is renamed to Voltage_LP9
+        self.cnames['"Model Root"/"Sensors"/"Voltage_LP9"/"Out1"']='yaw_angle'
+        # changes for April
+        self.cnames['"Model Root"/"Sensors"/"Rotor_Speed_RPM"'] = 'rpm'
+        self.cnames['"Model Root"/"Sensors"/"Rotor_Pos_deg"'] = 'rotor_azimuth'
+        self.cnames['"Model Root"/"Sensors"/"sound"'] = 'sound'
+        self.cnames['"Model Root"/"Sensors"/"sound_gain"/"Out1"']='sound_gain'
+        self.cnames['"Model Root"/"Tigger_Signal"/"Trigger"'] = 'hs_trigger'
+        self.cnames['"Model Root"/"Tigger_Signal"/"Trigger_signal"/"Dummy"']\
+                    = 'hs_trigger_start_end'
+
         self.rpm_spike_removed = False
 
         # they are named withouth quotes for the sweep files
         keys = self.ch_dict.keys()
         for key in keys:
             self.ch_dict[key.replace('"', '')] = self.ch_dict[key]
+            self.cnames[key.replace('"', '')] = self.cnames[key]
 
         self.matfile = matfile
         # file name only, excluding the path
@@ -999,15 +1041,19 @@ class DspaceMatFile:
         labels = np.ndarray((ychannels), dtype='<U100')
         # and the inverse, the channel name coupled to its number
         self.labels_ch = dict()
+        self.labels_cnames = {}
         # cycle through all the Y channels recorded
         for ch in range(ychannels):
+            chname_long = x_var[ch,0][0][0]
             # change the label name if applicable
             try:
-                labels[ch] = self.ch_dict[x_var[ch,0][0][0]]
+                labels[ch] = self.ch_dict[chname_long]
                 # and the inverse: channel name coupled to its number
                 self.labels_ch[labels[ch]] = ch
+                # map the print name to C-compatible names
+                self.labels_cnames[labels[ch]] = self.cnames[chname_long]
             except KeyError:
-                labels[ch] = x_var[ch,0][0][0]
+                labels[ch] = chname_long
             # channel 0 is the time and it is not in par_names
             data[:,ch] = x_data[ch+1,:]
 
@@ -1081,14 +1127,23 @@ class DspaceMatFile:
 
         labels = np.ndarray((ychannels), dtype='<U100')
         # and the inverse, the channel name coupled to its number
-        self.labels_ch = dict()
+        self.labels_ch = {}
+        self.labels_cnames = {}
         # cycle through all the Y channels recorded
         for ch in range(ychannels):
             # change the label name if applicable
             try:
-                labels[ch] = self.ch_dict[L2['Y']['Name'][0,ch][0]]
+                chname_long = L2['Y']['Name'][0,ch][0]
+                labels[ch] = self.ch_dict[chname_long]
                 # and the inverse: channel name coupled to its number
+                # make sure we're not overwriting any channel
+                if labels[ch] in self.labels_ch:
+                    msg = ('overwriting channel label in labels_ch '
+                           'key, value: %s, %s' % (labels[ch], ch))
+                    logging.warning(msg)
                 self.labels_ch[labels[ch]] = ch
+                # map the print name to C-compatible names
+                self.labels_cnames[labels[ch]] = self.cnames[chname_long]
             except KeyError:
                 labels[ch] = L2['Y']['Name'][0,ch][0]
             data[:,ch] = L2['Y']['Data'][0,ch][0,:]
@@ -1398,9 +1453,41 @@ class ComboResults(BladeStrainFile, OJFLogFile, DspaceMatFile):
         The leading 4 seconds in dspace are cut off as well
         """
 
-        # only resample if there is blade data present and synced!
-        # and do not resample twice!
-        if not self.isbladedata or not self.dspace_strain_is_synced \
+        # when there is only OJF and dSPACE data available
+        if not self.isbladedata and self.isojfdata and not self.data_resampled:
+            SPS = self.dspace.sample_rate
+            # maximum time based on the shortest series, int() will basically also
+            # floor the result: 60.9 becomes 60
+            tmax = int(min([self.ojf.time[-1], self.dspace.time[-1]]))
+            tnew = np.linspace(0,tmax,tmax*SPS)
+
+            # interpollate dSPACE on new grid
+            dnew = np.ndarray( (len(tnew),self.dspace.data.shape[1]),
+                              dtype=np.float64)
+            for i in range(self.dspace.data.shape[1]):
+                dnew[:,i] = np.interp(tnew, self.dspace.time,self.dspace.data[:,i])
+            self.dspace.time = tnew
+            self.dspace.data = dnew
+
+            # interpollate OJF on new grid
+            dnew = np.ndarray( (len(tnew),self.ojf.data.shape[1]),
+                              dtype=np.float64)
+            # OJF time is not accurate and reliable
+            if len(self.ojf.time) > self.ojf.data.shape[1]:
+                self.ojf.time = self.ojf.time[0:self.ojf.data.shape[0]]
+            for i in range(self.ojf.data.shape[1]):
+                dnew[:,i] = np.interp(tnew, self.ojf.time, self.ojf.data[:,i])
+            self.ojf.time = tnew
+            self.ojf.data = dnew
+
+            self.dspace.sample_rate = SPS
+            self.ojf.sample_rate = SPS
+
+            self.data_resampled = True
+
+            return
+
+        elif not self.isbladedata or not self.dspace_strain_is_synced \
             and self.data_resampled:
             return
 
@@ -1432,6 +1519,9 @@ class ComboResults(BladeStrainFile, OJFLogFile, DspaceMatFile):
         # and reset all the dspace data
         dnew = np.ndarray( (len(tnew),self.ojf.data.shape[1]),
                           dtype=np.float64)
+        # OJF time is not accurate and reliable
+        if len(self.ojf.time) > self.ojf.data.shape[1]:
+            self.ojf.time = self.ojf.time[0:self.ojf.data.shape[0]]
         for i in range(self.ojf.data.shape[1]):
             dnew[:,i] = np.interp(tnew, self.ojf.time,self.ojf.data[:,i])
         self.ojf.time = tnew
@@ -3053,8 +3143,12 @@ class ComboResults(BladeStrainFile, OJFLogFile, DspaceMatFile):
     def _mod_labels_sel_chans(self, forplots=True):
         """
         Consistent labels acrross February/April campaigns, and select
-        which channels to take from the dSPACE results
+        which channels to take from the dSPACE results.
+
+        For saving to hdf5 pd.DataFrame, use C-compatble variable names
         """
+
+        cnames = {}
 
         if not self.dspace_is_cal and not self.blade_is_cal:
             rawdata = '_raw'
@@ -3282,22 +3376,26 @@ class ComboResults(BladeStrainFile, OJFLogFile, DspaceMatFile):
             plot_nr += 1
 
         else:
-            # For february, only plot the HS trigger
-            ch = self.dspace.labels_ch['HS trigger']
-            time = self.dspace.time[slice_dspace]
-            data = self.dspace.data[slice_dspace,ch]
+            # For february, only plot the HS trigger, but that channel
+            # might not be available for all the DC sweeps
+            try:
+                ch = self.dspace.labels_ch['HS trigger']
+                time = self.dspace.time[slice_dspace]
+                data = self.dspace.data[slice_dspace,ch]
 
-            ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, plot_nr)
-            # the trigger is either 0 or 1
-            ax1.plot(time, data, 'b')
-            ax1.set_title(self.dspace.labels[ch])
-            ax1.grid(True)
+                ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, plot_nr)
+                # the trigger is either 0 or 1
+                ax1.plot(time, data, 'b')
+                ax1.set_title(self.dspace.labels[ch])
+                ax1.grid(True)
 
-            ch_key = self.dspace.labels[ch]
-            if ylabels.has_key(ch_key):
-                ax1.set_ylabel(ylabels[self.dspace.labels[ch]])
+                ch_key = self.dspace.labels[ch]
+                if ylabels.has_key(ch_key):
+                    ax1.set_ylabel(ylabels[self.dspace.labels[ch]])
 
-            ax1.set_xlim(window_dspace)
+                ax1.set_xlim(window_dspace)
+            except KeyError:
+                pass
 
             plot_nr += 1
 
@@ -3583,7 +3681,7 @@ class ComboResults(BladeStrainFile, OJFLogFile, DspaceMatFile):
         # -------------------------------------------------
         pa4.save_fig()
 
-    def to_df(self, fpath=None):
+    def to_df(self, fpath=None, complevel=0, complib=None):
         """
         Convert the callibrated and combined result file into pandas DataFrame.
         Meta-data is stored in the index name attribute.
@@ -3594,10 +3692,13 @@ class ComboResults(BladeStrainFile, OJFLogFile, DspaceMatFile):
         (slice_dspace, slice_ojf, slice_blade, window_dspace, window_ojf,
                 window_blade, zoomtype, time_range) = self._data_window()
 
-
         ylabels, rawdata, chans = self._mod_labels_sel_chans(forplots=False)
 
-        chans.append(self.dspace.labels_ch['HS trigger'])
+        # some of the DC runs do not have this one
+        try:
+            chans.append(self.dspace.labels_ch['HS trigger'])
+        except KeyError:
+            pass
 
         if self.dspace.campaign == 'April':
             try:
@@ -3616,24 +3717,25 @@ class ComboResults(BladeStrainFile, OJFLogFile, DspaceMatFile):
                 colname = ylabels[self.dspace.labels[ch]]
             except KeyError:
                 colname = self.dspace.labels[ch]
-            df[colname] = self.dspace.data[slice_dspace,ch]
+            cname = self.dspace.labels_cnames[self.dspace.labels[ch]]
+            df[str(cname)] = self.dspace.data[slice_dspace,ch]
 
         if self.isojfdata:
             for ch in [1, 4, 2]:
-                colname = self.ojf.labels[ch]
-                df[colname] = self.ojf.data[slice_ojf,ch]
+                colname = self.ojf.labels[ch].replace(' ', '_')
+                df[str(colname)] = self.ojf.data[slice_ojf,ch]
 
         try:
-            colnames = ['blade 1 root', 'blade 1 30%',
-                        'blade 2 root', 'blade 2 30%', 'pulse rotor']
-            chans = [2, 3, 0, 1, 4]
-            for ch, colname in zip(chans, colnames):
-                df[colname] = self.blade.data[slice_blade,ch]
+            # cnames has maximum 5 columns (5th is the pulse), but data can
+            # still hold 6 columns (last one is empty)
+            for ch in range(min(self.blade.data.shape[1],5)):
+                colname = self.blade.cnames[ch]
+                df[str(colname)] = self.blade.data[slice_blade,ch]
         except AttributeError:
             pass
 
         if fpath is not None:
-            df.to_hdf(fpath, 'table')
+            df.to_hdf(fpath, 'table', complevel=complevel, complib=complib)
 
         return df
 

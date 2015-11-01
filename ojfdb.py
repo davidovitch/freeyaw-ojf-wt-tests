@@ -17,6 +17,7 @@ import shutil
 
 import numpy as np
 import matplotlib as mpl
+import pandas as pd
 
 import ojfresult
 import plotting
@@ -455,23 +456,25 @@ def build_db(path_db, prefix, **kwargs):
     key_inc : list
         Keywords that should occur in the database, operator is AND
 
+    resample : boolean, default=False
+
+    dataframe : boolean, default=False
+        From a single case combine dSPACE, OJF and blade strain into a single
+        Pandas DataFrame.
+
     """
 
     output = kwargs.get('output', prefix)
     dashplot = kwargs.get('dashplot', False)
     calibrate = kwargs.get('calibrate', True)
     key_inc = kwargs.get('key_inc', [])
+    resample = kwargs.get('resample', False)
+    dataframe = kwargs.get('dataframe', False)
     db_index_file = kwargs.get('db_index_file', 'db_index_%s.pkl' % prefix)
     # read the database
     FILE = open(path_db + db_index_file)
     db_index = pickle.load(FILE)
     FILE.close()
-
-    if calibrate:
-        caldict_dspace_02 = ojfresult.CalibrationData.caldict_dspace_02
-        caldict_blade_02  = ojfresult.CalibrationData.caldict_blade_02
-        caldict_dspace_04 = ojfresult.CalibrationData.caldict_dspace_04
-        caldict_blade_04  = ojfresult.CalibrationData.caldict_blade_04
 
     # respath is where all the symlinks are
     respath = path_db + prefix + '/'
@@ -484,6 +487,7 @@ def build_db(path_db, prefix, **kwargs):
 
     # save the statistics in a dict
     db_stats = {}
+    df_stats = None
 
     nr, nrfiles = 0, len(db_index)
 
@@ -508,14 +512,7 @@ def build_db(path_db, prefix, **kwargs):
         if res.nodspacefile:
             continue
         if calibrate:
-            if resfile.startswith('02'):
-                res._calibrate_dspace(caldict_dspace_02)
-                res._calibrate_blade(caldict_blade_02)
-            elif resfile.startswith('04'):
-                res._calibrate_dspace(caldict_dspace_04)
-                res._calibrate_blade(caldict_blade_04)
-            else:
-                raise ValueError, 'which month?? %s' % resfile
+            res.calibrate()
 
         # for the dc-sweep cases, ditch the first 4 seconds where the rotor
         # speed is still changing too much
@@ -528,6 +525,9 @@ def build_db(path_db, prefix, **kwargs):
             istart = res.dspace.sample_rate*cutoff
             res.dspace.data = res.dspace.data[istart:,:]
             res.dspace.time = res.dspace.time[istart:]-res.dspace.time[istart]
+
+        if resample:
+            res._resample()
 
         #except:
             #logging.warn('ignored: %s' % resfile)
@@ -549,6 +549,72 @@ def build_db(path_db, prefix, **kwargs):
             db_stats[resfile]['ojf labels'] = res.ojf.labels
         except AttributeError:
             pass
+
+        if dataframe:
+            ftarget = os.path.join('database/DataFrames/', resfile)
+            df = res.to_df(ftarget, complevel=9, complib='blosc')
+            if df_stats is None:
+                # only take the unique entries, cnames contains all possible
+                # mappings
+                all_c_columns = list(set(res.dspace.cnames.values()))
+                all_c_columns.append('time')
+                # also add cnames for OJF and BLADE
+                if not res.isojfdata:
+                    res.ojf = ojfresult.OJFLogFile(ojffile=None)
+                all_c_columns.extend(res.ojf.cnames)
+                if not res.isbladedata:
+                    res.blade = ojfresult.BladeStrainFile(None)
+                all_c_columns.extend(res.blade.cnames)
+                stats_mean = {col:[] for col in all_c_columns}
+                stats_mean['index'] = []
+                stats_min = {col:[] for col in all_c_columns}
+                stats_min['index'] = []
+                stats_max = {col:[] for col in all_c_columns}
+                stats_max['index'] = []
+                stats_std = {col:[] for col in all_c_columns}
+                stats_std['index'] = []
+                stats_range = {col:[] for col in all_c_columns}
+                stats_range['index'] = []
+                df_stats = True
+
+            def add_stats(stats, df_dict):
+                df_dict['index'] = resfile
+                for col in stats.index:
+                    if col == 'time':
+                        df_dict[col].append(res.dspace.time[-1])
+                    df_dict[col].append(stats[col])
+
+                # and empty items for those for which there is no data
+                for col in (set(all_c_columns) - {str(k) for k in stats.index}):
+                    df_dict[col].append(np.nan)
+                return df_dict
+
+            stats_mean = add_stats(df.mean(), stats_mean)
+            stats_min = add_stats(df.min(), stats_min)
+            stats_max = add_stats(df.max(), stats_max)
+            stats_std = add_stats(df.std(), stats_std)
+            stats_range = add_stats(df.max()-df.min(), stats_range)
+
+    if df_stats:
+        fname = os.path.join(path_db, 'db_stats_%s_mean.h5' % output)
+        df = pd.DataFrame(stats_mean)
+        df.to_hdf(fname, 'table', compression=9, complib='blosc')
+
+        fname = os.path.join(path_db, 'db_stats_%s_min.h5' % output)
+        df = pd.DataFrame(stats_min)
+        df.to_hdf(fname, 'table', compression=9, complib='blosc')
+
+        fname = os.path.join(path_db, 'db_stats_%s_max.h5' % output)
+        df = pd.DataFrame(stats_max)
+        df.to_hdf(fname, 'table', compression=9, complib='blosc')
+
+        fname = os.path.join(path_db, 'db_stats_%s_std.h5' % output)
+        df = pd.DataFrame(stats_std)
+        df.to_hdf(fname, 'table', compression=9, complib='blosc')
+
+        fname = os.path.join(path_db, 'db_stats_%s_range.h5' % output)
+        df = pd.DataFrame(stats_range)
+        df.to_hdf(fname, 'table', compression=9, complib='blosc')
 
     # load an existing database first, update
     try:

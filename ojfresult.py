@@ -3098,7 +3098,7 @@ class ComboResults(BladeStrainFile, OJFLogFile, DspaceMatFile):
             channels.append(self.dspace.labels_ch['Tower Top acc X (SS)'])
             channels.append(self.dspace.labels_ch['Tower Top acc Z'])
             channels.append(self.dspace.labels_ch['Voltage filtered'])
-            channels.append(self.dspace.labels_ch['Current filtered'])
+            channels.append(self.dspace.labels_ch['Current Filter'])
 
         return ylabels, rawdata, channels
 
@@ -3583,34 +3583,34 @@ class ComboResults(BladeStrainFile, OJFLogFile, DspaceMatFile):
         # -------------------------------------------------
         pa4.save_fig()
 
-    def to_df(self, fpath):
+    def to_df(self, fpath=None):
         """
         Convert the callibrated and combined result file into pandas DataFrame.
+        Meta-data is stored in the index name attribute.
         """
 
         df = pd.DataFrame()
 
-        slice_dspace, slice_ojf, slice_blade, window_dspace, window_ojf, \
-                window_blade, zoomtype, time_range = self._data_window()
+        (slice_dspace, slice_ojf, slice_blade, window_dspace, window_ojf,
+                window_blade, zoomtype, time_range) = self._data_window()
 
 
         ylabels, rawdata, chans = self._mod_labels_sel_chans(forplots=False)
 
         chans.append(self.dspace.labels_ch['HS trigger'])
-        if self.dspace.campaign == 'April':
 
+        if self.dspace.campaign == 'April':
             try:
                 chans.append(self.dspace.labels_ch['HS trigger start-end'])
             except KeyError:
                 pass
             chans.append(self.dspace.labels_ch['RPM Pulse'])
-            if self.dspace_strain_is_synced:
-                title += ', synchronized'
-            else:
-                title += ', synchronization failed'
+#            if self.dspace_strain_is_synced:
+#                title += ', synchronized'
+#            else:
+#                title += ', synchronization failed'
 
         df['time'] = self.dspace.time[slice_dspace]
-        data = self.dspace.data[slice_dspace,:]
         for ch in chans:
             try:
                 colname = ylabels[self.dspace.labels[ch]]
@@ -3620,28 +3620,22 @@ class ComboResults(BladeStrainFile, OJFLogFile, DspaceMatFile):
 
         if self.isojfdata:
             for ch in [1, 4, 2]:
-            time = self.ojf.time[slice_ojf]
-            data = self.ojf.data[slice_ojf,:]
+                colname = self.ojf.labels[ch]
+                df[colname] = self.ojf.data[slice_ojf,ch]
 
-            self.ojf.labels[ch_w]
+        try:
+            colnames = ['blade 1 root', 'blade 1 30%',
+                        'blade 2 root', 'blade 2 30%', 'pulse rotor']
+            chans = [2, 3, 0, 1, 4]
+            for ch, colname in zip(chans, colnames):
+                df[colname] = self.blade.data[slice_blade,ch]
+        except AttributeError:
+            pass
 
+        if fpath is not None:
+            df.to_hdf(fpath, 'table')
 
-#        fname_descr = rawdata + '_dashboard' + zoomtype
-#        fname = os.path.join(fpath, self.resfile + fname_descr)
-#
-#        # dspace
-#        self.dspace.labels
-#        self.dspace.labels_ch
-#
-#        # OJF
-#        time, data, labels
-#
-#        # BLADE
-#
-#
-#        for channel, chi in self.dspace.labels_ch.iteritems():
-
-
+        return df
 
 
 class BladeContour:

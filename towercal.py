@@ -6,6 +6,7 @@ Created on Mon Jan 21 15:20:54 2013
 """
 
 import math
+import os
 
 import numpy as np
 import scipy as sp
@@ -19,6 +20,9 @@ import ojfresult
 from staircase import StairCase
 from misc import find0
 
+RESDATA_02 = 'data/raw/02/calibration/'
+RESDATA_04 = 'data/raw/04/calibration/'
+CALPATH = 'data/calibration/'
 
 class TowerCalibration:
     """
@@ -44,7 +48,7 @@ class TowerCalibration:
         """
 
 
-        self.figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        self.figpath = CALPATH
         self.figpath += 'TowerStrainCal/'
         self.pprpath = self.figpath
 
@@ -230,8 +234,8 @@ class TowerCalibration:
         data_cal *= 9.81*moment_arm_cal
 
         # load the dspace and ojf files
-        respath = '/home/dave/PhD_data/OJF_data_edit/04/calibration/'
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        respath = RESDATA_04
+        figpath = CALPATH
         figpath += 'TowerStrainCal-04/'
         resfile = '0405_run_249_towercal'
         dspace = ojfresult.DspaceMatFile(respath + resfile)
@@ -247,7 +251,7 @@ class TowerCalibration:
         # and read the yaw angle fot this test
         yaw = dspace.data[istart:istop,iyaw]
         # calibrate the yaw angle signal, load the transformation polynomial
-        calpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        calpath = CALPATH
         ycp = calpath + 'YawLaserCalibration-04/runs_289_295.yawcal-pol10'
         pol = np.loadtxt(ycp)
         yaw = np.polyval(pol, yaw).mean()
@@ -327,8 +331,8 @@ class TowerCalibration:
         data_cal *= 9.81*moment_arm_cal
 
         # load the dspace and ojf files
-        respath = '/home/dave/PhD_data/OJF_data_edit/04/calibration/'
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        respath = RESDATA_04
+        figpath = CALPATH
         figpath += 'TowerStrainCal-04/'
         resfile = '0405_run_250_towercal'
         dspace = ojfresult.DspaceMatFile(respath + resfile)
@@ -344,7 +348,7 @@ class TowerCalibration:
         # and read the yaw angle fot this test
         yaw = dspace.data[istart:istop,iyaw]
         # calibrate the yaw angle signal, load the transformation polynomial
-        calpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        calpath = CALPATH
         ycp = calpath + 'YawLaserCalibration-04/runs_289_295.yawcal-pol10'
         pol = np.loadtxt(ycp)
         yaw = np.polyval(pol, yaw).mean()
@@ -424,8 +428,8 @@ class TowerCalibration:
         data_cal *= 9.81*moment_arm_cal
 
         # load the dspace and ojf files
-        respath = '/home/dave/PhD_data/OJF_data_edit/04/calibration/'
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        respath = RESDATA_04
+        figpath = CALPATH
         figpath += 'TowerStrainCal-04/'
         resfile = '0405_run_251_towercal'
         dspace = ojfresult.DspaceMatFile(respath + resfile)
@@ -441,7 +445,7 @@ class TowerCalibration:
         # and read the yaw angle fot this test
         yaw = dspace.data[istart:istop,iyaw]
         # calibrate the yaw angle signal, load the transformation polynomial
-        calpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        calpath = CALPATH
         ycp = calpath + 'YawLaserCalibration-04/runs_289_295.yawcal-pol10'
         pol = np.loadtxt(ycp)
         yaw = np.polyval(pol, yaw).mean()
@@ -489,7 +493,7 @@ class TowerCalibration:
         """
 
         dd = direction
-        p='/home/dave/PhD/Projects/PostProcessing/OJF_tests/TowerStrainCal-04/'
+        p = os.path.join(CALPATH, 'TowerStrainCal-04/')
 
         towercallist = ['0405_run_249_towercal_%s' % direction,
                         '0405_run_250_towercal_%s' % direction,
@@ -574,9 +578,8 @@ class TowerCalibration:
         """
         To get an overview of the data and quality, print all the raw data
         """
-        respath = '/home/dave/PhD_data/OJF_data_edit/04/calibration/'
-        figpath = '/home/dave/PhD/Projects/PostProcessing/'
-        figpath += 'OJF_tests/TowerStrainCal-04/'
+        respath = RESDATA_04
+        figpath = os.path.join(CALPATH, 'TowerStrainCal-04/')
 
         # using the fish wire, which snapped right at the start
         resfile = '0405_run_248_towercal_destroy_fish_wire'
@@ -619,7 +622,7 @@ class TowerCalibration:
         thrustworty overlapping measurements. This stuff is hence worthless!
         """
 
-#        respath = '/home/dave/PhD_data/OJF_data_edit/02/calibration/'
+#        respath = RESDATA_02
 #        # tower only files
 #        resfile1 = '0203_tower_norotor_nowire_4_20_0ms'
 #        dm1 = ojfresult.DspaceMatFile(matfile=respath+resfile1+'.mat' )
@@ -633,8 +636,8 @@ class TowerCalibration:
         # ----------------------------------------------
 
         # load the dspace and ojf files
-        respath = '/home/dave/PhD_data/OJF_data_edit/02/calibration/'
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/TowerWind/'
+        respath = RESDATA_02
+        figpath = os.path.join(CALPATH, 'TowerWind/')
         resfile = '0203_tower_norotor_nowire_4_20_0ms'
         cr = ojfresult.ComboResults(respath,resfile)
         # select the channels of interest
@@ -675,8 +678,8 @@ class TowerCalibration:
         # ----------------------------------------------
 
         # load the dspace and ojf files
-        respath = '/home/dave/PhD_data/OJF_data_edit/02/calibration/'
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/TowerWind/'
+        respath = RESDATA_02
+        figpath = os.path.join(CALPATH, 'TowerWind/')
         resfile = '0203_tower_norotor_wire_0_4_20'
         cr = ojfresult.ComboResults(respath,resfile)
         # select the channels of interest
@@ -739,8 +742,8 @@ class TowerCalibration:
         data_cal *= 9.81*moment_arm_cal
 
         # load the dspace and ojf files
-        respath = '/home/dave/PhD_data/OJF_data_edit/04/calibration/'
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        respath = RESDATA_04
+        figpath = CALPATH
         figpath += 'TowerStrainCalYaw/'
         resfile = '0405_run_259_towercal_towerstrainwithyawerrors'
         dspace = ojfresult.DspaceMatFile(respath + resfile)
@@ -798,8 +801,8 @@ class TowerCalibration:
         # =====================================================================
 
         # load the dspace and ojf files
-        respath = '/home/dave/PhD_data/OJF_data_edit/04/calibration/'
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        respath = RESDATA_04
+        figpath = CALPATH
         figpath += 'TowerStrainCalYaw/'
         resfile = '0405_run_260_towercal_towerstrainwithyawerrors'
         dspace = ojfresult.DspaceMatFile(respath + resfile)
@@ -866,7 +869,7 @@ class TowerCalibration:
         yaw = yaw[isort]
 
         # calibrate the yaw signal
-        calpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        calpath = CALPATH
         ycp = calpath + 'YawLaserCalibration-04/runs_289_295.yawcal-pol10'
         pol = np.loadtxt(ycp)
         yaw = np.polyval(pol, yaw)
@@ -899,7 +902,7 @@ class TowerCalibration:
         # =====================================================================
         # offset for the channels: FA, SS on zero load
         # =====================================================================
-        calpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        calpath = CALPATH
         cc = calpath + 'TowerStrainCal-04/'
         # collect all the measurment data
         Mn = np.loadtxt(cc + 'towercal_249_250_251_FA-data_cal')
@@ -913,7 +916,7 @@ class TowerCalibration:
         # =====================================================================
         # Load the yawed strain calibration test data
         # =====================================================================
-        calpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        calpath = CALPATH
         cc = calpath + 'TowerStrainCalYaw/'
         PSIy = np.loadtxt(cc + 'towercal_259_260.yawangle')
         FAy = np.loadtxt(cc + 'towercal_259_260.FA')
@@ -1084,7 +1087,7 @@ class TowerCalibration:
         M_ss = np.array([])
 
         # the psi angles for zero and max strain
-        calpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        calpath = CALPATH
         cc = calpath + 'TowerStrainCalYaw/'
 
         # take the standard saved angles, or some custom angle
@@ -1096,7 +1099,7 @@ class TowerCalibration:
         # =====================================================================
         # Load the data again, but now include the yaw angles
         # =====================================================================
-        calpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        calpath = CALPATH
         cc = calpath + 'TowerStrainCal-04/'
 
         # collect all the measurment data
@@ -1148,7 +1151,7 @@ class TowerCalibration:
         # =====================================================================
         # fit the aggregated data and save the transormation functions
         # =====================================================================
-        calpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        calpath = CALPATH
         calpath += 'TowerStrainCal-04/towercal_249_250_251_yawcorrect'
 
         # sort the set first FA
@@ -1188,7 +1191,7 @@ class TowerCalibration:
         # =====================================================================
         # plot the new calibration functions and compare to calibration data
         # =====================================================================
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'TowerStrainCal-04/'
         figfile = 'april_towercal_249_250_251_yawcorrect_fa_%s' % prefix
         # ---------------------------------------------------------
@@ -1229,7 +1232,7 @@ class TowerCalibration:
         # =====================================================================
         # plot the new calibration functions and compare to calibration data
         # =====================================================================
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'TowerStrainCal-04/'
         figfile = 'april_towercal_249_250_251_yawcorrect_ss_%s' % prefix
         # ---------------------------------------------------------
@@ -1282,7 +1285,7 @@ class TowerCalibration:
                               col_deriv=0, ftol=1.0e-07, xtol=1.0e-07,
                               maxfev=1000, epsfcn=1e-07, diag=None)
         # save the zero/max strain angles
-        calpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        calpath = CALPATH
         cc = calpath + 'TowerStrainCalYaw/'
         np.savetxt(cc + 'psi_fa_max_opt', np.array([xopt[0]]))
         np.savetxt(cc + 'psi_ss_0_opt', np.array([xopt[1]]))
@@ -1307,7 +1310,7 @@ class TowerCalibration:
         problem.
         """
 
-        calpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        calpath = CALPATH
         cc = calpath + 'TowerStrainCal-04/'
         # collect all the measurment data
         Mn = np.loadtxt(cc + 'towercal_249_250_251_FA-data_cal')
@@ -1502,15 +1505,21 @@ def all_tower_calibrations():
     """
     tc = TowerCalibration()
     # post process the raw measurement data
-#    tc.april_249()
-#    tc.april_250()
-#    tc.april_251()
-#    tc.yaw_259_260()
+    tc.april_249()
+    tc.april_250()
+    tc.april_251()
+    tc.yaw_259_260()
     # plot final results and create transofrmation function
     tc.april_combine(direction='FA')
     tc.april_combine(direction='SS')
+    # yaw calibration method yawplot
     tc.yaw_influence()
-    tc.calibrate_zerostrain_angle()
+    tc.calibrate_zerostrain_angle(prefix='yawplot')
+    verify_psi_correction('yawplot')
+    # yaw calibration method opt (final method used)
+    tc.yaw_influence_calibrate()
+    tc.calibrate_zerostrain_angle(prefix='opt')
+    verify_psi_correction('opt')
 
 
 def verify_psi_correction(prefix):
@@ -1525,7 +1534,7 @@ def verify_psi_correction(prefix):
     prefix : str
         possible values are opt and yawplot
     """
-    calpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+    calpath = CALPATH
     # definition of the calibration files for April
     ycp04 = calpath + 'YawLaserCalibration-04/runs_289_295.yawcal-pol10'
     # for the tower calibration, the yaw misalignment is already taken
@@ -1559,7 +1568,7 @@ def verify_psi_correction(prefix):
 
 
     # this is uncallibrated data
-    calpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+    calpath = CALPATH
     cc = calpath + 'TowerStrainCalYaw/'
     PSIy = np.loadtxt(cc + 'towercal_259_260.yawangle')
     FAy = np.loadtxt(cc + 'towercal_259_260.FA')
@@ -1652,7 +1661,7 @@ def find_zerostrain_angle_opt(x):
     # =====================================================================
     # Load the data again, but now include the yaw angles
     # =====================================================================
-    calpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+    calpath = CALPATH
     cc = calpath + 'TowerStrainCal-04/'
 
     # collect all the measurment data
@@ -1726,7 +1735,7 @@ def find_zerostrain_angle_opt(x):
     Mpsi0 = (2.0 + mass_holder)*moment_arm_cal*9.81
 
     # this is uncallibrated data
-    calpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+    calpath = CALPATH
     cc = calpath + 'TowerStrainCalYaw/'
     FAy = np.loadtxt(cc + 'towercal_259_260.FA')
     SSy = np.loadtxt(cc + 'towercal_259_260.SS')
@@ -1758,7 +1767,7 @@ if __name__ == '__main__':
     # Tower calibration
     # -------------------------------------------------------------
     # create a very first insight into the data: plot raw
-    tc = TowerCalibration()
+#    tc = TowerCalibration()
 #    tc.april_print_all_raw()
 #    tc.windspeed_correction()
 #    tc.april_249()
@@ -1769,7 +1778,7 @@ if __name__ == '__main__':
 #    tc.yaw_259_260()
 #    tc.yaw_influence()
 #    tc.calibrate_zerostrain_angle()
-    verify_psi_correction('yawplot')
+#    verify_psi_correction('yawplot')
 #    tc.yaw_influence_calibrate()
-    verify_psi_correction('opt')
+#    verify_psi_correction('opt')
 

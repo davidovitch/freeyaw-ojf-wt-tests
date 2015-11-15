@@ -23,6 +23,7 @@ import ojfresult
 import plotting
 import ojf_post
 
+PATH_DB = 'database/'
 
 def symlink_to_hs_folder(source_folder, path_db, symf='symlinks_hs_mimer/'):
     """
@@ -131,6 +132,8 @@ def symlink_to_folder(source_folder, path_db, **kwargs):
 
     This is by far the most safe way since the files are not actually renamed.
     """
+
+    df_index = {'source':[], 'runid':[], 'caseid':[]}
 
     db_id = kwargs.get('db_id', 'symlinks')
     path_db += db_id + '/'
@@ -254,9 +257,19 @@ def symlink_to_folder(source_folder, path_db, **kwargs):
                     newname = basisname + ext
                 print '        ' + newname
 
+                path_source = os.path.join('../../', rootn, name)
+                path_target = os.path.join(path_db, newname)
+
                 # collect all cases as simlinks in the database folder
                 # this holds the lowest risk of destroying the actual data!
-                os.symlink(rootn+'/'+name, path_db + newname)
+                os.symlink(path_source, path_target)
+
+                # save in the df database
+                # remove the root folder from the source path
+                source_rel = os.path.commonprefix([path_source, source_folder])
+                df_index['source'].append(source_rel)
+                df_index['runid'].append(runid)
+                df_index['caseid'].append(newname)
 
                 ## do not rename a file if the target already exists
                 ## based on stackoverflow answer
@@ -379,8 +392,10 @@ def symlinks_to_dcsweep(source_folder, path_db, db_id):
                 FILE.writelines([ojfline]*30)
 
             # and make the symlinks
-            os.symlink(root+'/'+fname, path_db+new)
-            os.symlink(root+'/'+logdstname, path_db+logdstname)
+            # relative symbolic links: first two levels up
+            root_ = os.path.join('../../', root)
+            os.symlink(os.path.join(root_, fname), path_db+new)
+            os.symlink(os.path.join(root_, logdstname), path_db+logdstname)
 
             # save in the index file
             db_index[new.replace('.mat', '')] = runid
@@ -424,6 +439,30 @@ def symlinks_to_dcsweep(source_folder, path_db, db_id):
     FILE.close()
 
 
+def convert_pkl_index_df(path_db, db_id='symlinks'):
+    """
+    Convert the pickled database index db_index and db_index_runid to a
+    DataFrame. The database is simply a dictionary holding (basename,runid)
+    key/value pairs (runid has it the other way around)
+    """
+
+#    path_db += db_id + '/'
+    fname = os.path.join(path_db, 'db_index_%s' % db_id)
+
+    with open(fname + '.pkl') as f:
+        db_index = pickle.load(f)
+
+    df_dict = {'basename':[], 'runid':[]}
+    for basename, runid in db_index.iteritems():
+        df_dict['basename'].append(basename)
+        df_dict['runid'].append(runid)
+
+    df = pd.DataFrame(df_dict)
+    df.to_hdf(fname + '.h5', 'table', complevel=9, complib='blosc')
+    df.to_csv(fname + '.csv')
+    df.to_excel(fname + '.xls')
+
+
 def build_db(path_db, prefix, **kwargs):
     """
     Create the statistics for each OJF case in the index database
@@ -463,19 +502,28 @@ def build_db(path_db, prefix, **kwargs):
         Pandas DataFrame.
 
     """
-
+    folder_df = kwargs.get('path_df', 'DataFrames/')
+    folder_csv = kwargs.get('path_df', 'CSV/')
     output = kwargs.get('output', prefix)
     dashplot = kwargs.get('dashplot', False)
     calibrate = kwargs.get('calibrate', True)
     key_inc = kwargs.get('key_inc', [])
     resample = kwargs.get('resample', False)
     dataframe = kwargs.get('dataframe', False)
+    continue_build = kwargs.get('continue_build', True)
     db_index_file = kwargs.get('db_index_file', 'db_index_%s.pkl' % prefix)
+
     # read the database
     FILE = open(path_db + db_index_file)
     db_index = pickle.load(FILE)
     FILE.close()
 
+    # remove the files we've already done
+    if continue_build:
+        source_folder = os.path.join(path_db, folder_df)
+        for root, dirs, files in os.walk(source_folder, topdown=True):
+            for fname in files:
+                db_index.pop(fname[:-3])
     # respath is where all the symlinks are
     respath = path_db + prefix + '/'
 
@@ -551,8 +599,9 @@ def build_db(path_db, prefix, **kwargs):
             pass
 
         if dataframe:
-            ftarget = os.path.join('database/DataFrames/', resfile)
+            ftarget = os.path.join(path_db, folder_df, resfile + '.h5')
             df = res.to_df(ftarget, complevel=9, complib='blosc')
+            df.to_csv(os.path.join(path_db, folder_csv, resfile + '.csv'))
             if df_stats is None:
                 # only take the unique entries, cnames contains all possible
                 # mappings
@@ -1188,7 +1237,7 @@ def plot_voltage_current(prefix):
         return  x_grid, np.polyval(pol, x_grid)
 
 
-    path_db = 'database/'
+    path_db = PATH_DB
     db = ojf_db(prefix, path_db=path_db)
 
     figpath = 'figures/overview/'
@@ -1308,7 +1357,7 @@ def plot_rpm_wind(prefix):
         x_grid = np.linspace(x[0], x[-1], res)
         return  x_grid, np.polyval(pol, x_grid)
 
-    path_db = 'database/'
+    path_db = PATH_DB
     db = ojf_db(prefix, path_db=path_db)
 
     figpath = 'figures/overview/'
@@ -1443,7 +1492,7 @@ def plot_rpm_vs_towerstrain(prefix):
     """
 
     cal = True
-    path_db = 'database/'
+    path_db = PATH_DB
     db = ojf_db(prefix, debug=True, path_db=path_db)
 
     figpath = 'figures/overview/'
@@ -1594,7 +1643,7 @@ def plot_rpm_vs_tower_allfeb(prefix):
     After the installation of the analogue filters, no more strain signal...
     """
 
-    path_db = 'database/'
+    path_db = PATH_DB
     db = ojf_db(prefix, debug=True, path_db=path_db)
 
     figpath = 'figures/overview/'
@@ -1710,7 +1759,7 @@ def plot_ct_vs_lambda_rotors(prefix):
     Compare the CT of the swept, and non swept blades
     """
 
-    path_db = 'database/'
+    path_db = PATH_DB
     db = ojf_db(prefix, debug=True, path_db=path_db)
 
     figpath = 'figures/overview/'
@@ -1791,7 +1840,7 @@ def plot_ct_vs_lambda(prefix):
     That will gave a better understanding of the stuff
     """
 
-    path_db = 'database/'
+    path_db = PATH_DB
     db = ojf_db(prefix, debug=True, path_db=path_db)
 
     figpath = 'figures/overview/'
@@ -1897,7 +1946,7 @@ def plot_blade_vs_lambda(prefix, blade):
         ax1.grid(True)
         pa4.save_fig()
 
-    path_db = 'database/'
+    path_db = PATH_DB
     db = ojf_db(prefix, debug=True, path_db=path_db)
     inc = [blade]
     exc = ['coning', 'samoerai']
@@ -2129,7 +2178,7 @@ def make_symlinks_hs():
 
     # =========================================================================
     # CREATE SYMLINKS FOR THE HIGH SPEED CAMERA FOLDERS
-    path_db = 'database/'
+    path_db = PATH_DB
 
 #    sf = '/mnt/mimer/backup_dave/PhD_archive/OJF_data_orig/02/'
 #    symlink_to_hs_folder(sf, path_db, symf='symlinks_hs_mimer/')
@@ -2153,7 +2202,7 @@ def make_symlinks_filtered():
 
     # -------------------------------------------------------------------------
     # SYMLINKS, DATABASE FOR THE DSPACE, BLADE, AND WIND TUNNEL RESULTS
-    path_db = 'database/'
+    path_db = PATH_DB
     source_folder = '/home/dave/PhD_data/OJF_data_edit/02/'
     symlink_to_folder(source_folder, path_db)
     source_folder = '/home/dave/PhD_data/OJF_data_edit/04/'
@@ -2186,16 +2235,11 @@ def steady_rpms():
     For all steady RPM's, find the corresponding other steady parematers: yaw,
     FA, SS, blade load. Save those time series in a seperate datafile
     """
-
-
-
+    # TODO: finish this
+    pass
 
 
 if __name__ == '__main__':
-
-    # the path to the database is not going to change anymore...
-    # so it is safe to set as a globa variable, right?
-#    path_db = 'database/'
 
     dummy = None
 
@@ -2217,7 +2261,6 @@ if __name__ == '__main__':
 #    plot_blade_vs_lambda(prefix, 'stiff')
 #    plot_rpm_vs_blade(prefix, 'flex')
 #    plot_rpm_vs_blade(prefix, 'stiff')
-
 
     # read a single file for debugging/checking
 #    path_db = '/home/dave/PhD_data/OJF_data_edit/database/'

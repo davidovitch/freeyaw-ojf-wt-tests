@@ -6,6 +6,7 @@ Created on Tue Jan 22 16:19:58 2013
 """
 
 import math
+import os
 
 import numpy as np
 import scipy as sp
@@ -15,6 +16,12 @@ import scipy.constants as spc
 import plotting
 import ojfresult
 from staircase import StairCase
+
+
+RESDATA_02 = 'data/raw/02/calibration/'
+RESDATA_04 = 'data/raw/04/calibration/'
+CALPATH = 'data/calibration/'
+
 
 class BladeCalibration:
     """
@@ -40,8 +47,7 @@ class BladeCalibration:
 
         Loads here can contain both flex and stiff cases
         """
-        self.figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
-        self.figpath += 'BladeStrainCal/'
+        self.figpath = os.path.join(CALPATH, 'BladeStrainCal/')
         self.pprpath = self.figpath
 
         # the load sequence corresponding to the selected stairs
@@ -187,8 +193,7 @@ class BladeCalibration:
         blade = ojfresult.BladeStrainFile(respath + run, Fs=512)
         channels = [0,1,2,3]
         # plot the yaw signal
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
-        figpath += 'BladeStrainCal/'
+        figpath = os.path.join(CALPATH, 'BladeStrainCal/')
         figfile = run
         title = run.replace('_', '').replace('.csv', '')
         plot = plotting.A4Tuned()
@@ -218,8 +223,7 @@ class BladeCalibration:
         blade = ojfresult.BladeStrainFile(respath + run, verbose=True, Fs=512)
         channels = [0,1,2,3]
         # plot the yaw signal
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
-        figpath += 'BladeStrainCal/'
+        figpath = os.path.join(CALPATH, 'BladeStrainCal/')
         figfile = run
         title = run.replace('_', '').replace('.csv', '')
         plot = plotting.A4Tuned()
@@ -249,8 +253,7 @@ class BladeCalibration:
         blade = ojfresult.BladeStrainFile(respath + run, verbose=True, Fs=512)
         channels = [0,1,2,3]
         # plot the yaw signal
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
-        figpath += 'BladeStrainCal/'
+        figpath = os.path.join(CALPATH, 'BladeStrainCal/')
         figfile = run
         title = run.replace('_', '').replace('.csv', '')
         plot = plotting.A4Tuned()
@@ -286,8 +289,7 @@ class BladeCalibration:
         blade = ojfresult.BladeStrainFile(respath + run, verbose=True, Fs=512)
         channels = [0,1,2,3]
         # plot the yaw signal
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
-        figpath += 'BladeStrainCal/'
+        figpath = os.path.join(CALPATH, 'BladeStrainCal/')
         figfile = run
         title = run.replace('_', '').replace('.csv', '')
         plot = plotting.A4Tuned()
@@ -329,8 +331,7 @@ class BladeCalibration:
         blade = ojfresult.BladeStrainFile(respath + run, verbose=True, Fs=512)
         channels = [0,1,2,3]
         # plot the yaw signal
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
-        figpath += 'BladeStrainCal/'
+        figpath = os.path.join(CALPATH, 'BladeStrainCal/')
         figfile = run
         title = run.replace('_', '').replace('.csv', '')
         plot = plotting.A4Tuned()
@@ -382,7 +383,7 @@ class BladeCalibration:
         blade_cases.append('0213_run_101_ch3')
         blade_cases.append('0213_run_101_ch4')
 
-        self.figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        self.figpath = CALPATH
         self.figpath += 'BladeStrainCal/'
         self.pprpath = self.figpath
         figfile = 'bladestraincal-february-stiff'
@@ -405,7 +406,7 @@ class BladeCalibration:
         blade = ojfresult.BladeStrainFile(respath + run, Fs=512)
         channels = [0,1,2,3]
         # plot the yaw signal
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'BladeStrainCal/'
         figfile = run
         title = run.replace('_', '').replace('.csv', '')
@@ -453,7 +454,7 @@ class BladeCalibration:
         blade = ojfresult.BladeStrainFile(respath + run, Fs=512)
         channels = [0,1,2,3]
         # plot the yaw signal
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'BladeStrainCal/'
         figfile = run
         title = run.replace('_', '').replace('.csv', '')
@@ -466,28 +467,28 @@ class BladeCalibration:
                        figpath=figpath, figfile=figfile+'_ch1')
         time_stair, data_stair = sc.setup_filter(blade.time, blade.data[:,0],
                     dt_treshold=0.00020, cutoff_hz=False, dt=1, start=5000,
-                    stair_step_tresh=2., smoothen='moving', end=38400)
+                    stair_step_tresh=2., smoothen='moving', end=38000)
 
         sc = StairCase(plt_progress=False, pprpath=figpath,
                        runid='0214_run_173_ch2',
                        figpath=figpath, figfile=figfile+'_ch2')
         time_stair, data_stair = sc.setup_filter(blade.time, blade.data[:,1],
                     dt_treshold=0.00200, cutoff_hz=False, dt=1, start=5000,
-                    stair_step_tresh=2., smoothen='moving', end=38400)
+                    stair_step_tresh=2., smoothen='moving', end=38000)
 
         sc = StairCase(plt_progress=False, pprpath=figpath,
                        runid='0214_run_173_ch3',
                        figpath=figpath, figfile=figfile+'_ch3')
         time_stair, data_stair = sc.setup_filter(blade.time, blade.data[:,2],
                     dt_treshold=0.00100, cutoff_hz=False, dt=1, start=5000,
-                    stair_step_tresh=2., smoothen='moving', end=38400)
+                    stair_step_tresh=2., smoothen='moving', end=38000)
 
         sc = StairCase(plt_progress=False, pprpath=figpath,
                        runid='0214_run_173_ch4',
                        figpath=figpath, figfile=figfile+'_ch4')
         time_stair, data_stair = sc.setup_filter(blade.time, blade.data[:,3],
                     dt_treshold=0.00200, cutoff_hz=False, dt=1, start=5000,
-                    stair_step_tresh=2., smoothen='moving', end=38400)
+                    stair_step_tresh=2., smoothen='moving', end=38000)
 
 
         # -------------------------------------------------------------------
@@ -498,7 +499,7 @@ class BladeCalibration:
         blade = ojfresult.BladeStrainFile(respath + run, Fs=512)
         channels = [0,1,2,3]
         # plot the yaw signal
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'BladeStrainCal/'
         figfile = run
         title = run.replace('_', '').replace('.csv', '')
@@ -542,7 +543,7 @@ class BladeCalibration:
         blade = ojfresult.BladeStrainFile(respath + run, Fs=512)
         channels = [0,1,2,3]
         # plot the yaw signal
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'BladeStrainCal/'
         figfile = run
         title = run.replace('_', '').replace('.csv', '')
@@ -602,7 +603,7 @@ class BladeCalibration:
 #        blade_cases.append('0214_run_175_ch3')
 #        blade_cases.append('0214_run_175_ch4')
 
-        self.figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        self.figpath = CALPATH
         self.figpath += 'BladeStrainCal/'
         self.pprpath = self.figpath
         figfile = 'bladestraincal-february-flex'
@@ -634,7 +635,7 @@ class BladeCalibration:
 
         mass_holder = 0.57166
 
-        self.figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        self.figpath = CALPATH
         self.figpath += 'BladeStrainCal/'
         self.pprpath = self.figpath
 
@@ -806,9 +807,9 @@ class BladeCalibration:
     def apr_print_all_raw(self):
         """
         """
-        respath = '/home/dave/PhD_data/OJF_data_edit/04/calibration/'
-        figpath = '/home/dave/PhD/Projects/PostProcessing/'
-        figpath += 'OJF_tests/BladeStrainCal/'
+        respath = RESDATA_04
+        figpath = CALPATH
+        figpath += 'BladeStrainCal/'
 
         # =====================================================================
         # BLADE 1
@@ -831,7 +832,7 @@ class BladeCalibration:
 
         # =====================================================================
         # for the vibrations
-        respath = '/home/dave/PhD_data/OJF_data_edit/04/vibration/'
+        respath = RESDATA_04.replace('calibration', 'vibration')
 
         resfile = '257or258'
         channels = [0,1,2,3]
@@ -864,7 +865,7 @@ class BladeCalibration:
         Strain calibration files for the flexible blades, tune the filters
         so we have a good staircase data selection
         """
-        respath = '/home/dave/PhD_data/OJF_data_edit/04/calibration/'
+        respath = RESDATA_04
 
         # =====================================================================
         # 0405_run_252_bladecal_blade1.csv
@@ -872,15 +873,16 @@ class BladeCalibration:
         # BLADE 1
         run = '0405_run_252_bladecal_blade1.csv'
         blade = ojfresult.BladeStrainFile(respath + run)
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'BladeStrainCal/'
         figfile = run
+        title = run.replace('_', ' ').replace('.csv', '')
 
         channels = [0,1,2,3]
         # plot the raw signal
         plot = plotting.A4Tuned()
         plot.plot_simple(figpath+figfile, blade.time, blade.data,
-                         blade.labels, channels=channels, grandtitle=figfile)
+                         blade.labels, channels=channels, grandtitle=title)
 
         # -------------------------------------------------------------------
         runid = '0405_run_252_ch3'
@@ -893,16 +895,17 @@ class BladeCalibration:
         plt.figure()
         plt.plot(time_stair, data_stair, 'wo') # to check we did it right
         ii = range(len(time_stair))
-        ii.pop(2)
+#        ii.pop(2)
         # carefull with the next indices since the reference to them changed
         # due to each proceeding pop
+        ii.pop(8)
         ii.pop(9-1)
-        ii.pop(14-2)
-        ii.pop(15-3)
+        ii.pop(13-2)
+#        ii.pop(15-3)
         time_stair = time_stair[ii]
         data_stair = data_stair[ii]
         plt.plot(time_stair, data_stair, 'r*') # to check we did it right
-        plt.title(runid)
+        plt.title(runid.replace('_', '\\_'))
         # and save the results
         filename = runid + '-time_stair'
         np.savetxt(figpath + filename, time_stair)
@@ -915,7 +918,7 @@ class BladeCalibration:
         sc = StairCase(plt_progress=False, pprpath=figpath, figpath=figpath,
                        runid=runid, figfile=figfile+'_ch4')
         time_stair, data_stair = sc.setup_filter(blade.time, blade.data[:,3],
-                    dt_treshold=0.00245, cutoff_hz=False, dt=1, start=1000,
+                    dt_treshold=0.00300, cutoff_hz=False, dt=1, start=1000,
                     stair_step_tresh=8., smoothen='moving')
         # and manually remove some of the false positives in the stair case
         plt.figure()
@@ -924,15 +927,15 @@ class BladeCalibration:
         ii.pop(1)
         # carefull with the next indices since the reference to them changed
         # due to each proceeding pop
-        ii.pop(3-1)
-        ii.pop(7-2)
-        ii.pop(9-3)
+#        ii.pop(3-1)
+        ii.pop(6-1)
+        ii.pop(8-2)
+        ii.pop(11-3)
         ii.pop(12-4)
-        ii.pop(13-5)
         time_stair = time_stair[ii]
         data_stair = data_stair[ii]
         plt.plot(time_stair, data_stair, 'r*') # to check we did it right
-        plt.title(runid)
+        plt.title(runid.replace('_', '\\_'))
         # and save the results
         filename = runid + '-time_stair'
         np.savetxt(figpath + filename, time_stair)
@@ -947,32 +950,34 @@ class BladeCalibration:
         # BLADE 2
         run = '0405_run_254or253_bladecal_virbations_blade2orblade1-2.csv'
         blade = ojfresult.BladeStrainFile(respath + run)
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'BladeStrainCal/'
         figfile = run
+        title = run.replace('_', ' ').replace('.csv', '')
 
         channels = [0,1,2,3]
         # plot the raw signal
         plot = plotting.A4Tuned()
         plot.plot_simple(figpath+figfile, blade.time, blade.data,
-                         blade.labels, channels=channels, grandtitle=figfile)
+                         blade.labels, channels=channels, grandtitle=title)
 
         # -------------------------------------------------------------------
         runid = '0405_run_254_ch1'
         sc = StairCase(plt_progress=False, pprpath=figpath, figpath=figpath,
                        runid=runid, figfile=figfile+'_ch1')
         time_stair, data_stair = sc.setup_filter(blade.time, blade.data[:,0],
-                    dt_treshold=0.00030, cutoff_hz=False, dt=1, start=5000,
-                    stair_step_tresh=8., smoothen='moving')
+                    dt_treshold=0.00075, cutoff_hz=False, dt=1, start=5000,
+                    stair_step_tresh=8., smoothen='moving', end=blade.Fs*125)
         # and manually remove some of the false positives in the stair case
         plt.figure()
         plt.plot(time_stair, data_stair, 'wo') # to check we did it right
         ii = range(len(time_stair))
         ii.pop(9)
+        ii.pop(13-1)
         time_stair = time_stair[ii]
         data_stair = data_stair[ii]
         plt.plot(time_stair, data_stair, 'r*') # to check we did it right
-        plt.title(runid)
+        plt.title(runid.replace('_', '\\_'))
         # and save the results
         filename = runid + '-time_stair'
         np.savetxt(figpath + filename, time_stair)
@@ -985,26 +990,25 @@ class BladeCalibration:
         sc = StairCase(plt_progress=False, pprpath=figpath, figpath=figpath,
                        runid=runid, figfile=figfile+'_ch2')
         time_stair, data_stair = sc.setup_filter(blade.time, blade.data[:,1],
-                    dt_treshold=0.00070, cutoff_hz=False, dt=1, start=5000,
-                    stair_step_tresh=8., smoothen='moving')
+                    dt_treshold=0.00075, cutoff_hz=False, dt=1, start=5000,
+                    stair_step_tresh=8., smoothen='moving', end=blade.Fs*125)
         # and manually remove some of the false positives in the stair case
         plt.figure()
         plt.plot(time_stair, data_stair, 'wo') # to check we did it right
         ii = range(len(time_stair))
         ii.pop(5)
-        ii.pop(10-1)
+        ii.pop(6-1)
+        ii.pop(11-2)
         time_stair = time_stair[ii]
         data_stair = data_stair[ii]
         plt.plot(time_stair, data_stair, 'r*') # to check we did it right
-        plt.title(runid)
+        plt.title(runid.replace('_', '\\_'))
         # and save the results
         filename = runid + '-time_stair'
         np.savetxt(figpath + filename, time_stair)
         filename = runid + '-data_stair'
         np.savetxt(figpath + filename, data_stair)
         # -------------------------------------------------------------------
-
-
 
 
     def apr_flex(self, plotv=1):
@@ -1018,7 +1022,7 @@ class BladeCalibration:
         blade_cases.append('0405_run_254_ch1')
         blade_cases.append('0405_run_254_ch2')
 
-        self.figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        self.figpath = CALPATH
         self.figpath += 'BladeStrainCal/'
         self.pprpath = self.figpath
         figfile = 'bladestraincal-april-flex'
@@ -1034,7 +1038,7 @@ class BladeCalibration:
         Strain calibration files for the flexible blades, tune the filters
         so we have a good staircase data selection
         """
-        respath = '/home/dave/PhD_data/OJF_data_edit/04/calibration/'
+        respath = RESDATA_04
 
         # =====================================================================
         # 0412_run_356_b1_strain_calibration_w45_w34.csv
@@ -1042,15 +1046,16 @@ class BladeCalibration:
         # BLADE 1
         run = '0412_run_356_b1_strain_calibration_w45_w34.csv'
         blade = ojfresult.BladeStrainFile(respath + run)
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'BladeStrainCal/'
         figfile = run
+        title = run.replace('_', ' ').replace('.csv', '')
 
         channels = [0,1,2,3]
         # plot the raw signal
         plot = plotting.A4Tuned()
         plot.plot_simple(figpath+figfile, blade.time, blade.data,
-                         blade.labels, channels=channels, grandtitle=figfile)
+                         blade.labels, channels=channels, grandtitle=title)
 
         # -------------------------------------------------------------------
         runid = '0412_run_356_ch3'
@@ -1078,7 +1083,7 @@ class BladeCalibration:
         time_stair = time_stair[ii]
         data_stair = data_stair[ii]
         plt.plot(time_stair, data_stair, 'r*') # to check we did it right
-        plt.title(runid)
+        plt.title(runid.replace('_', '\\_'))
         # and save the results
         filename = runid + '-time_stair'
         np.savetxt(figpath + filename, time_stair)
@@ -1106,7 +1111,7 @@ class BladeCalibration:
         time_stair = time_stair[ii]
         data_stair = data_stair[ii]
         plt.plot(time_stair, data_stair, 'r*') # to check we did it right
-        plt.title(runid)
+        plt.title(runid.replace('_', '\\_'))
         # and save the results
         filename = runid + '-time_stair'
         np.savetxt(figpath + filename, time_stair)
@@ -1119,15 +1124,16 @@ class BladeCalibration:
         # BLADE 2
         run = '0412_run_357_b2_strain_calibration_w45_w34_or1.csv'
         blade = ojfresult.BladeStrainFile(respath + run)
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'BladeStrainCal/'
         figfile = run
+        title = run.replace('_', ' ').replace('.csv', '')
 
         channels = [0,1,2,3]
         # plot the raw signal
         plot = plotting.A4Tuned()
         plot.plot_simple(figpath+figfile, blade.time, blade.data,
-                         blade.labels, channels=channels, grandtitle=figfile)
+                         blade.labels, channels=channels, grandtitle=title)
 
         # -------------------------------------------------------------------
         runid = '0412_run_357_ch1'
@@ -1149,7 +1155,7 @@ class BladeCalibration:
         time_stair = time_stair[ii]
         data_stair = data_stair[ii]
         plt.plot(time_stair, data_stair, 'r*') # to check we did it right
-        plt.title(runid)
+        plt.title(runid.replace('_', '\\_'))
         # and save the results
         filename = runid + '-time_stair'
         np.savetxt(figpath + filename, time_stair)
@@ -1175,7 +1181,7 @@ class BladeCalibration:
         time_stair = time_stair[ii]
         data_stair = data_stair[ii]
         plt.plot(time_stair, data_stair, 'r*') # to check we did it right
-        plt.title(runid)
+        plt.title(runid.replace('_', '\\_'))
         # and save the results
         filename = runid + '-time_stair'
         np.savetxt(figpath + filename, time_stair)
@@ -1188,15 +1194,16 @@ class BladeCalibration:
         # BLADE 2
         run = '0412_run_358_b1b2_strain_calibration_w15_wtip.csv'
         blade = ojfresult.BladeStrainFile(respath + run)
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'BladeStrainCal/'
         figfile = run
+        title = run.replace('_', ' ').replace('.csv', '')
 
         channels = [0,1,2,3]
         # plot the raw signal
         plot = plotting.A4Tuned()
         plot.plot_simple(figpath+figfile, blade.time, blade.data,
-                         blade.labels, channels=channels, grandtitle=figfile)
+                         blade.labels, channels=channels, grandtitle=title)
 
         # -------------------------------------------------------------------
         runid = '0412_run_358_ch1'
@@ -1215,7 +1222,7 @@ class BladeCalibration:
         time_stair = time_stair[ii]
         data_stair = data_stair[ii]
         plt.plot(time_stair, data_stair, 'r*') # to check we did it right
-        plt.title(runid)
+        plt.title(runid.replace('_', '\\_'))
         # and save the results
         filename = runid + '-time_stair'
         np.savetxt(figpath + filename, time_stair)
@@ -1240,7 +1247,7 @@ class BladeCalibration:
         time_stair = time_stair[ii]
         data_stair = data_stair[ii]
         plt.plot(time_stair, data_stair, 'r*') # to check we did it right
-        plt.title(runid)
+        plt.title(runid.replace('_', '\\_'))
         # and save the results
         filename = runid + '-time_stair'
         np.savetxt(figpath + filename, time_stair)
@@ -1266,7 +1273,7 @@ class BladeCalibration:
         time_stair = time_stair[ii]
         data_stair = data_stair[ii]
         plt.plot(time_stair, data_stair, 'r*') # to check we did it right
-        plt.title(runid)
+        plt.title(runid.replace('_', '\\_'))
         # and save the results
         filename = runid + '-time_stair'
         np.savetxt(figpath + filename, time_stair)
@@ -1290,7 +1297,7 @@ class BladeCalibration:
         time_stair = time_stair[ii]
         data_stair = data_stair[ii]
         plt.plot(time_stair, data_stair, 'r*') # to check we did it right
-        plt.title(runid)
+        plt.title(runid.replace('_', '\\_'))
         # and save the results
         filename = runid + '-time_stair'
         np.savetxt(figpath + filename, time_stair)
@@ -1313,7 +1320,7 @@ class BladeCalibration:
         blade_cases.append('0412_run_358_ch3')
         blade_cases.append('0412_run_358_ch4')
 
-        self.figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        self.figpath = CALPATH
         self.figpath += 'BladeStrainCal/'
         self.pprpath = self.figpath
         figfile = 'bladestraincal-april-stiff'
@@ -1332,7 +1339,7 @@ class BladeCalibration:
         self.february_loads()
         self.april_loads()
 
-        self.figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        self.figpath = CALPATH
         self.figpath += 'BladeStrainCal/'
         self.pprpath = self.figpath
 
@@ -1884,7 +1891,7 @@ class BladeCalibration:
         # 0      1    2     3  4  5  6  7       8
         # w45, w34, w15, wtip, 1, 2, 3, 4, delta t
         # M1,   M2
-        respath = '/home/dave/PhD/Projects/OJF/CalibrationData/'
+        respath = 'data/raw/calibration_blade_vliegtuighal/'
 
 #        resfile_a1_flex = 'A1_flexblade_nofoam.csv'
 #        resfile_b1_stiff = 'B1_stiffblade_nofoam.csv'
@@ -1920,7 +1927,7 @@ class BladeCalibration:
         print 'p4', p4.coeffs
 
         ax = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
-        ax.set_title(resfile)
+        ax.set_title(resfile.replace('_', ' '))
         ax.plot(M1, self.a1_flex[:,4], 'r^', label='1')
         ax.plot(M1, self.a1_flex[:,5], 'rs', label='2')
         ax.plot(M2, self.a1_flex[:,6], 'g^', label='3')
@@ -1970,7 +1977,7 @@ class BladeCalibration:
         print 'p4', p4.coeffs
 
         ax = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 2)
-        ax.set_title(resfile)
+        ax.set_title(resfile.replace('_', ' '))
         ax.plot(M1, self.b1_stiff[:,4], 'r^', label='1')
         ax.plot(M1, self.b1_stiff[:,5], 'rs', label='2')
         ax.plot(M2, self.b1_stiff[:,6], 'g^', label='3')
@@ -2019,7 +2026,7 @@ class BladeCalibration:
         print 'p4', p4.coeffs
 
         ax = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 3)
-        ax.set_title(resfile)
+        ax.set_title(resfile.replace('_', ' '))
         ax.plot(M1, self.b2_stiff[:,4], 'r^', label='1')
         ax.plot(M1, self.b2_stiff[:,5], 'rs', label='2')
         ax.plot(M2, self.b2_stiff[:,6], 'g^', label='3')
@@ -2067,7 +2074,7 @@ class BladeCalibration:
         print 'p4', p4.coeffs
 
         ax = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 4)
-        ax.set_title(resfile)
+        ax.set_title(resfile.replace('_', ' '))
         ax.plot(M1, self.b1_stiff_f[:,4], 'r^', label='1')
         ax.plot(M1, self.b1_stiff_f[:,5], 'rs', label='2')
         ax.plot(M2, self.b1_stiff_f[:,6], 'g^', label='3')
@@ -2104,11 +2111,11 @@ class BladeCalibration:
         Verify that there is no influence of the blade axial loading on the
         strain output
         """
-        #figpath  = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        #figpath  = CALPATH
         #figpath += 'BladeStrainCalExt/'
         #
         #
-        #respath = '/home/dave/PhD_data/OJF_data_edit/extension_drag/'
+        #respath = 'data/raw/extension_drag/'
         #cases = []
         #cases.append('01_stiff_B2_ext_trigger01_3641704062.csv')
         #cases.append('02_stiff_B2_ext_trigger01_1582045735.csv')
@@ -2127,7 +2134,7 @@ class BladeCalibration:
         #plot.plot_simple(figpath+case, blade.time[200:], blade.data[200:,:],
                          #blade.labels, channels=channels, grandtitle=title)
 
-        respath = '/home/dave/PhD_data/OJF_data_edit/extension_drag/'
+        respath = 'data/raw/extension_drag/'
 
         # =====================================================================
         # 01_stiff_B2_ext_trigger01_3641704062.csv
@@ -2135,7 +2142,7 @@ class BladeCalibration:
         # BLADE 1
         run = '01_stiff_B2_ext_trigger01_3641704062.csv'
         blade = ojfresult.BladeStrainFile(respath + run)
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'BladeStrainCalExt/'
         figfile = run
         title = ' '.join(run.split('_')[1:4])
@@ -2167,7 +2174,7 @@ class BladeCalibration:
         # BLADE 1
         run = '02_stiff_B2_ext_trigger01_1582045735.csv'
         blade = ojfresult.BladeStrainFile(respath + run)
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'BladeStrainCalExt/'
         figfile = run
         title = ' '.join(run.split('_')[1:4])
@@ -2199,7 +2206,7 @@ class BladeCalibration:
         # BLADE 1
         run = '03_flex_B2_ext_trigger01_4167243314.csv'
         blade = ojfresult.BladeStrainFile(respath + run)
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'BladeStrainCalExt/'
         figfile = run
         title = ' '.join(run.split('_')[1:4])
@@ -2231,7 +2238,7 @@ class BladeCalibration:
         # BLADE 1
         run = '05_flex_B2_ext_trigger01_3474366086.csv'
         blade = ojfresult.BladeStrainFile(respath + run)
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'BladeStrainCalExt/'
         figfile = run
         title = ' '.join(run.split('_')[1:4])
@@ -2278,14 +2285,14 @@ class BladeCalibration:
         delta_ch3 = np.ndarray((2,0))
         #delta_ch4 = np.array([])
 
-        respath = '/home/dave/PhD_data/OJF_data_edit/extension_drag/'
+        respath = 'data/raw/extension_drag/'
 
         # =====================================================================
         # 700_stiff_B2.csv
         # =====================================================================
         run = '700_stiff_B2.csv'
         blade = ojfresult.BladeStrainFile(respath + run)
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'BladeStrainCalExt/'
         figfile = run
         title = ' '.join(run.split('_')[1:4])
@@ -2336,7 +2343,7 @@ class BladeCalibration:
         # =====================================================================
         run = '701_stiff_B2.csv'
         blade = ojfresult.BladeStrainFile(respath + run)
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'BladeStrainCalExt/'
         figfile = run
         title = ' '.join(run.split('_')[1:4])
@@ -2369,7 +2376,7 @@ class BladeCalibration:
         # =====================================================================
         run = '702_stiff_B2.csv'
         blade = ojfresult.BladeStrainFile(respath + run)
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'BladeStrainCalExt/'
         figfile = run
         title = ' '.join(run.split('_')[1:4])
@@ -2422,7 +2429,7 @@ class BladeCalibration:
         # =====================================================================
         run = '703_flex_B2.csv'
         blade = ojfresult.BladeStrainFile(respath + run)
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'BladeStrainCalExt/'
         figfile = run
         title = ' '.join(run.split('_')[1:4])
@@ -2465,7 +2472,7 @@ class BladeCalibration:
         # =====================================================================
         run = '704_flex_B2.csv'
         blade = ojfresult.BladeStrainFile(respath + run)
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'BladeStrainCalExt/'
         figfile = run
         title = ' '.join(run.split('_')[1:4])
@@ -2508,7 +2515,7 @@ class BladeCalibration:
         # =====================================================================
         run = '705_flex_B2.csv'
         blade = ojfresult.BladeStrainFile(respath + run)
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'BladeStrainCalExt/'
         figfile = run
         title = ' '.join(run.split('_')[1:4])
@@ -2578,14 +2585,14 @@ class BladeCalibration:
         delta_ch3 = np.ndarray((2,0))
         delta_ch4 = np.ndarray((2,0))
 
-        respath = '/home/dave/PhD_data/OJF_data_edit/extension_drag/'
+        respath = 'data/raw/extension_drag/'
 
         # =====================================================================
         # 805_flex_B2.csv
         # =====================================================================
         run = '805_flex_B2.csv'
         blade = ojfresult.BladeStrainFile(respath + run)
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'BladeStrainCalExt/'
         figfile = run
         title = ' '.join(run.split('_')[1:4])
@@ -2639,7 +2646,7 @@ class BladeCalibration:
         # =====================================================================
         run = '806_flex_B2.csv'
         blade = ojfresult.BladeStrainFile(respath + run)
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'BladeStrainCalExt/'
         figfile = run
         title = ' '.join(run.split('_')[1:4])
@@ -2693,7 +2700,7 @@ class BladeCalibration:
         # =====================================================================
         run = '807_flex_B2.csv'
         blade = ojfresult.BladeStrainFile(respath + run)
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'BladeStrainCalExt/'
         figfile = run
         title = ' '.join(run.split('_')[1:4])
@@ -2747,7 +2754,7 @@ class BladeCalibration:
         # =====================================================================
         run = '808_flex_B2.csv'
         blade = ojfresult.BladeStrainFile(respath + run)
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'BladeStrainCalExt/'
         figfile = run
         title = ' '.join(run.split('_')[1:4])
@@ -2801,7 +2808,7 @@ class BladeCalibration:
         # =====================================================================
         run = '810_flex_B2.csv'
         blade = ojfresult.BladeStrainFile(respath + run)
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'BladeStrainCalExt/'
         figfile = run
         title = ' '.join(run.split('_')[1:4])
@@ -2877,14 +2884,14 @@ class BladeCalibration:
         #delta_ch3 = np.ndarray((2,0))
         #delta_ch4 = np.ndarray((2,0))
 
-        respath = '/home/dave/PhD_data/OJF_data_edit/extension_drag/'
+        respath = 'data/raw/extension_drag/'
 
         # =====================================================================
         # 811_flex_B2.csv
         # =====================================================================
         run = '811_stiff_B2.csv'
         blade = ojfresult.BladeStrainFile(respath + run)
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'BladeStrainCalExt/'
         figfile = run
         title = ' '.join(run.split('_')[1:4])
@@ -2938,7 +2945,7 @@ class BladeCalibration:
         # =====================================================================
         run = '812_stiff_B2.csv'
         blade = ojfresult.BladeStrainFile(respath + run)
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'BladeStrainCalExt/'
         figfile = run
         title = ' '.join(run.split('_')[1:4])
@@ -2992,7 +2999,7 @@ class BladeCalibration:
         # =====================================================================
         run = '813_stiff_B2.csv'
         blade = ojfresult.BladeStrainFile(respath + run)
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'BladeStrainCalExt/'
         figfile = run
         title = ' '.join(run.split('_')[1:4])
@@ -3046,7 +3053,7 @@ class BladeCalibration:
         # =====================================================================
         run = '814_stiff_B2.csv'
         blade = ojfresult.BladeStrainFile(respath + run)
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'BladeStrainCalExt/'
         figfile = run
         title = ' '.join(run.split('_')[1:4])
@@ -3100,7 +3107,7 @@ class BladeCalibration:
         # =====================================================================
         run = '815_stiff_B2.csv'
         blade = ojfresult.BladeStrainFile(respath + run)
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'BladeStrainCalExt/'
         figfile = run
         title = ' '.join(run.split('_')[1:4])
@@ -3163,7 +3170,7 @@ class BladeCalibration:
         See what the influence of an edgewise force is (drag in this case)
         """
 
-        respath = '/home/dave/PhD_data/OJF_data_edit/extension_drag/'
+        respath = 'data/raw/extension_drag/'
 
         # =====================================================================
         # 04_flex_B2_drag_trigger01_953281293.csv
@@ -3171,7 +3178,7 @@ class BladeCalibration:
         # BLADE 1
         run = '04_flex_B2_drag_trigger01_953281293.csv'
         blade = ojfresult.BladeStrainFile(respath + run)
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'BladeStrainCalExt/'
         figfile = run
         title = ' '.join(run.split('_')[1:4])
@@ -3203,7 +3210,7 @@ class BladeCalibration:
         # BLADE 1
         run = '06_stiff_B2_drag_trigger01_733514185.csv'
         blade = ojfresult.BladeStrainFile(respath + run)
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'BladeStrainCalExt/'
         figfile = run
         title = ' '.join(run.split('_')[1:4])
@@ -3229,7 +3236,39 @@ class BladeCalibration:
                     dt_treshold=0.00015, cutoff_hz=False, dt=1,
                     stair_step_tresh=5., smoothen='moving')
 
+
+def feb_bladestrain_calibration():
+
+    bc = BladeCalibration()
+    bc.february_loads()
+    bc.beam_only()
+    # create a very first insight into the data: plot raw
+    bc.feb_stiff_raw(RESDATA_02)
+    bc.feb_stiff()
+    bc.feb_flex_raw(RESDATA_02)
+    bc.feb_flex()
+
+
+def apr_bladestrain_calibration():
+
+    bc = BladeCalibration()
+    # create a very first insight into the data: plot raw
+#    bc.apr_print_all_raw()
+    bc.apr_flex_raw() # plot all raw data, make filter for stair case
+    bc.april_loads() # create the load definitions for each case
+    bc.apr_flex() # actually make and plot the data and transfer function
+    bc.apr_stiff_raw()
+    bc.apr_stiff()
+
+
+def all_blade_calibrations():
+
+    feb_bladestrain_calibration()
+    apr_bladestrain_calibration()
+
+    bc = BladeCalibration()
+    bc.compare_cal_feb_april()
+
+
 if __name__ == '__main__':
     dummy=None
-
-

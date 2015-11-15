@@ -7,6 +7,7 @@ Created on Tue Jan 22 16:29:28 2013
 
 import math
 import logging
+import os
 
 import numpy as np
 import scipy as sp
@@ -19,16 +20,19 @@ from ojfresult import calc_sample_rate
 from filters import Filters
 from staircase import StairCase
 
+
+RESDATA_02 = 'data/raw/02/calibration/'
+RESDATA_04 = 'data/raw/04/calibration/'
+CALPATH = 'data/calibration/'
+
+
 class YawCalibration:
 
     def __init__(self):
         """
         """
-        self.figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
-        self.figpath += 'YawLaserCalibration/'
+        self.figpath = os.path.join(CALPATH, 'YawLaserCalibration/')
         self.pprpath = self.figpath
-#        self.runs_050_051(respath)
-
 
     def load_cal_dataset(self, run, title, psi_step_deg=0.01):
         """
@@ -207,7 +211,6 @@ class YawCalibration:
         filename = run + '.yawcal-pol10'
         np.savetxt(pprpath + filename, pol10)
 
-
     def runs_289_295(self, respath):
         """
         Create the calibration data set for the April session. Use now the
@@ -217,8 +220,6 @@ class YawCalibration:
         In April, the fast side are the positive yaw angles, corresponding to
         a positive angle around the tower Z-axis.
         """
-
-
 
         pprpath = self.pprpath
         self.respath = respath
@@ -247,11 +248,12 @@ class YawCalibration:
         ch = dm.labels_ch['Yaw Laser']
 
         sc = StairCase(plt_progress=False, pprpath=figpath, runid=resfile)
+        sc.figfile = resfile+'_ch'+str(ch)
+        sc.figpath = figpath
         time_B, stair_B = sc.setup_filter(dm.time, dm.data[:,ch],
-                    dm.labels[ch], figpath=figpath, dt_treshold=8e-7,
-                    figfile=resfile+'_ch'+str(ch), cutoff_hz=False, dt=1,
-                    start=8500, end=-6050, stair_step_tresh=0.03,
-                    smoothen='moving', smooth_window=0.5)
+                                  dt_treshold=8e-7, cutoff_hz=False, dt=1,
+                                  start=8500, end=-6050, stair_step_tresh=0.03,
+                                  smoothen='moving', smooth_window=0.5)
 
         print psi_B.shape, stair_B.shape
 
@@ -278,7 +280,6 @@ class YawCalibration:
         savearray[:,1] = stair_B
         filename = 'runs_289_295.yawcal-psiB-stairB'
         np.savetxt(pprpath + filename, savearray)
-
 
     def runs_050_051(self, respath):
         """
@@ -344,7 +345,6 @@ class YawCalibration:
         filename = 'runs_050_051.yawcal-psiB-stairB'
         np.savetxt(pprpath + filename, savearray)
 
-
     def plotall_feb_raw(self, respath):
         """
         Print all the calibration data raw data from the February series
@@ -366,7 +366,7 @@ class YawCalibration:
 #            dspace = ojfresult.DspaceMatFile(respath + run)
 #            yawchan = 6
 #            # plot the yaw signal
-#            figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+#            figpath = os.path.join(CALPATH, 'YawLaserCalibration/')
 #            figfile = dspace.matfile.split('/')[-1] + '_ch' + str(yawchan)
 #            plot = plotting.A4Tuned()
 #            plot.plot_simple(figpath+figfile, dspace.time, dspace.data,
@@ -381,7 +381,7 @@ class YawCalibration:
         dspace = ojfresult.DspaceMatFile(respath + run)
         yawchan = 6
         # plot the yaw signal
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = os.path.join(CALPATH, 'YawLaserCalibration/')
         figfile = dspace.matfile.split('/')[-1] + '_ch' + str(yawchan)
         plot = plotting.A4Tuned()
         plot.plot_simple(figpath+figfile, dspace.time, dspace.data,
@@ -393,7 +393,7 @@ class YawCalibration:
         dspace = ojfresult.DspaceMatFile(respath + run)
         yawchan = 6
         # plot the yaw signal
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = os.path.join(CALPATH, 'YawLaserCalibration/')
         figfile = dspace.matfile.split('/')[-1] + '_ch' + str(yawchan)
         plot = plotting.A4Tuned()
         plot.plot_simple(figpath+figfile, dspace.time, dspace.data,
@@ -408,7 +408,7 @@ class YawCalibration:
         dspace = ojfresult.DspaceMatFile(respath + run)
         yawchan = 6
         # plot the yaw signal
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = os.path.join(CALPATH, 'YawLaserCalibration/')
         figfile = dspace.matfile.split('/')[-1] + '_ch' + str(yawchan)
         plot = plotting.A4Tuned()
         plot.plot_simple(figpath+figfile, dspace.time, dspace.data,
@@ -420,7 +420,7 @@ class YawCalibration:
         dspace = ojfresult.DspaceMatFile(respath + run)
         yawchan = 6
         # plot the yaw signal
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = os.path.join(CALPATH, 'YawLaserCalibration/')
         figfile = dspace.matfile.split('/')[-1] + '_ch' + str(yawchan)
         plot = plotting.A4Tuned()
         plot.plot_simple(figpath+figfile, dspace.time, dspace.data,
@@ -432,7 +432,7 @@ class YawCalibration:
         dspace = ojfresult.DspaceMatFile(respath + run)
         yawchan = 6
         # plot the yaw signal
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = os.path.join(CALPATH, 'YawLaserCalibration/')
         figfile = dspace.matfile.split('/')[-1] + '_ch' + str(yawchan)
         plot = plotting.A4Tuned()
         plot.plot_simple(figpath+figfile, dspace.time, dspace.data,
@@ -444,7 +444,7 @@ class YawCalibration:
         dspace = ojfresult.DspaceMatFile(respath + run)
         yawchan = 6
         # plot the yaw signal
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = os.path.join(CALPATH, 'YawLaserCalibration/')
         figfile = dspace.matfile.split('/')[-1] + '_ch' + str(yawchan)
         plot = plotting.A4Tuned()
         plot.plot_simple(figpath+figfile, dspace.time, dspace.data,
@@ -456,13 +456,12 @@ class YawCalibration:
         dspace = ojfresult.DspaceMatFile(respath + run)
         yawchan = 6
         # plot the yaw signal
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = os.path.join(CALPATH, 'YawLaserCalibration/')
         figfile = dspace.matfile.split('/')[-1] + '_ch' + str(yawchan)
         plot = plotting.A4Tuned()
         plot.plot_simple(figpath+figfile, dspace.time, dspace.data,
                          dspace.labels, channels=[yawchan], grandtitle=figfile,
                          figsize_y=10, ylim=[2.5, 4])
-
 
     def plotall_apr_raw(self):
         """
@@ -470,7 +469,7 @@ class YawCalibration:
         Nothing more, nothing less.
         """
         respath = '/home/dave/PhD_data/OJF_data_edit/04/2012.04.10/0410_data/'
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = CALPATH
         figpath += 'YawLaserCalibration-04/'
 
         # -------------------------------------------------------------------
@@ -540,7 +539,6 @@ class YawCalibration:
 #        dm.plot_channel(channel=ch, figpath=figpath)
 #        time_A, stair_A = self.setup_filter(respath, resfile, start=8000,
 #                    end=-6050, figpath=figpath, dt_treshold=3.5e-6)
-
 
     def _solve_A(self, A, **kwargs):
         """
@@ -624,7 +622,6 @@ class YawCalibration:
 
         return psi_sol*180./math.pi, psi0*180./math.pi
 
-
     def psi_lookup_table(self, **kwargs):
         """
         Create the lookup table which relates A and B to the corresponding
@@ -676,7 +673,7 @@ class YawCalibration:
             plt.legend()
             plt.xlabel('A, B [mm]')
             plt.ylabel('$\psi$ [deg]')
-            fig_path = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+            fig_path = CALPATH
             plt.savefig(fig_path+'yawcal.png', dpi=200)
             plt.savefig(fig_path+'yawcal.eps', dpi=200)
             plt.show()
@@ -810,8 +807,9 @@ class YawCalibration:
         labels[2] = 'psd'
 
         plot = plotting.A4Tuned()
-        plot.setup(figpath+figfile+'_filter', nr_plots=2, grandtitle=figfile,
-                         figsize_y=20, wsleft_cm=2., wsright_cm=2.5)
+        title = figfile.replace('_', ' ')
+        plot.setup(figpath+figfile+'_filter', nr_plots=2, grandtitle=title,
+                   figsize_y=20, wsleft_cm=2., wsright_cm=2.5)
 
         # -------------------------------------------------
         # plotting of signal
@@ -820,7 +818,7 @@ class YawCalibration:
         ax1.plot(time, data, label='data')
         # add the results of the filtering technique
         time_stair, data_stair
-        ax1.plot(time[N-1:], data_reduced[N-1:], 'r', label='data_red')
+        ax1.plot(time[N-1:], data_reduced[N-1:], 'r', label='data red')
 #        ax1.plot(time[N-1:], data_filt[N-1:], 'g', label='data_filt')
         # also include the selected chair data
         label = '%i stairs' % data_stair.shape[0]
@@ -833,7 +831,7 @@ class YawCalibration:
         ax1b = ax1.twinx()
 #        ax1b.plot(time[N:]-delay,data_s_dt[N:],alpha=0.2,label='data_s_dt')
         ax1b.plot(time[N:], data_filt_dt[N:], 'r', alpha=0.2,
-                  label='data_filt_dt')
+                  label='data filt dt')
 #        ax1b.plot(time[N:], data_reduced_dt[N:], 'b', alpha=0.2,
 #                  label='data_reduced_dt')
 #        ax1b.plot(time[N-1:]-delay, filtered_x_dt[N-1:], alpha=0.2)
@@ -845,10 +843,10 @@ class YawCalibration:
         # -------------------------------------------------
         ax3 = plot.fig.add_subplot(plot.nr_rows, plot.nr_cols, 2)
         Pxx, freqs = ax3.psd(data, Fs=sample_rate, label='data')
-        Pxx, freqs = ax3.psd(data_dt, Fs=sample_rate, label='data_dt')
+        Pxx, freqs = ax3.psd(data_dt, Fs=sample_rate, label='data dt')
 #        Pxx, freqs = ax3.psd(data_s_dt, Fs=sample_rate, label='data_s_dt')
         Pxx, freqs = ax3.psd(data_filt_dt[N-1:], Fs=sample_rate,
-                             label='data_filt_dt')
+                             label='data filt dt')
         ax3.legend()
 #        print Pxx.shape, freqs.shape
         plot.save_fig()
@@ -872,7 +870,6 @@ class YawCalibration:
 #        print data_filt_dt_amps
 
         return time_stair, data_stair
-
 
     def order_staircase(self, time_trim, data_trim, delta_step_tresh):
         """
@@ -933,19 +930,36 @@ class YawCalibration:
 
         return data_ordered, time_stair, data_stair
 
-def all_yawlaser_calibrations():
-    """
-    Just print the yaw laser calibration stuff for the thesis again
-    """
 
+def feb_yawlaser_calibration():
+    # FEBRUARY
     ycal = YawCalibration()
+    ycal.figpath = os.path.join(CALPATH, 'YawLaserCalibration/')
+    ycal.pprpath = ycal.figpath
+    ycal.respath = RESDATA_02
+#    ycal.plotall_feb_raw()
+    ycal.runs_050_051(ycal.respath)
     ycal.load_cal_dataset('runs_050_051', 'February')
 
+
+def apr_yawlaser_calibration():
+    # APRIL
     ycal = YawCalibration()
-    ycal.figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
-    ycal.figpath += 'YawLaserCalibration-04/'
+    ycal.figpath = os.path.join(CALPATH, 'YawLaserCalibration-04/')
     ycal.pprpath = ycal.figpath
+    ycal.respath = RESDATA_04
+#    ycal.plotall_apr_raw()
+    ycal.runs_289_295(ycal.respath)
     ycal.load_cal_dataset('runs_289_295', 'April', psi_step_deg=0.01)
+
+
+def all_yawlaser_calibrations():
+    """
+    Re-run and print complete yaw calibration cycle, including thesis plots.
+    """
+
+    feb_yawlaser_calibration()
+    apr_yawlaser_calibration()
 
 
 if __name__ == '__main__':

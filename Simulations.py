@@ -33,7 +33,6 @@ import scipy.interpolate as interpolate
 import pylab as plt
 
 # custom libraries
-import Hawc2io
 import misc
 import HawcPy
 
@@ -2892,9 +2891,6 @@ class Cases:
 # TODO: implement this
 class Results():
     """
-    Move all Hawc2io to here? NO: this should be the wrapper, to interface
-    the htc_dict with the io functions
-
     There should be a bare metal module/class for those who only want basic
     python support for HAWC2 result files and/or launching simulations.
 
@@ -2973,7 +2969,7 @@ def eigenbody(cases, debug=False):
     Read HAWC2 body eigenalysis result file
     =======================================
 
-    This is basically a cases convience wrapper around Hawc2io.ReadEigenBody
+    This is basically a cases convience wrapper around HawcPy.ReadEigenBody
 
     Parameters
     ----------
@@ -3004,8 +3000,8 @@ def eigenbody(cases, debug=False):
         file_path = tags['[run_dir]'] + tags['[eigenfreq_dir]']
         file_name = tags['[case_id]'] + '_eigen_body.dat'
         # and load the eigenfrequency body results
-        results, results2 = Hawc2io.ReadEigenBody(file_path, file_name,
-                                                  nrmodes=10)
+        results, results2 = HawcPy.ReadEigenBody(file_path, file_name,
+                                                 nrmodes=10)
         # add them to the htc_dict
         cases[case]['[eigen_body_results]'] = results
         cases[case]['[eigen_body_results2]'] = results2
@@ -3044,7 +3040,7 @@ def eigenstructure(cases, debug=False):
         file_path = tags['[run_dir]'] + tags['[eigenfreq_dir]']
         file_name = tags['[case_id]'] + '_eigen_strc.dat'
         # and load the eigenfrequency structure results
-        modes = Hawc2io.ReadEigenStructure(file_path, file_name, max_modes=10)
+        modes = HawcPy.ReadEigenStructure(file_path, file_name, max_modes=10)
         # add them to the htc_dict
         cases[case]['[eigen_structure]'] = modes
 

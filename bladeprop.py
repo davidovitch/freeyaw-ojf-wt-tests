@@ -478,12 +478,12 @@ def cross_prop(coord_up, coord_low, tests=False, verplot=False):
 def S823_coordinates():
     """return coordinates and max t/c
     """
-    return np.loadtxt('data/S823.dat', skiprows=1), 21.0
+    return np.loadtxt('data/model/S823.dat', skiprows=1), 21.0
 
 def S822_coordinates():
     """return coordinates and max t/c
     """
-    return np.loadtxt('data/S822.dat', skiprows=1), 16.0
+    return np.loadtxt('data/model/S822.dat', skiprows=1), 16.0
 
 class Blade:
     """
@@ -2457,67 +2457,3 @@ class AirfoilProperties:
 if __name__ == '__main__':
 
     dummy = 0
-
-#    builtfirstdb()
-
-#    # ---------------------------------------------------------------------
-#    # load the db and make selection
-#    # selection criteria for merging the E387
-#    db = AirfoilDB(verbose=False, verplot=False,
-#                   Re=1e5, airfoilname='E387', run='', table='runs')
-#    db.plot()
-#    db.merge()
-#    db.properties()
-#    db.h5f.close()
-#    # ---------------------------------------------------------------------
-
-
-    # ---------------------------------------------------------------------
-    # search and list airfoils who match
-    # ---------------------------------------------------------------------
-#    db = AirfoilDB(Re=3e5, airfoilname='S822', run='', table='runs',
-#                   verplot=False, verbose=False, re_acc=1e4)
-#    db.plot(cl_pot=False)
-#    db.merge(overwrite=False)
-#    db.h5f.close()
-    # ---------------------------------------------------------------------
-
-    # ---------------------------------------------------------------------
-    # PLOTTING DATA
-    # ---------------------------------------------------------------------
-#    db = AirfoilDB(Re=1e5, airfoilname='S822', run='', table='runs_merge',
-#                   verplot=False, verbose=False, re_acc=1e4)
-#    db.plot180()
-#    db.h5f.close()
-
-    # ---------------------------------------------------------------------
-    # add an airfoil to the coordinate database
-    # ---------------------------------------------------------------------
-#    coord = AirfoilCoord()
-
-#    target = '/home/dave/PhD/Projects/DataSets/coordinates/S822.dat'
-#    coord.txt2tbl(target, 'S822')
-#
-#    target = '/home/dave/PhD/Projects/DataSets/coordinates/S823.dat'
-#    coord.txt2tbl(target, 'S823', overwrite=False)
-
-#    coord._init_db_rplus()
-#    coord.update_coord_tbl('S822', 16, '', '')
-#    coord.h5f.close()
-
-#    coord._init_db_rplus()
-#    coord.update_coord_tbl('S823', 21, '', '')
-#    coord.h5f.close()
-
-#    coord._init_db_rplus()
-#    coord.h5f.root.coord.coord_tbl.cols.t_c_max[0] = 16.
-#    coord.h5f.root.coord.coord_tbl.flush()
-#    coord.h5f.close()
-
-#    coord_up, coord_low = coord.interp_airfoils('S823', 'S822', 20.)
-#    coord.verbose = True
-#    coord.verplot = True
-#    coord.cross_prop(coord_up, coord_low, tests=True)
-
-    # ---------------------------------------------------------------------
-#    pass

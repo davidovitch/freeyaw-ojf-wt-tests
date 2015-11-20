@@ -8,7 +8,7 @@ Created on Wed Aug  8 09:03:47 2012
 from __future__ import division
 import math
 import os
-#import sys
+import sys
 #import timeit
 import logging
 import pickle
@@ -64,8 +64,8 @@ class CalibrationData:
 
     # ---------------------------------------------------------------------
     # definition of the calibration files for February
-    calpath = 'data/'
-    ycp = calpath + 'YawLaserCalibration/runs_050_051.yawcal-pol10'
+    calpath = 'data/calibration/'
+    ycp = os.path.join(calpath, 'YawLaserCalibration/runs_050_051.yawcal-pol10')
     caldict_dspace_02 = {}
     caldict_dspace_02['Yaw Laser'] = ycp
     # do not calibrate tower strain in February, results are not reliable
@@ -75,7 +75,7 @@ class CalibrationData:
     #caldict_dspace_02['Tower Strain Side-Side'] = tsscp
 
     caldict_blade_02 = {}
-    bcp='data/BladeStrainCal/'
+    bcp = os.path.join(calpath, 'BladeStrainCal/')
     caldict_blade_02[0] = bcp + '0214_run_172_ch1_0214_run_173_ch1.pol1'
     caldict_blade_02[1] = bcp + '0214_run_172_ch2_0214_run_173_ch2.pol1'
     caldict_blade_02[2] = bcp + '0214_run_172_ch3_0214_run_173_ch3.pol1'
@@ -85,7 +85,8 @@ class CalibrationData:
     # ---------------------------------------------------------------------
     tw_cal = 'opt'
     # definition of the calibration files for April
-    ycp04 = calpath + 'YawLaserCalibration-04/runs_289_295.yawcal-pol10'
+    ycp04 = os.path.join(calpath,
+                         'YawLaserCalibration-04/runs_289_295.yawcal-pol10')
     # for the tower calibration, the yaw misalignment is already taken
     # into account in the calibration polynomial, no need to include the
     # yaw angle in the calibration. We always measure in the FA,SS dirs
@@ -106,7 +107,6 @@ class CalibrationData:
     caldict_dspace_04['psi_ss_0'] = target_ss
 
     caldict_blade_04 = {}
-    bcp='data/BladeStrainCal/'
     caldict_blade_04[0] = bcp + '0412_run_357_ch1_0412_run_358_ch1.pol1'
     caldict_blade_04[1] = bcp + '0412_run_357_ch2_0412_run_358_ch2.pol1'
     caldict_blade_04[2] = bcp + '0412_run_356_ch3_0412_run_358_ch3.pol1'
@@ -1361,12 +1361,12 @@ class ComboResults(BladeStrainFile, OJFLogFile, DspaceMatFile):
 
         # if it is a triggered file, we can synchronize with dspace
         if sync and self.isbladedata and self.blade.filetype == 'triggered':
-#            try:
-            self._sync_strain_dspace(checkplot=checkplot)
-#            except:
-#                # print the error message we found
-#                print sys.exc_info()[0]
-#                logging.warning('syncing dspace and blade strain failed...')
+            try:
+                self._sync_strain_dspace(checkplot=checkplot)
+            except:
+                # print the error message we found
+                print sys.exc_info()[0]
+                logging.warning('syncing dspace and blade strain failed...')
 
         try:
             self.ojf = OJFLogFile(respath+resfile, silent=silent)
@@ -1505,6 +1505,7 @@ class ComboResults(BladeStrainFile, OJFLogFile, DspaceMatFile):
             dnew[:,i] = np.interp(tnew, self.blade.time, self.blade.data[:,i])
         self.blade.time = tnew
         self.blade.data = dnew
+        self.blade.sample_rate = SPS
 
         # and reset all the dspace data
         dnew = np.ndarray( (len(tnew),self.dspace.data.shape[1]),
@@ -1513,23 +1514,22 @@ class ComboResults(BladeStrainFile, OJFLogFile, DspaceMatFile):
             dnew[:,i] = np.interp(tnew, self.dspace.time,self.dspace.data[:,i])
         self.dspace.time = tnew
         self.dspace.data = dnew
+        self.dspace.sample_rate = SPS
 
         # OJF data: is irrelevant, but for the convience of having them in the
         # same DataFrame
         # and reset all the dspace data
-        dnew = np.ndarray( (len(tnew),self.ojf.data.shape[1]),
-                          dtype=np.float64)
-        # OJF time is not accurate and reliable
-        if len(self.ojf.time) > self.ojf.data.shape[1]:
-            self.ojf.time = self.ojf.time[0:self.ojf.data.shape[0]]
-        for i in range(self.ojf.data.shape[1]):
-            dnew[:,i] = np.interp(tnew, self.ojf.time,self.ojf.data[:,i])
-        self.ojf.time = tnew
-        self.ojf.data = dnew
-
-        self.blade.sample_rate = SPS
-        self.dspace.sample_rate = SPS
-        self.ojf.sample_rate = SPS
+        if self.isojfdata:
+            dnew = np.ndarray( (len(tnew),self.ojf.data.shape[1]),
+                              dtype=np.float64)
+            # OJF time is not accurate and reliable
+            if len(self.ojf.time) > self.ojf.data.shape[1]:
+                self.ojf.time = self.ojf.time[0:self.ojf.data.shape[0]]
+            for i in range(self.ojf.data.shape[1]):
+                dnew[:,i] = np.interp(tnew, self.ojf.time,self.ojf.data[:,i])
+            self.ojf.time = tnew
+            self.ojf.data = dnew
+            self.ojf.sample_rate = SPS
 
         self.data_resampled = True
 

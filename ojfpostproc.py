@@ -36,9 +36,15 @@ import materials
 import Simulations as sim
 import misc
 import ojfresult
-from towercal import TowerCalibration
-from bladecal import BladeCalibration
+import towercal
+import bladecal
+import yawcal
 from ojfdb import ojf_db
+
+
+RESDATA_CAL_02 = 'data/raw/02/calibration/'
+RESDATA_CAL_04 = 'data/raw/04/calibration/'
+
 
 ## make list containing all the files in the folder
 #files = []
@@ -540,89 +546,43 @@ def february_calibration():
     Create all the calibration transformation polynomials for the February
     session
     """
-    # -------------------------------------------------------------
-    # Path where calibration files are grouped together
-    # -------------------------------------------------------------
-    respath = '/home/dave/PhD_data/OJF_data_edit/02/calibration/'
 
     # -------------------------------------------------------------
     # Blade Strain Calibration
     # -------------------------------------------------------------
-
-    bc = BladeCalibration()
-    bc.february_loads()
-
-#    bc.beam_only()
-
-    # February calibrations runs
-#    bc.feb_stiff_raw(respath)
-    bc.feb_stiff()
-    # April calibration runs
-#    bc.feb_flex_raw(respath)
-    bc.feb_flex()
-
-#    # -------------------------------------------------------------
-#    # Tower Calibration
-#    # -------------------------------------------------------------
-#    tc = TowerCalibration()
-#    tc.february(plot=True)
-
+    bladecal.feb_bladestrain_calibration()
 
     # -------------------------------------------------------------
-#    # Yaw calibration
-#    # -------------------------------------------------------------
-#    cal = YawCalibration()
-#    respath = '/home/dave/PhD_data/OJF_data_edit/02/calibration/'
-##    cal.plotall_feb_raw(respath)
-#    cal.runs_050_051(respath)
-#    cal.load_cal_dataset('runs_050_051')
+    # Tower Calibration
+    # -------------------------------------------------------------
+    # bad calibration results mean no tower calibration for February
+
+    # -------------------------------------------------------------
+    # Yaw calibration
+    # -------------------------------------------------------------
+    yawcal.feb_yawlaser_calibration()
+
 
 def april_calibration():
     """
     All the calibrations for the April session
     """
 
-    ## -------------------------------------------------------------
-    ## Yaw calibration
-    ## -------------------------------------------------------------
-    #
-    #ycal = YawCalibration()
-    #ycal.figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
-    #ycal.figpath += 'YawLaserCalibration-04/'
-    #ycal.respath = '/home/dave/PhD_data/OJF_data_edit/04/2012.04.10/0410_data/'
-    #ycal.pprpath = ycal.figpath
-##    ycal.plotall_apr_raw()
-##    ycal.runs_289_295(ycal.respath)
-    #ycal.load_cal_dataset('runs_289_295', psi_step_deg=0.01)
+    # -------------------------------------------------------------
+    # Yaw calibration
+    # -------------------------------------------------------------
+    yawcal.apr_yawlaser_calibration()
 
     # -------------------------------------------------------------
     # Tower calibration
     # -------------------------------------------------------------
-    # create a very first insight into the data: plot raw
-    tc = TowerCalibration()
-#    tc.april_print_all_raw()
-#    tc.windspeed_correction()
-#    tc.april_249()
-#    tc.april_250()
-#    tc.april_251()
-#    tc.april_combine(direction='FA')
-#    tc.april_combine(direction='SS')
-#    tc.yaw_259_260()
-    tc.yaw_influence()
+    towercal.all_tower_calibrations()
 
+    # -------------------------------------------------------------
+    # Blade calibration
+    # -------------------------------------------------------------
+    bladecal.apr_bladestrain_calibration()
 
-#    # -------------------------------------------------------------
-#    # Blade calibration
-#    # -------------------------------------------------------------
-#    # create a very first insight into the data: plot raw
-#    bc = BladeCalibration()
-#    #bc.apr_print_all_raw()
-#    #bc.apr_flex_raw() # plot all raw data, make filter for stair case
-#    bc.april_loads() # create the load definitions for each case
-#    bc.apr_flex() # actually make and plot the data and transfer function
-#
-#    #bc.apr_stiff_raw()
-#    bc.apr_stiff()
 
 def blade_extension_drag():
     """
@@ -2848,4 +2808,3 @@ if __name__ == '__main__':
 #    t = timeit.Timer(stmt=ff)
 #    #print t.timeit(number=20)
 #    print "%.2f usec/pass" % (20 * t.timeit(number=20)/20)
-

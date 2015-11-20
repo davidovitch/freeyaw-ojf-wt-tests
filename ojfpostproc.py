@@ -44,7 +44,7 @@ from ojfdb import ojf_db
 
 RESDATA_CAL_02 = 'data/raw/02/calibration/'
 RESDATA_CAL_04 = 'data/raw/04/calibration/'
-
+PROCESSING = 'processing/'
 
 ## make list containing all the files in the folder
 #files = []
@@ -76,7 +76,7 @@ def _resistance_serie(ohms):
 
 
 def example_simple():
-    respath = '/home/dave/PhD_data/OJF_data_edit/02/2012-02-10/'
+    respath = 'data/raw/02/2012-02-10/'
     resfile = '0210_run_005_freeyaw_init_0_stiffblades_pwm1000.mat'
 
     ojfmatfile = scipy.io.loadmat(respath+resfile)
@@ -152,9 +152,8 @@ def compare_eigenfrq_ranges():
     See what happens when comparing a selected and full range
     """
     # FOR THE BLADES
-    respath = '/home/dave/PhD_data/OJF_data_edit/02/vibration/'
-    figpath = '/home/dave/PhD/Projects/PostProcessing/'
-    figpath += 'OJF_tests/eigenfrequencies/'
+    respath = 'data/raw/02/vibration/'
+    figpath = os.path.join(PROCESSING, 'eigenfrequencies/')
     # there was only one vibriation test in Februari
     # blade was just held tight at the root and then a deflection was
     # imposed and suddenly released
@@ -214,8 +213,7 @@ def eigenfreq_april():
     nnfts = [2048]
 
     respath = '/home/dave/PhD_data/OJF_data_edit/04/vibration/'
-    figpath = '/home/dave/PhD/Projects/PostProcessing/'
-    figpath += 'OJF_tests/eigenfrequencies/'
+    figpath = os.path.join(PROCESSING, 'eigenfrequencies/')
 
     # TOWER VIBRATIONS
     resfile = '0405_run_248_towercal_destroy_fish_wire'
@@ -290,8 +288,7 @@ def eigenfreq_februari():
 
     # FOR THE BLADES
     respath = '/home/dave/PhD_data/OJF_data_edit/02/vibration/'
-    figpath = '/home/dave/PhD/Projects/PostProcessing/'
-    figpath += 'OJF_tests/eigenfrequencies/'
+    figpath = os.path.join(PROCESSING, 'eigenfrequencies/')
     # there was only one vibriation test in Februari
     # blade was just held tight at the root and then a deflection was
     # imposed and suddenly released
@@ -323,8 +320,7 @@ def eigenfreq_august():
 
     # FOR THE BLADES
     respath = '/home/dave/PhD_data/OJF_data_edit/08_vibration/'
-    figpath = '/home/dave/PhD/Projects/PostProcessing/'
-    figpath += 'OJF_tests/eigenfrequencies/'
+    figpath = os.path.join(PROCESSING, 'eigenfrequencies/')
 
     resfile = '500_trigger01_413314024'
     #channels = [0,1,2,3]
@@ -476,8 +472,7 @@ def eigenfreq_tower():
     Manually obtained from 0405_run_253_towervibrations
     """
 
-    path='/home/dave/PhD/Projects/PostProcessing/'
-    path += 'OJF_tests/eigenfreq_damp_tower/'
+    path = os.path.join(PROCESSING, 'eigenfreq_damp_tower/')
 
     # is 24.41 the tower or something else? Remember the vibration measurements
     # where done on the complete wind turbine infrastructure
@@ -497,8 +492,7 @@ def eigenfreq_blade():
     create manually the result files
     """
 
-    path='/home/dave/PhD/Projects/PostProcessing/'
-    path += 'OJF_tests/eigenfreq_damp_blade/'
+    path = os.path.join(PROCESSING, 'eigenfreq_damp_blade/')
 
     # blade 1 stiff
     struct = 'stiff'
@@ -597,8 +591,7 @@ def blade_extension_drag():
 
 
     # load all the bc.extension2 generated data
-    figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
-    figpath += 'BladeStrainCalExt/'
+    figpath = os.path.join(PROCESSING, 'BladeStrainCalExt/')
 
     #stiff_B2_ch1 = np.loadtxt(figpath+'stiff_B2_ch1_allpoints')
     #stiff_B2_ch2 = np.loadtxt(figpath+'stiff_B2_ch2_allpoints')
@@ -637,8 +630,7 @@ def blade_extension_3():
     #bc.extension3_stiff()
 
     # load all the bc.extension3 generated data
-    figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
-    figpath += 'BladeStrainCalExt/'
+    figpath = os.path.join(PROCESSING, 'BladeStrainCalExt/')
 
     #delta_ch1 = np.loadtxt(figpath+'delta_ch1_8xx')
     #delta_ch2 = np.loadtxt(figpath+'delta_ch2_8xx')
@@ -668,8 +660,7 @@ def plot_sync_blade_strain_dspace():
     importance.
     """
 
-    figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
-    figpath += 'sync_dspace_bladestrain/'
+    figpath = os.path.join(PROCESSING, 'sync_dspace_bladestrain/')
     respath = '/home/dave/PhD_data/OJF_data_edit/database/symlinks/'
 
     # illustrate the drifting of dSPACE and MicroStrain clocks, high rpm
@@ -1067,8 +1058,7 @@ def blade_cg():
     only gave away one parameter: the center of gravity.
     """
 
-    figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
-    figpath += 'blademassproperties/'
+    figpath = os.path.join(PROCESSING, 'blademassproperties/')
 
     cg = ojfresult.BladeCgMass(figpath=figpath)
 
@@ -1108,7 +1098,7 @@ def blade_aero_coeff():
     # TODO: move function to ojfresult.py
 
     bladepath = '/home/dave/PhD_data/OJF_data_edit/bladeonly/'
-    figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/bladeonly/'
+    figpath = os.path.join(PROCESSING, 'bladeonly/')
     figname = 'flex-stiff-all-V'
     windi=11
     aoai=13
@@ -1373,8 +1363,8 @@ def save_contour_cg_mass():
     testdatapath = '/home/dave/PhD_data/OJF_data_edit/blade_contour/'
 
     base = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
-    massdata = base + 'blademassproperties/'
-    countour = base + 'bladecontour/'
+    massdata = os.path.join(PROCESSING, 'blademassproperties/')
+    countour = os.path.join(PROCESSING, 'bladecontour/')
 
     flextip = ['56', '156', '256', '306']
     stifftip = ['106', '606', '706']
@@ -1431,7 +1421,7 @@ def blade_contour():
     """
 
     filepath = '/home/dave/PhD_data/OJF_data_edit/blade_contour/'
-    figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/bladecontour/'
+    figpath = os.path.join(PROCESSING, 'bladecontour/')
 
     # plot a single case
     #case = 'flex_B1_LE_0'
@@ -1492,7 +1482,7 @@ def blade_contour_all_raw():
 
     bc = ojfresult.BladeContour()
 
-    figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/bladecontour/'
+    figpath = os.path.join(PROCESSING, 'bladecontour/')
     figpath += 'rawresults/'
     filepath = '/home/dave/PhD_data/OJF_data_edit/blade_contour/'
     for f in [f for f in os.walk(filepath)][0][2]:
@@ -1514,11 +1504,9 @@ def blade_damping_all(checkplot=True):
     """
 
     respath = '/home/dave/PhD_data/OJF_data_edit/08_vibration/'
-    figpath = '/home/dave/PhD/Projects/PostProcessing/'
-    figpath += 'OJF_tests/eigenfreq_damp_blade/'
+    figpath = os.path.join(PROCESSING, 'eigenfreq_damp_blade/')
 
-    freqpath='/home/dave/PhD/Projects/PostProcessing/'
-    freqpath += 'OJF_tests/eigenfreq_damp_blade/'
+    freqpath = os.path.join(PROCESSING, 'eigenfreq_damp_blade/')
 
     # APPROACH: get all measurements for each blade and collect all calculated
     # damping values
@@ -1615,11 +1603,9 @@ def plot_psd_blades():
     As used for the plots in the thesis
     """
     respath = '/home/dave/PhD_data/OJF_data_edit/08_vibration/'
-    figpath = '/home/dave/PhD/Projects/PostProcessing/'
-    figpath += 'OJF_tests/eigenfreq_damp_blade/'
+    figpath = os.path.join(PROCESSING, 'eigenfreq_damp_blade/')
 
-    freqpath='/home/dave/PhD/Projects/PostProcessing/'
-    freqpath += 'OJF_tests/eigenfreq_damp_blade/'
+    freqpath = os.path.join(PROCESSING, 'eigenfreq_damp_blade/')
 
     # APPROACH: get all measurements for each blade and collect all calculated
     # damping values
@@ -1756,10 +1742,8 @@ def plot_damping_blade():
 
     # example input data ----------------------------------------------------
     respath = '/home/dave/PhD_data/OJF_data_edit/08_vibration/'
-    figpath = '/home/dave/PhD/Projects/PostProcessing/'
-    figpath += 'OJF_tests/eigenfreq_damp_blade/'
-    freqpath='/home/dave/PhD/Projects/PostProcessing/'
-    freqpath += 'OJF_tests/eigenfreq_damp_blade/'
+    figpath = os.path.join(PROCESSING, 'eigenfreq_damp_blade/')
+    freqpath = os.path.join(PROCESSING, 'eigenfreq_damp_blade/')
     resfile='504_b2_stiff_trigger02_2430537494'
     freqfile='stiff_B2'
     checkplot = False
@@ -1893,11 +1877,7 @@ def plot_damping_tower():
     """
 
     respath = '/home/dave/PhD_data/OJF_data_edit/04/vibration/'
-    figpath = '/home/dave/PhD/Projects/PostProcessing/'
-    figpath += 'OJF_tests/eigenfreq_damp_tower/'
-
-    freqpath  = '/home/dave/PhD/Projects/PostProcessing/'
-    freqpath += 'OJF_tests/eigenfreq_damp_tower/'
+    figpath = os.path.join(PROCESSING, 'eigenfreq_damp_tower/')
 
     # TOWER VIBRATIONS
     channels = []
@@ -2040,11 +2020,9 @@ def plot_psd_tower():
     """
 
     respath = '/home/dave/PhD_data/OJF_data_edit/04/vibration/'
-    figpath = '/home/dave/PhD/Projects/PostProcessing/'
-    figpath += 'OJF_tests/eigenfreq_damp_tower/'
+    figpath = os.path.join(PROCESSING, 'eigenfreq_damp_tower/')
 
-    freqpath  = '/home/dave/PhD/Projects/PostProcessing/'
-    freqpath += 'OJF_tests/eigenfreq_damp_tower/'
+    freqpath  = os.path.join(PROCESSING, 'eigenfreq_damp_tower/')
 
     # TOWER VIBRATIONS
     channels = ['Tower Strain Side-Side filtered',
@@ -2211,7 +2189,7 @@ def sound_measurements():
 #    runs_inc += [`num` for num in xrange(359, 420)]
     data, cases, headers = db.select(['04'], [], [], runs_inc=runs_inc)
 
-#    figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/sound/'
+#    figpath = os.path.join(PROCESSING, 'sound/')
 
 
     for case in cases:
@@ -2285,8 +2263,8 @@ def ojf_postproc_01():
     the wind tunnel again in April.
     """
 
-    calpath='/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
-    figpath='/home/dave/PhD/Projects/PostProcessing/OJF_tests/dashboard-v2/'
+    calpath = PROCESSING
+    figpath = os.path.join(PROCESSING, 'dashboard-v2/')
 
     ycp = calpath + 'YawLaserCalibration/' + 'runs_050_051.yawcal-pol10'
     tfacp = calpath + 'TowerStrainCal/' + 'towercal-pol1_fa'
@@ -2371,7 +2349,7 @@ def torque2012_old():
     This work lead to the torque2012_abstract selection
     """
 
-    calpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+    calpath = PROCESSING
     figpath = calpath + 'Torque2012/abstract/'
 
     ycp = calpath + 'YawLaserCalibration/' + 'runs_050_051.yawcal-pol10'
@@ -2536,7 +2514,7 @@ def torque2012_abstract():
     """
     Exploratory plots for used for the Torque 2012 paper abstract
     """
-    calpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+    calpath = PROCESSING
     figpath = calpath + 'Torque2012/abstract/'
 
     # -------------------------------------------------------------
@@ -2637,7 +2615,7 @@ def presentation_risoe_june():
     Some additional plots for the big OJF presentation in june at Risø
     """
 
-    calpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+    calpath = PROCESSING
     ycp02 = calpath + 'YawLaserCalibration/' + 'runs_050_051.yawcal-pol10'
     ycp04 = calpath + 'YawLaserCalibration-04/' + 'runs_289_295.yawcal-pol10'
 #    tfacp = calpath + 'TowerStrainCal/' + 'towercal-pol1_fa'
@@ -2654,8 +2632,7 @@ def presentation_risoe_june():
     caldict_dspace_04['Tower Strain For-Aft'] = tfacp
     caldict_dspace_04['Tower Strain Side-Side'] = tsscp
 
-    figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
-    figpath += 'sync_dspace_bladestrain/'
+    figpath = os.path.join(PROCESSING, 'sync_dspace_bladestrain/')
     # illustrate the drifting of dSPACE and MicroStrain clocks, high rpm
     respath = '/home/dave/PhD_data/OJF_data_edit/04/2012-04-04/0404_data/'
     resfile = '0404_run_223_9.0ms_dc1_flexies_fixyaw_highrpm'
@@ -2671,8 +2648,7 @@ def presentation_risoe_june():
     res.dashboard_a3(figpath)
 
 
-    figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
-    figpath += 'spinup/'
+    figpath = os.path.join(PROCESSING, 'spinup/')
     # illustrate yawing and blade loads
     respath = '/home/dave/PhD_data/OJF_data_edit/04/2012-04-05/0405_data/'
     resfile = '0405_run_270_9.0ms_dc0_flexies_freeyaw_spinupyawerror'
@@ -2685,11 +2661,10 @@ def presentation_risoe_june():
 def speedup_cases():
     """
     """
-    figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
-    figpath += 'spinup/'
+    figpath = os.path.join(PROCESSING, 'spinup/')
 
     # -------------------------------------------------------------------------
-    #calpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+    #calpath = PROCESSING
     #ycp02 = calpath + 'YawLaserCalibration/' + 'runs_050_051.yawcal-pol10'
     #tfacp02 = calpath + 'TowerStrainCal/' + 'towercal-pol1_fa'
     #tsscp02 = calpath + 'TowerStrainCal/' + 'towercal-pol1_ss'
@@ -2706,7 +2681,6 @@ def speedup_cases():
     #res.dashb_blade_yaw(figpath, 'fix yaw, coning stiff, 8-9 m/s spinup')
 
     # -------------------------------------------------------------------------
-#    calpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
 #    ycp04 = calpath + 'YawLaserCalibration-04/' + 'runs_289_295.yawcal-pol10'
 #    tfacp04 = calpath + 'TowerStrainCal-04/' + 'towercal_249_250_251.cal-pol1'
 #    tsscp04 = calpath + 'TowerStrainCal-04/' + 'towercal_249_250_251.cal-pol1'
@@ -2716,8 +2690,7 @@ def speedup_cases():
 #    caldict_dspace_04['Tower Strain Side-Side'] = tsscp04
 
     # -------------------------------------------------------------------------
-    figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
-    figpath += 'spinup/'
+    figpath = os.path.join(PROCESSING, 'spinup/')
     respath = '/home/dave/PhD_data/OJF_data_edit/04/2012-04-12/0412_data/'
     resfile = '0412_run_372_10ms_stiff_fixyaw_speedup'
     res = ojfresult.ComboResults(respath, resfile, sync=True)

@@ -212,7 +212,7 @@ def eigenfreq_april():
     nnfts = [8192,4096,2048]
     nnfts = [2048]
 
-    respath = '/home/dave/PhD_data/OJF_data_edit/04/vibration/'
+    respath = os.path.join('data/raw/', '04/vibration/')
     figpath = os.path.join(PROCESSING, 'eigenfrequencies/')
 
     # TOWER VIBRATIONS
@@ -287,7 +287,7 @@ def eigenfreq_februari():
     nnfts = [2048]
 
     # FOR THE BLADES
-    respath = '/home/dave/PhD_data/OJF_data_edit/02/vibration/'
+    respath = 'data/raw/02/vibration/'
     figpath = os.path.join(PROCESSING, 'eigenfrequencies/')
     # there was only one vibriation test in Februari
     # blade was just held tight at the root and then a deflection was
@@ -319,7 +319,7 @@ def eigenfreq_august():
     nnfts = [2048]
 
     # FOR THE BLADES
-    respath = '/home/dave/PhD_data/OJF_data_edit/08_vibration/'
+    respath = 'data/raw/08_vibration/'
     figpath = os.path.join(PROCESSING, 'eigenfrequencies/')
 
     resfile = '500_trigger01_413314024'
@@ -661,7 +661,7 @@ def plot_sync_blade_strain_dspace():
     """
 
     figpath = os.path.join(PROCESSING, 'sync_dspace_bladestrain/')
-    respath = '/home/dave/PhD_data/OJF_data_edit/database/symlinks/'
+    respath = 'database/symlinks_all/'
 
     # illustrate the drifting of dSPACE and MicroStrain clocks, high rpm
     resfile = '0404_run_223_9.0ms_dc1_flexies_fixyaw_highrpm'
@@ -1097,7 +1097,7 @@ def blade_aero_coeff():
 
     # TODO: move function to ojfresult.py
 
-    bladepath = '/home/dave/PhD_data/OJF_data_edit/bladeonly/'
+    bladepath = 'data/raw/bladeonly/'
     figpath = os.path.join(PROCESSING, 'bladeonly/')
     figname = 'flex-stiff-all-V'
     windi=11
@@ -1308,7 +1308,7 @@ def blade_contour_corr():
     Just take the average of the two others for the stiffness.
     """
 
-    testdatapath = '/home/dave/PhD_data/OJF_data_edit/blade_contour/'
+    testdatapath = 'data/raw/blade_contour/'
     tipmass='256'
     struct='flex'
 
@@ -1360,9 +1360,8 @@ def save_contour_cg_mass():
     """
 
     bc = ojfresult.BladeContour()
-    testdatapath = '/home/dave/PhD_data/OJF_data_edit/blade_contour/'
+    testdatapath = 'data/raw/blade_contour/'
 
-    base = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
     massdata = os.path.join(PROCESSING, 'blademassproperties/')
     countour = os.path.join(PROCESSING, 'bladecontour/')
 
@@ -1420,7 +1419,7 @@ def blade_contour():
     As used for the thesis plotting
     """
 
-    filepath = '/home/dave/PhD_data/OJF_data_edit/blade_contour/'
+    filepath = 'data/raw/blade_contour/'
     figpath = os.path.join(PROCESSING, 'bladecontour/')
 
     # plot a single case
@@ -1484,7 +1483,7 @@ def blade_contour_all_raw():
 
     figpath = os.path.join(PROCESSING, 'bladecontour/')
     figpath += 'rawresults/'
-    filepath = '/home/dave/PhD_data/OJF_data_edit/blade_contour/'
+    filepath = 'data/raw/blade_contour/'
     for f in [f for f in os.walk(filepath)][0][2]:
         # ignore all the xls files
         if f.endswith('.xls'): continue
@@ -1503,7 +1502,7 @@ def blade_damping_all(checkplot=True):
     saved
     """
 
-    respath = '/home/dave/PhD_data/OJF_data_edit/08_vibration/'
+    respath = 'data/raw/08_vibration/'
     figpath = os.path.join(PROCESSING, 'eigenfreq_damp_blade/')
 
     freqpath = os.path.join(PROCESSING, 'eigenfreq_damp_blade/')
@@ -1602,7 +1601,7 @@ def plot_psd_blades():
 
     As used for the plots in the thesis
     """
-    respath = '/home/dave/PhD_data/OJF_data_edit/08_vibration/'
+    respath = 'data/raw/08_vibration/'
     figpath = os.path.join(PROCESSING, 'eigenfreq_damp_blade/')
 
     freqpath = os.path.join(PROCESSING, 'eigenfreq_damp_blade/')
@@ -1741,7 +1740,7 @@ def plot_damping_blade():
     """
 
     # example input data ----------------------------------------------------
-    respath = '/home/dave/PhD_data/OJF_data_edit/08_vibration/'
+    respath = 'data/raw/08_vibration/'
     figpath = os.path.join(PROCESSING, 'eigenfreq_damp_blade/')
     freqpath = os.path.join(PROCESSING, 'eigenfreq_damp_blade/')
     resfile='504_b2_stiff_trigger02_2430537494'
@@ -1876,7 +1875,7 @@ def plot_damping_tower():
     > because highest peak is on the 50 Hz, which is not in the beginning
     """
 
-    respath = '/home/dave/PhD_data/OJF_data_edit/04/vibration/'
+    respath = 'data/raw/04/vibration/'
     figpath = os.path.join(PROCESSING, 'eigenfreq_damp_tower/')
 
     # TOWER VIBRATIONS
@@ -2019,7 +2018,7 @@ def plot_psd_tower():
     evaluated before in eigenfreq_april
     """
 
-    respath = '/home/dave/PhD_data/OJF_data_edit/04/vibration/'
+    respath = 'data/raw/04/vibration/'
     figpath = os.path.join(PROCESSING, 'eigenfreq_damp_tower/')
 
     freqpath  = os.path.join(PROCESSING, 'eigenfreq_damp_tower/')
@@ -2182,7 +2181,7 @@ def sound_measurements():
     It seems we can't see anything, the PSD down't show anything ...
     """
 
-    path_db = '/home/dave/PhD_data/OJF_data_edit/database/'
+    path_db = 'database/'
     db = ojf_db('steady_nocal', debug=False, path_db=path_db)
     # the below is much faster than str(num)!
     runs_inc = [`num` for num in xrange(335, 356)]
@@ -2193,7 +2192,7 @@ def sound_measurements():
 
 
     for case in cases:
-        res = ojfresult.ComboResults(path_db+'symlinks/', case, silent=True)
+        res = ojfresult.ComboResults(path_db+'symlinks_all/', case, silent=True)
 #        isound = res.dspace.labels_ch['Sound']
         isoundg = res.dspace.labels_ch['Sound_gain']
         print res.dspace.sample_rate, case
@@ -2227,12 +2226,12 @@ def sound_measurements_sweep():
     What was the sample rate during the sweep series?
     """
 
-#    source_folder = '/home/dave/PhD_data/OJF_data_edit/dc_sweep/'
-    sf = '/home/dave/PhD_data/OJF_data_edit/dc_sweep/2012-04-12_stiff/'
-    sf = '/home/dave/PhD_data/OJF_data_edit/dc_sweep/'
+#    source_folder = 'data/raw/dc_sweep/'
+    sf = 'data/raw/dc_sweep/2012-04-12_stiff/'
+    sf = 'data/raw/dc_sweep/'
 #    fname = 'full.mat'
 
-    sf = '/home/dave/PhD_data/OJF_data_edit/dc_sweep/2012-04-13_stiff/'
+    sf = 'data/raw/dc_sweep/2012-04-13_stiff/'
     for root, dirs, files in os.walk(sf, topdown=True):
         print dirs
         for fname in files:
@@ -2279,7 +2278,7 @@ def ojf_postproc_01():
     # Complete cycle: plot calibrated data for one case completely
     # -------------------------------------------------------------
 
-    respath = '/home/dave/PhD_data/OJF_data_edit/02/2012-02-14/'
+    respath = 'data/raw/02/2012-02-14/'
     resfile = '0214_run_158_7.0ms_dc0_flexies_fixyaw_pwm1000_highrpm'
     res = ojfresult.ComboResults(respath, resfile)
     res.dashboard_a3(figpath, nr_rev=5)
@@ -2293,7 +2292,7 @@ def ojf_postproc_01():
     res.dashboard_a3(figpath, nr_rev=5)
 
     # no ojf log file
-    respath = '/home/dave/PhD_data/OJF_data_edit/02/2012-02-09/'
+    respath = 'data/raw/02/2012-02-09/'
     resfile = '0209_run_011_10ms_dc0.0_stiffblades_pwm10000'
     res = ojfresult.ComboResults(respath, resfile)
     res.dashboard_a3(figpath, nr_rev=5)
@@ -2303,7 +2302,7 @@ def ojf_postproc_01():
     # stiff, coning
     resfile = '0212_run_077_8.0ms_dc0_fixyaw_spinuptippingpoint_stiffblades'
     resfile += '_coning_pwm1000_low-to-highrpm'
-    respath = '/home/dave/PhD_data/OJF_data_edit/02/2012-02-12/'
+    respath = 'data/raw/02/2012-02-12/'
     res = ojfresult.ComboResults(respath, resfile)
     res.dashboard_a3(figpath)
     res.dashboard_a3(figpath, time=[50,51])
@@ -2318,7 +2317,7 @@ def ojf_postproc_01():
 
     # stiff, coning
     resfile = '0211_run_053_speeduptil_8ms_450_rpm'
-    respath = '/home/dave/PhD_data/OJF_data_edit/02/2012-02-11/'
+    respath = 'data/raw/02/2012-02-11/'
     res = ojfresult.ComboResults(respath, resfile)
     res.dashboard_a3(figpath, time=[35,45])
     res._calibrate_dspace(caldict_dspace, rem_wind=True)
@@ -2326,7 +2325,7 @@ def ojf_postproc_01():
 
     # flex, no coning, free yaw
     resfile = '0214_run_166_7.0ms_dc0_flexies_freeyawplaying_pwm1000_highrpm'
-    respath = '/home/dave/PhD_data/OJF_data_edit/02/2012-02-14/'
+    respath = 'data/raw/02/2012-02-14/'
     res = ojfresult.ComboResults(respath, resfile)
     res._calibrate_dspace(caldict_dspace, rem_wind=True)
     res.dashboard_a3(figpath)
@@ -2334,7 +2333,7 @@ def ojf_postproc_01():
 
     # flex, no coning, free yaw
     resfile = '0214_run_170_8.0ms_dc1_flexies_freeyawplaying_pwm1000_highrpm'
-    respath = '/home/dave/PhD_data/OJF_data_edit/02/2012-02-14/'
+    respath = 'data/raw/02/2012-02-14/'
     res = ojfresult.ComboResults(respath, resfile)
     res._calibrate_dspace(caldict_dspace, rem_wind=True)
     res.dashboard_a3(figpath)
@@ -2370,7 +2369,7 @@ def torque2012_old():
     # -------------------------------------------------------------
 
     resfile = '0210_run_027_7.0ms_dc0_freeyawplaying_stiffblades_pwm1000'
-    respath = '/home/dave/PhD_data/OJF_data_edit/02/2012-02-10/'
+    respath = 'data/raw/02/2012-02-10/'
     res = ojfresult.ComboResults(respath, resfile)
     res._calibrate_dspace(caldict_dspace, rem_wind=True)
 #    res.dashboard_a3(figpath)
@@ -2417,7 +2416,7 @@ def torque2012_old():
 
     resfile = '0212_run_068_5.5ms_dc0_freeyawplaying_stiffblades_coning'
     resfile += '_pwm1000_highrpm'
-    respath = '/home/dave/PhD_data/OJF_data_edit/02/2012-02-12/'
+    respath = 'data/raw/02/2012-02-12/'
     res = ojfresult.ComboResults(respath, resfile)
     res._calibrate_dspace(caldict_dspace, rem_wind=True)
 #    res.dashboard_a3(figpath)
@@ -2425,7 +2424,7 @@ def torque2012_old():
 
     resfile = '0212_run_069_6.0ms_dc0_freeyawplaying_stiffblades_coning'
     resfile += '_pwm1000_highrpm'
-    respath = '/home/dave/PhD_data/OJF_data_edit/02/2012-02-12/'
+    respath = 'data/raw/02/2012-02-12/'
     res = ojfresult.ComboResults(respath, resfile)
     res._calibrate_dspace(caldict_dspace, rem_wind=True)
 #    res.dashboard_a3(figpath)
@@ -2433,7 +2432,7 @@ def torque2012_old():
 
     resfile = '0212_run_071_7.0ms_dc0_freeyawplaying_stiffblades_coning'
     resfile += '_pwm1000_highrpm'
-    respath = '/home/dave/PhD_data/OJF_data_edit/02/2012-02-12/'
+    respath = 'data/raw/02/2012-02-12/'
     res = ojfresult.ComboResults(respath, resfile)
     res._calibrate_dspace(caldict_dspace, rem_wind=True)
 #    res.dashboard_a3(figpath)
@@ -2460,7 +2459,7 @@ def torque2012_old():
     # -------------------------------------------------------------
     # Free yawing cases: SWEPT
     # -------------------------------------------------------------
-    respath = '/home/dave/PhD_data/OJF_data_edit/02/2012-02-13/'
+    respath = 'data/raw/02/2012-02-13/'
 
     resfile = '0213_run_130_7.0ms_dc0_samoerai_freeyawplaying_pwm1000_highrpm'
     res = ojfresult.ComboResults(respath, resfile)
@@ -2480,7 +2479,7 @@ def torque2012_old():
     # DIFFERENT STUFF
     # -------------------------------------------------------------
 
-    respath = '/home/dave/PhD_data/OJF_data_edit/04/2012-04-04/0404_data/'
+    respath = 'data/raw/04/2012-04-04/0404_data/'
     resfile = '0404_run_222_9.5ms_dc0_flexies_fixyaw_speedup_200rpm'
     res = ojfresult.ComboResults(respath, resfile)
     res.dashboard_a3(figpath)
@@ -2528,7 +2527,7 @@ def torque2012_abstract():
     # Free yawing cases: FLEXIES APRIL, LOW RPM, lowside
     # -------------------------------------------------------------
 
-    #respath = '/home/dave/PhD_data/OJF_data_edit/04/2012-04-10/0410_data/'
+    #respath = 'data/raw/04/2012-04-10/0410_data/'
     #resfile = '0410_run_296_7ms_dc0_flexies_freeyaw_lowrpm'
     #res = ojfresult.ComboResults(respath, resfile)
     #res._sync_strain_dspace(min_h=0.3, checkplot=False)
@@ -2537,7 +2536,7 @@ def torque2012_abstract():
     #res.freeyaw_compact(figpath,'free yawing, 7 m/s, slow RPM and deep stall',
                         #time=[0, 60], )
 
-    respath = '/home/dave/PhD_data/OJF_data_edit/04/2012-04-13/0413_data/'
+    respath = 'data/raw/04/2012-04-13/0413_data/'
     resfile = '0413_run_404_7ms_dc0_stiffblades_freeyaw_lowrpm'
     res = ojfresult.ComboResults(respath, resfile)
     res._sync_strain_dspace(min_h=0.3, checkplot=False)
@@ -2550,7 +2549,7 @@ def torque2012_abstract():
     # Free yawing cases: FLEXIES APRIL, LOW RPM, fastside
     # -------------------------------------------------------------
 
-    #respath = '/home/dave/PhD_data/OJF_data_edit/04/2012-04-10/0410_data/'
+    #respath = 'data/raw/04/2012-04-10/0410_data/'
     #resfile = '0410_run_297_7ms_dc0_flexies_freeyaw_lowrpm'
     #res = ojfresult.ComboResults(respath, resfile)
     #res._sync_strain_dspace(min_h=0.3, checkplot=False)
@@ -2559,7 +2558,7 @@ def torque2012_abstract():
     #res.freeyaw_compact(figpath, 'free yawing, 7 m/s,slow RPM and deep stall',
                         #time=[0,60])
 
-    respath = '/home/dave/PhD_data/OJF_data_edit/04/2012-04-13/0413_data/'
+    respath = 'data/raw/04/2012-04-13/0413_data/'
     resfile = '0413_run_403_7ms_dc0_stiffblades_freeyaw_lowrpm'
     res = ojfresult.ComboResults(respath, resfile)
     res._sync_strain_dspace(min_h=0.3, checkplot=False)
@@ -2572,7 +2571,7 @@ def torque2012_abstract():
     # Free yawing cases: FLEXIES APRIL, HIGH RPM
     # -------------------------------------------------------------
 
-    respath = '/home/dave/PhD_data/OJF_data_edit/04/2012-04-05/0405_data/'
+    respath = 'data/raw/04/2012-04-05/0405_data/'
     resfile = '0405_run_266_8.0ms_dc0.4_flexies_freeyaw_highrpm'
     res = ojfresult.ComboResults(respath, resfile)
     res._sync_strain_dspace(min_h=0.3, checkplot=False)
@@ -2583,7 +2582,7 @@ def torque2012_abstract():
     # -------------------------------------------------------------
     # Fix yawing cases: FLEXIES APRIL, compare TOWER SHADOW LOW RPM
     # -------------------------------------------------------------
-    respath = '/home/dave/PhD_data/OJF_data_edit/04/2012-04-04/0404_data/'
+    respath = 'data/raw/04/2012-04-04/0404_data/'
 
     resfile = '0404_run_212_9.0ms_dc0.6_flexies_fixyaw_lowrpm'
     res = ojfresult.ComboResults(respath, resfile)
@@ -2634,7 +2633,7 @@ def presentation_risoe_june():
 
     figpath = os.path.join(PROCESSING, 'sync_dspace_bladestrain/')
     # illustrate the drifting of dSPACE and MicroStrain clocks, high rpm
-    respath = '/home/dave/PhD_data/OJF_data_edit/04/2012-04-04/0404_data/'
+    respath = 'data/raw/04/2012-04-04/0404_data/'
     resfile = '0404_run_223_9.0ms_dc1_flexies_fixyaw_highrpm'
     res = ojfresult.ComboResults(respath, resfile)
     res.overlap_pulse(figpath)
@@ -2650,7 +2649,7 @@ def presentation_risoe_june():
 
     figpath = os.path.join(PROCESSING, 'spinup/')
     # illustrate yawing and blade loads
-    respath = '/home/dave/PhD_data/OJF_data_edit/04/2012-04-05/0405_data/'
+    respath = 'data/raw/04/2012-04-05/0405_data/'
     resfile = '0405_run_270_9.0ms_dc0_flexies_freeyaw_spinupyawerror'
     res = ojfresult.ComboResults(respath, resfile)
     res._calibrate_dspace(caldict_dspace_04, rem_wind=True)
@@ -2674,7 +2673,7 @@ def speedup_cases():
     #caldict_dspace_02['Tower Strain Side-Side'] = tsscp02
     #
     ## THIS IS A CONED ROTOR!!
-    #respath = '/home/dave/PhD_data/OJF_data_edit/02/2012-02-13/'
+    #respath = 'data/raw/02/2012-02-13/'
     #resfile='0213_run_144_9ms_dc0_flexies_fixyaw_spinup_pwm1000_low-to-highrpm'
     #res = ojfresult.ComboResults(respath, resfile)
     #res._calibrate_dspace(caldict_dspace_02, rem_wind=True)
@@ -2691,7 +2690,7 @@ def speedup_cases():
 
     # -------------------------------------------------------------------------
     figpath = os.path.join(PROCESSING, 'spinup/')
-    respath = '/home/dave/PhD_data/OJF_data_edit/04/2012-04-12/0412_data/'
+    respath = 'data/raw/04/2012-04-12/0412_data/'
     resfile = '0412_run_372_10ms_stiff_fixyaw_speedup'
     res = ojfresult.ComboResults(respath, resfile, sync=True)
     res._calibrate_dspace(ojfresult.CalibrationData.caldict_dspace_04)
@@ -2700,7 +2699,7 @@ def speedup_cases():
                         time=[15, 40])
 
     # -------------------------------------------------------------------------
-#    respath = '/home/dave/PhD_data/OJF_data_edit/04/2012-04-13/0413_data/'
+#    respath = 'data/raw/04/2012-04-13/0413_data/'
 #    resf='0413_run_408_0-10ms_dc0_stiffblades_freeyaw_lowrpm_startup_fastside'
 #    res = ojfresult.ComboResults(respath, resf, sync=True)
 #    res._calibrate_dspace(ojfresult.CalibrationData.caldict_dspace_04)
@@ -2708,7 +2707,7 @@ def speedup_cases():
 
     # -------------------------------------------------------------------------
 #    # illustrate yawing and blade loads
-#    respath = '/home/dave/PhD_data/OJF_data_edit/04/2012-04-05/0405_data/'
+#    respath = 'data/raw/04/2012-04-05/0405_data/'
 #    resfile = '0405_run_270_9.0ms_dc0_flexies_freeyaw_spinupyawerror'
 #    res = ojfresult.ComboResults(respath, resfile, sync=True)
 #    res._calibrate_dspace(ojfresult.CalibrationData.caldict_dspace_04)

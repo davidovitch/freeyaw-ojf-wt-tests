@@ -820,7 +820,7 @@ def _linear_distr_blade(blade):
 
 if __name__ == '__main__':
 
-    fpath = '/home/dave/PhD_data/OJF_data_edit/blade_contour/'
+    fpath = 'data/raw/blade_contour/'
     fname = '2012-09-26 Contour meting Verelst Test flex B1 LE lijn 0 gr.xls'
     sheetname = 'DMM Scan'
     #row_sel = range(39,200)

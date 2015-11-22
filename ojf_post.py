@@ -694,7 +694,7 @@ def master_tags(sim_id, runmethod=True, turbulence=False, silent=False,
     # =========================================================================
     # TODO: move to variable_tag
     if runmethod in ['local', 'local-script', 'none']:
-        path = '/home/dave/PhD_data/HAWC2_results/ojf_post/' + sim_id + '/'
+        path = 'simulations/hawc2/' + sim_id + '/'
         master.tags['[run_dir]'] = path
     elif runmethod == 'thyra':
         master.tags['[run_dir]'] = '/mnt/thyra/HAWC2/ojf_post/' + sim_id + '/'
@@ -707,19 +707,11 @@ def master_tags(sim_id, runmethod=True, turbulence=False, silent=False,
     # blade layout is taken form an HAWTOPT blade.dat result file
     # make sure that aeset and blade.dat file name are refering to the same!
     master.tags['[blade_hawtopt_file]'] = 'blade.dat'
-    master.tags['[blade_hawtopt_dir]'] \
-        = '/home/dave/PhD/Projects/Hawc2Models/ojf_post/blade_hawtopt/'
-
+    master.tags['[blade_hawtopt_dir]'] = 'data/model/blade_hawtopt/'
     master.tags['[master_htc_file]'] = 'ojf_post_master.htc'
-
-    master.tags['[master_htc_dir]'] \
-        = '/home/dave/PhD/Projects/Hawc2Models/ojf_post/htc/'
-
-    master.tags['[model_dir_local]'] \
-        = '/home/dave/PhD/Projects/Hawc2Models/ojf_post/'
-
-    master.tags['[post_dir]'] \
-        = '/home/dave/PhD/Projects/PostProcessing/ojf_post/raw/'
+    master.tags['[master_htc_dir]'] = 'data/model/hawc2/htc/'
+    master.tags['[model_dir_local]'] = 'data/model/hawc2/'
+    master.tags['[post_dir]'] = 'simulations/hawc2/raw/'
 
     # -------------------------------------------------------------------------
     # semi variable tags that only change per simulation series
@@ -753,7 +745,6 @@ def master_tags(sim_id, runmethod=True, turbulence=False, silent=False,
     # =========================================================================
     # case_id will be set with variable_tag_func
     master.tags['[case_id]'] = None
-    #master.tags['[run_dir]'] = '/home/dave/tmp/'
 
     master.tags['[pbs_queue_command]'] = '#PBS -q workq'
     # the express queue has 2 thyra nodes with max walltime of 1h
@@ -1321,8 +1312,7 @@ def post_launch(sim_id, post_dir):
     # downloaded locally, change path to results
     for case in htc_dict:
         if htc_dict[case]['[run_dir]'][:4] == '/mnt':
-            path = '/home/dave/PhD_data/HAWC2_results/ojf_post/' +sim_id +'/'
-            htc_dict[case]['[run_dir]'] = path
+            htc_dict[case]['[run_dir]'] = 'simulations/hawc2/%s/' % sim_id
 
     # check if all results are ok. An overview of which errors where found in
     # the logfiles is written in the post_dir
@@ -1343,7 +1333,7 @@ def reformat_st():
     """
     After some changes, you might wanne have the layout of the file nice again
     """
-    file_path = '/home/dave/PhD/Projects/Hawc2Models/ojf_post/data/'
+    file_path = 'data/model/hawc2/data/'
     file_name = 'ojf.st'
 
     md = sim.ModelData(silent=True)
@@ -1361,7 +1351,7 @@ def blade_st_increase_t_stiffness():
     the wrongly measured blades
     """
 
-    file_path = '/home/dave/PhD/Projects/Hawc2Models/ojf_post/data/'
+    file_path = 'data/model/hawc2/data/'
     file_name = 'ojf.st'
 
     md = sim.ModelData(silent=True)
@@ -1407,7 +1397,7 @@ def blade_st_with_cylinder_root():
     root sections
     """
 
-    file_path = '/home/dave/PhD/Projects/Hawc2Models/ojf_post/data/'
+    file_path = 'data/model/hawc2/data/'
     file_name = 'ojf.st'
 
     md = sim.ModelData(silent=True)
@@ -1723,7 +1713,7 @@ def tower_shadow_profile():
     of lateral position.
     """
     # setup the plot
-    figpath = '/home/dave/PhD/Projects/PostProcessing/ojf_post/fig/ts/'
+    figpath = 'simulations/fig/ts/'
     figfile = 'tower-shadow-comparison'
     pa4 = plotting.A4Tuned()
     title = 'Tower shadow at 10 m/s'
@@ -1732,7 +1722,7 @@ def tower_shadow_profile():
     ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
 
     # case 100 rpm
-    respath = '/home/dave/PhD/Projects/Hawc2Models/ojf_post/results/'
+    respath = 'simulations/hawc2/'
     resfile = 's0_a0_yfix_10ms_y0_ts4_100rpm_c0_p0_sb71_ab00_st2'
     res100 = HawcPy.LoadResults(respath, resfile)
     # find the lowest tower shadow passage event
@@ -1748,7 +1738,6 @@ def tower_shadow_profile():
 
 
     # case 300 rpm
-    respath = '/home/dave/PhD/Projects/Hawc2Models/ojf_post/results/'
     resfile = 's0_a0_yfix_10ms_y0_ts4_300rpm_c0_p0_sb71_ab00_st2'
     res300 = HawcPy.LoadResults(respath, resfile)
     # find the lowest tower shadow passage event
@@ -1764,7 +1753,6 @@ def tower_shadow_profile():
 
 
     # case 600 rpm
-    respath = '/home/dave/PhD/Projects/Hawc2Models/ojf_post/results/'
     resfile = 's0_a0_yfix_10ms_y0_ts4_600rpm_c0_p0_sb71_ab00_st2'
     res600 = HawcPy.LoadResults(respath, resfile)
     # find the lowest tower shadow passage event
@@ -1793,7 +1781,7 @@ def tower_shadow_profile_2():
     """
 
     def plotcase(resfile, ax, label, bladeradius, mark=False):
-        respath = '/home/dave/PhD_data/HAWC2_results/ojf_post/results/'
+        respath = 'simulations/hawc2/'
         res = HawcPy.LoadResults(respath, resfile)
         # find the lowest tower shadow passage event
         azi_b1 = res.sig[:,Chi.azi_b1]
@@ -1816,7 +1804,7 @@ def tower_shadow_profile_2():
 
     # -----------------------------------------------------------------------
     # setup the plot
-    figpath = '/home/dave/PhD/Projects/PostProcessing/ojf_post/fig/ts/'
+    figpath = 'simulations/fig/ts/'
     figfile = 'tower-shadow-comparison-a2-a3-cd0.3'
     pa4 = plotting.A4Tuned()
     title = 'Wind speed 10 m/s, tower radius 5cm, cd 0.3'
@@ -1858,7 +1846,7 @@ def tower_shadow_profile_2():
 
     # -----------------------------------------------------------------------
     # setup the plot
-    figpath = '/home/dave/PhD/Projects/PostProcessing/ojf_post/fig/ts/'
+    figpath = 'simulations/fig/ts/'
     figfile = 'tower-shadow-comparison-a2-a3-cd0.5'
     pa4 = plotting.A4Tuned()
     title = 'Wind speed 10 m/s, tower radius 5cm, cd 0.5'
@@ -1891,7 +1879,7 @@ def tower_shadow_profile_2():
 
     # -----------------------------------------------------------------------
     # setup the plot
-    figpath = '/home/dave/PhD/Projects/PostProcessing/ojf_post/fig/ts/'
+    figpath = 'simulations/fig/ts/'
     figfile = 'tower-shadow-comparison-a2-a3-a4-cd0.5'
     pa4 = plotting.A4Tuned()
     title = 'Wind speed 10 m/s, tower radius 5cm, cd 0.5'
@@ -1925,7 +1913,7 @@ def compare_rot_dirs(simid):
     Compare standard and OJF rotation directions on the OJF model
     """
 
-    respath = '/home/dave/PhD_data/HAWC2_results/ojf_post/'+simid+'/results/'
+    respath = 'simulations/hawc2/' + simid + '/results/'
 
     resfile = simid+'_4.0ms_s0_y0_yfix_rot_ojf_blade.dat_ts0_cd0.5_'
     resfile += '300rpm_c0_p0_sb51_ab00_st1'
@@ -1958,8 +1946,7 @@ def compare_rot_dirs(simid):
     #compare_rot_dirs('b4')
     #compare_rot_dir----------------------------
     # setup the plot
-    figpath = '/home/dave/PhD/Projects/PostProcessing/ojf_post/fig/'
-    figpath += 'rot_direction/'
+    figpath = 'simulations/fig/rot_direction/'
     figfile = 'rotation-comparison-'+simid+'-nots-nosweep-stiff'
     pa4 = plotting.A4Tuned()
     title = 'Wind speed 4 m/s @ 300 rpm'
@@ -2103,8 +2090,7 @@ class DashBoard:
         # and plot for each case the dashboard
         for k in htc_dict:
             if htc_dict[k]['[run_dir]'][:4] == '/mnt':
-                path='/home/dave/PhD_data/HAWC2_results/ojf_post/'+sim_id +'/'
-                htc_dict[k]['[run_dir]'] = path
+                htc_dict[k]['[run_dir]'] = 'simulations/hawc2/%s/' + sim_id
             basepath = htc_dict[k]['[run_dir]']
             respath = htc_dict[k]['[res_dir]']
             resfile = htc_dict[k]['[case_id]']
@@ -2348,8 +2334,7 @@ class HAWC2andOJF:
         htc_dict_sel = dict()
         htc_dict_sel[case] = htc_dict[case]
         if htc_dict_sel[case]['[run_dir]'][:4] == '/mnt':
-            path = '/home/dave/PhD_data/HAWC2_results/ojf_post/' +simid +'/'
-            htc_dict_sel[case]['[run_dir]'] = path
+            htc_dict_sel[case]['[run_dir]'] = 'simulations/hawc2/%s/' + simid
         self.casedict = htc_dict_sel[case]
 
         basepath = htc_dict[case]['[run_dir]']
@@ -3255,9 +3240,8 @@ def blade_only_aero_plot():
     """
     # quick and dirty visualisation
     sim_id = 'aero_00'
-    figpath = '/home/dave/PhD/Projects/PostProcessing/ojf_post/fig/'
-    figpath += 'aero_blade_only/'
-    postpath = '/home/dave/PhD/Projects/PostProcessing/ojf_post/raw/'
+    figpath = 'simulations/fig/aero_blade_only/'
+    postpath = 'simulations/hawc2/raw/'
     cao = sim.Cases(postpath, sim_id)
 
     # global-tower-node-002-forcevec-z
@@ -3359,9 +3343,8 @@ def launch_test_cylinder():
 
 if __name__ == '__main__':
 
-    #figpath = '/home/dave/PhD/Projects/PostProcessing/ojf_post/fig/dashboard/'
-    figpath = '/home/dave/PhD/Projects/PostProcessing/Torque2012/'
-    post_dir = '/home/dave/PhD/Projects/PostProcessing/ojf_post/raw/'
+    figpath = 'simulations/fig/'
+    post_dir = 'simulations/hawc2/raw/'
 
     #blade_st_with_cylinder_root()
 #    launch_test_cylinder()
@@ -3388,6 +3371,3 @@ if __name__ == '__main__':
 #    compare_rot_dirs('b4') # omega equal
 #    compare_rot_dirs('b5') # omega switched
 #    compare_rot_dirs('b7') # omega equal
-    #pass
-
-

@@ -15,7 +15,7 @@ import os
 
 # 3th party modules
 import numpy as np
-import scipy as sp
+#import scipy as sp
 #from scipy import optimize
 #from scipy.interpolate import UnivariateSpline
 import scipy.interpolate as interpolate
@@ -32,6 +32,13 @@ import ojf_post
 import ojfdb
 
 sti = HawcPy.ModelData.st_headers
+
+POSTDIR = 'simulations/hawc2/raw/'
+FIGDIR = 'simulations/fig/'
+RESDIR = 'simulations/hawc2/'
+OJFPATH = 'database/symlinks_all/'
+PATH_DB = 'database/'
+OJFPATH_RAW = 'data/raw/'
 
 class Chi:
     def __init__(self, ch_dict):
@@ -100,12 +107,11 @@ class static_blade_deflection:
     def __init__(self):
         """
         """
-        self.figpath = '/home/dave/PhD/Projects/PostProcessing/ojf_vs_hawc2/'
-        self.figpath += 'static_blade_deflection/'
+        self.figpath = os.path.join(FIGDIR, 'static_blade_deflection/')
 
-        self.post_dir = '/home/dave/PhD/Projects/PostProcessing/ojf_post/raw/'
+        self.post_dir = POSTDIR
         # measurement data path
-        self.testdatapath = '/home/dave/PhD_data/OJF_data_edit/blade_contour/'
+        self.testdatapath = os.path.join(OJFPATH_RAW, 'blade_contour/')
 
     def compare(self, cases, cases0, testcase, figfile, **kwargs):
         """
@@ -473,13 +479,12 @@ class blade_aero_only:
         13 : AoA
         """
 
-        bladepath = '/home/dave/PhD_data/OJF_data_edit/bladeonly/'
-        figpath = '/home/dave/PhD/Projects/PostProcessing/ojf_vs_hawc2/'
-        figpath += 'bladeonly/'
+        bladepath = os.path.join(OJFPATH_RAW, 'bladeonly/')
+        figpath = os.path.join(FIGDIR, 'bladeonly/')
 
         # settings for the HAWC2 simulations
-        postpath = '/home/dave/PhD/Projects/PostProcessing/ojf_post/raw/'
-        resdir = '/home/dave/PhD_data/HAWC2_results/ojf_post/'
+        postpath = POSTDIR
+        resdir = RESDIR
         sim_id = 'aero_02'
 
         # indices for the OJF result files
@@ -670,8 +675,7 @@ def plot_ct_vs_lambda(cao):
     # -------------------------------------------------------------------------
     # plotting
     # -------------------------------------------------------------------------
-    figpath = '/home/dave/PhD/Projects/PostProcessing/ojf_vs_hawc2/'
-    figpath += 'ct_vs_lambda/'
+    figpath = os.path.join(FIGDIR, 'ct_vs_lambda/')
     scale = 1.5
     figfile = '%s-%s-ct-vs-lambda-%s' % (prefix, cao.sim_id, pitch_text)
     pa4 = plotting.A4Tuned(scale=scale)
@@ -769,8 +773,7 @@ def plot_ct_vs_yawerror_vs_lambda(cao):
     # -------------------------------------------------------------------------
     # plotting
     # -------------------------------------------------------------------------
-    figpath = '/home/dave/PhD/Projects/PostProcessing/ojf_vs_hawc2/'
-    figpath += 'ct_vs_lambda/'
+    figpath = os.path.join(FIGDIR, 'ct_vs_lambda/')
     scale = 1.5
     figfile = '%s-%s-ct-vs-yawerror-vs-lambda' % (prefix,cao.sim_id)
     pa4 = plotting.A4Tuned(scale=scale)
@@ -860,19 +863,16 @@ def plot_blade_vs_azimuth(cao, cname, db, normalize, delay, zeromean,
     ojfcase = cao.cases[cname]['[ojf_case]']
     sim_id = cao.cases[cname]['[sim_id]']
 
-    figpath = '/home/dave/PhD/Projects/PostProcessing/ojf_vs_hawc2/'
     if sim_id.endswith('gen'):
         if delay:
-            figpath += 'bladeloads_vs_azimuth_generator_delayed_BX_X/'
+            figpath = FIGDIR + 'bladeloads_vs_azimuth_generator_delayed_BX_X/'
         else:
             if zeromean:
-                figpath += 'bladeloads_vs_azimuth_generator_zeromean_BX_X/'
+                figpath = FIGDIR + 'bladeloads_vs_azimuth_generator_zeromean_BX_X/'
             else:
-                figpath += 'bladeloads_vs_azimuth_generator_BX_X/'
-#        figpath += 'bladeloads_vs_azimuth_generator_compare_BX_X/'
+                figpath = FIGDIR + 'bladeloads_vs_azimuth_generator_BX_X/'
     else:
-        figpath += 'bladeloads_vs_azimuth_fixrpm_BX_X/'
-#        figpath += 'bladeload_vs_azimuth_bemtimings/'
+        figpath = FIGDIR + 'bladeloads_vs_azimuth_fixrpm_BX_X/'
 
     # is this a forced yaw error case? than we need to get to the staircases
 
@@ -1331,7 +1331,7 @@ def plot_freeyaw_response(cao, cname, db, t0_ojf, t0_hawc, duration):
     run_id = '_'.join(ojfcase.split('_')[0:3])
     sim_id = cao.cases[cname]['[sim_id]']
 
-    figpath = '/home/dave/PhD/Projects/PostProcessing/ojf_vs_hawc2/freeyaw/'
+    figpath = os.path.join(FIGDIR, 'freeyaw/')
 
     # define the plotting range for OJF and HAWC2
     t1_ojf = t0_ojf + duration
@@ -1503,16 +1503,14 @@ def ojf_to_hawc2(**kwargs):
 
     generator = kwargs.get('generator', False)
 
-    pp = '/home/dave/PhD_data/OJF_data_edit/database/'
-    path_db = kwargs.get('path_db', pp)
+    path_db = kwargs.get('path_db', PATH_DB)
     database = kwargs.get('database', 'symlinks_all_psicor')
     inc = kwargs.get('inc', [])
     exc = kwargs.get('exc', [])
     months = kwargs.get('months', ['02','04'])
     runs_inc = kwargs.get('runs_inc', [])
     valuedict = kwargs.get('valuedict', {})
-    postpath = kwargs.get('postpath',
-                     '/home/dave/PhD/Projects/PostProcessing/ojf_post/raw/')
+    postpath = kwargs.get('postpath', POSTDIR)
     rpm_setter = kwargs.get('rpm_setter', 'all')
 
     # load the OJF test database
@@ -2329,7 +2327,7 @@ def compare_tower_shadow_cd():
         azi += 120.0
         azi[azi.__ge__(360.0)] -= 360.0
 
-    figpath = '/home/dave/PhD/Projects/PostProcessing/ojf_post/fig/ts/'
+    figpath = os.path.join(FIGDIR, 'ts/')
 
     # group per OJF case
     sim_id = 'ts_stud'
@@ -2532,7 +2530,7 @@ def plot_bem_timeconstants():
     # iter_dict['[nw_k3]'] = [-0.02, 0.0]
 
     cao = sim.Cases(POSTDIR, 'th_07')
-    cao.change_results_dir('/home/dave/PhD_data/HAWC2_results/ojf_post/')
+    cao.change_results_dir(RESDIR)
     ojfcase = '0405_run_287_9.0ms_dc0_flexies_freeyawforced_yawerrorrange_'
     ojfcase += 'lowside_highrpm_STC_145'
     cao.select(search_keyval={'[ojf_case]':ojfcase})
@@ -2540,7 +2538,7 @@ def plot_bem_timeconstants():
 
     # the cases with changing time constants
     cao = sim.Cases(POSTDIR, 'th_07')
-    cao.change_results_dir('/home/dave/PhD_data/HAWC2_results/ojf_post/')
+    cao.change_results_dir(RESDIR)
     ojfcase = '0405_run_287_9.0ms_dc0_flexies_freeyawforced_yawerrorrange_'
     ojfcase += 'lowside_highrpm_STC_145'
     cao.select(search_keyval={'[nw_k1]' : 0.1025, '[nw_k3]':0.0,
@@ -2550,7 +2548,7 @@ def plot_bem_timeconstants():
     print cao.cases[cao.cases.keys()[0]]['[case_id]']
 
     cao = sim.Cases(POSTDIR, 'th_07')
-    cao.change_results_dir('/home/dave/PhD_data/HAWC2_results/ojf_post/')
+    cao.change_results_dir(RESDIR)
     ojfcase = '0405_run_287_9.0ms_dc0_flexies_freeyawforced_yawerrorrange_'
     ojfcase += 'lowside_highrpm_STC_145'
     cao.select(search_keyval={'[nw_k1]' : 0.1025, '[nw_k3]':-0.02,
@@ -2573,7 +2571,7 @@ def plot_dt_conv_crit():
     ojf_post.post_launch('test_dt_conv_constr', POSTDIR)
     # force residual : [1e-3, 5e-4, 1e-4, 1e-5, 5e-5]
     cao = sim.Cases(POSTDIR, 'test_dt_conv')
-    cao.change_results_dir('/home/dave/PhD_data/HAWC2_results/ojf_post/')
+    cao.change_results_dir(RESDIR)
     cao.select({'[epsresq]' : 0.0005})
     len(cao.cases)
     overplot(cao, '[dt_sim]', '[epsresq]')
@@ -2581,7 +2579,7 @@ def plot_dt_conv_crit():
     # for the same convergence criteria, but different sampling
     # dt_sim : [0.0005, 0.0003, 0.00025, 0.0002, 0.0001]
     cao = sim.Cases(POSTDIR, 'test_dt_conv')
-    cao.change_results_dir('/home/dave/PhD_data/HAWC2_results/ojf_post/')
+    cao.change_results_dir(RESDIR)
     cao.select({'[dt_sim]' : 0.0002})
     len(cao.cases)
     overplot(cao, '[epsresq]', '[dt_sim]')
@@ -2591,7 +2589,7 @@ def plot_dt_conv_crit():
     # constraint eq residual : [7e-6, 7e-7, 7e-8, 7e-9, 7e-10]
     # for the same convergence criteria, but different sampling
     cao = sim.Cases(POSTDIR, 'test_dt_conv_constr')
-    cao.change_results_dir('/home/dave/PhD_data/HAWC2_results/ojf_post/')
+    cao.change_results_dir(RESDIR)
     cao.select({'[epsresg]' : 7e-9})
     len(cao.cases)
     overplot(cao, '[dt_sim]', '[epsresg]')
@@ -2599,7 +2597,7 @@ def plot_dt_conv_crit():
     # for the same convergence criteria, but different sampling
     # dt_sim : [0.0005, 0.0003, 0.00025, 0.0002, 0.0001]
     cao = sim.Cases(POSTDIR, 'test_dt_conv_constr', rem_failed=True)
-    cao.change_results_dir('/home/dave/PhD_data/HAWC2_results/ojf_post/')
+    cao.change_results_dir(RESDIR)
     cao.select({'[dt_sim]' : 0.0001})
     len(cao.cases)
     overplot(cao, '[epsresg]', '[dt_sim]')
@@ -2608,7 +2606,7 @@ def plot_dt_conv_crit():
     ojf_post.post_launch('test_dt_conv_incr', POSTDIR)
     # increment residual : [1e-5, 1e-6, 1e-7, 1e-8, 1e-9]
     cao = sim.Cases(POSTDIR, 'test_dt_conv_incr')
-    cao.change_results_dir('/home/dave/PhD_data/HAWC2_results/ojf_post/')
+    cao.change_results_dir(RESDIR)
     cao.select({'[epsresd]' : 1e-5})
     len(cao.cases)
     overplot(cao, '[dt_sim]', '[epsresd]')
@@ -2616,7 +2614,7 @@ def plot_dt_conv_crit():
     # for the same convergence criteria, but different sampling
     # dt_sim : [0.0005, 0.0003, 0.00025, 0.0002, 0.0001]
     cao = sim.Cases(POSTDIR, 'test_dt_conv_incr', rem_failed=True)
-    cao.change_results_dir('/home/dave/PhD_data/HAWC2_results/ojf_post/')
+    cao.change_results_dir(RESDIR)
     cao.select({'[dt_sim]' : 0.0002})
     len(cao.cases)
     overplot(cao, '[epsresd]', '[dt_sim]')
@@ -2720,7 +2718,7 @@ def blade_deflection():
     """
     Plot blade deflection curves
     """
-    pp = '/home/dave/PhD_data/HAWC2_results/ojf_post/blosd01/results/'
+    pp = os.path.join(RESDIR, 'blosd01/results/')
     ff = 'blosd01_0ms_s0_y0_sbflex_ab00'
     res = HawcPy.LoadResults(pp, ff)
     # select all the y deflection channels
@@ -2748,13 +2746,11 @@ def blade_deflection2():
     Plot blade deflection curves
     """
 
-    base = '/home/dave/PhD/Projects/PostProcessing/'
-    figpath = base + 'ojf_post/fig/static_blade_deflection/'
-    resdir = '/home/dave/PhD_data/HAWC2_results/ojf_post/'
+    figpath = os.oath.join(FIGDIR, 'static_blade_deflection/')
     sim_id = 'blosd01'
     scenario = 'blade_deflection'
 
-    cc = sim.Cases(POSTDIR, sim_id, resdir=resdir)
+    cc = sim.Cases(POSTDIR, sim_id, resdir=RESDIR)
     cc.printall(scenario, figpath=figpath)
 
 def compare_blade_deflection():
@@ -3068,10 +3064,6 @@ def waketimecnst():
 if __name__ == '__main__':
 
     dummy = False
-    POSTDIR = '/home/dave/PhD/Projects/PostProcessing/ojf_post/raw/'
-    FIGDIR = '/home/dave/PhD/Projects/PostProcessing/ojf_post/fig/'
-    RESDIR = '/home/dave/PhD_data/HAWC2_results/ojf_post/'
-    OJFPATH = '/home/dave/PhD_data/OJF_data_edit/database/symlinks_all/'
     db = ojfdb.ojf_db('symlinks_all_psicor')
 
     # ------------------------------------------------------------------------
@@ -3137,7 +3129,3 @@ if __name__ == '__main__':
 #    cao = sim.Cases(POSTDIR, 'th_06_gen', resdir=RESDIR, loadstats=True)
 #    for cname in cao.cases:
 #        plot_blade_vs_azimuth(cao, cname, db)
-
-
-
-

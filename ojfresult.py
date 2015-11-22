@@ -4253,7 +4253,7 @@ class BladeCgMass:
         """
         """
         # set where the files are found
-        self.fpath = kwargs.get('fpath', 'data/')
+        self.fpath = kwargs.get('fpath', 'data/raw/blade_mass/')
         tmp = 'data/blademassproperties/'
         self.figpath = kwargs.get('figpath',tmp)
 

@@ -30,7 +30,6 @@ from time import time
 import numpy as np
 import scipy
 import scipy.interpolate as interpolate
-import pylab as plt
 
 # custom libraries
 import misc
@@ -188,7 +187,6 @@ def local_shell_script(htc_dict, sim_id):
         shellscript += '" ===> Progress:'+str(nr)+'/'+str(nr_cases)+'"\n'
         # get a shorter version for the current cases tag_dict:
         scriptpath = htc_dict[case]['[run_dir]'] + 'runall.sh'
-        #shellscript += 'cd /home/dave/Projects/0_Risø_NDA/HAWC2/run'
         wine = 'WINEDEBUG=-all WINEARCH=win32 WINEPREFIX=~/.wine32 wine'
         shellscript += wine + " hawc2mb.exe htc/" + case + "\n"
         shellscript += 'echo ' + breakline + '\n'
@@ -607,8 +605,7 @@ def prepare_launch_cases(cases, runmethod='gorm', verbose=False,write_htc=True,
     # but reset to the correct launch dirs first
     sim_id = master.tags['[sim_id]']
     if runmethod in ['local', 'local-script', 'none']:
-        path = '/home/dave/PhD_data/HAWC2_results/ojf_post/%s/' % sim_id
-        master.tags['[run_dir]'] = path
+        master.tags['[run_dir]'] = 'simulations/hawc2/%s/' % sim_id
     elif runmethod == 'thyra':
         master.tags['[run_dir]'] = '/mnt/thyra/HAWC2/ojf_post/%s/' % sim_id
     elif runmethod == 'gorm':
@@ -634,8 +631,7 @@ def prepare_launch_cases(cases, runmethod='gorm', verbose=False,write_htc=True,
         sim_id = casedict['[sim_id]']
         # reset the launch dirs
         if runmethod in ['local', 'local-script', 'none']:
-            path = '/home/dave/PhD_data/HAWC2_results/ojf_post/%s/' % sim_id
-            casedict['[run_dir]'] = path
+            casedict['[run_dir]'] = 'simulations/hawc2/%s/' % sim_id
         elif runmethod == 'thyra':
             casedict['[run_dir]'] = '/mnt/thyra/HAWC2/ojf_post/%s/' % sim_id
         elif runmethod == 'gorm':
@@ -904,8 +900,7 @@ def get_htc_dict(post_dir, simid):
     # downloaded locally, change path to results
     for case in htc_dict:
         if htc_dict[case]['[run_dir]'][:4] == '/mnt':
-            path = '/home/dave/PhD_data/HAWC2_results/ojf_post/' +simid +'/'
-            htc_dict[case]['[run_dir]'] = path
+            htc_dict[case]['[run_dir]'] = 'simulations/hawc2/%s/' % simid
 
     try:
         htc_dict_fail = load_pickled_file(post_dir + simid + '_fail.pkl')
@@ -994,7 +989,6 @@ class HtcMaster:
         self.tags['[zaxis_fact]'] = 1.0
         # TODO: rename to execution dir, that description fits much better!
         self.tags['[run_dir]'] = None
-        #self.tags['[run_dir]'] = '/home/dave/tmp/'
 
         # following dirs are relative to the run_dir!!
         # they indicate the location of the SAVED (!!) results, they can be

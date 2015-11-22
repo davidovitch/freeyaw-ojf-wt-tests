@@ -468,7 +468,8 @@ class YawCalibration:
         Simply plot all raw data from the april calibration runs.
         Nothing more, nothing less.
         """
-        respath = '/home/dave/PhD_data/OJF_data_edit/04/2012.04.10/0410_data/'
+
+        respath = 'data/raw/04/2012.04.10/0410_data/'
         figpath = CALPATH
         figpath += 'YawLaserCalibration-04/'
 

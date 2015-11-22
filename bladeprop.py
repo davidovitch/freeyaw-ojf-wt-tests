@@ -9,7 +9,6 @@ import numpy as np
 import scipy
 import scipy.interpolate
 import scipy.integrate as integrate
-#from scipy import optimize
 import math
 import warnings
 
@@ -1504,7 +1503,7 @@ class AirfoilProperties:
 
             # plot settings
             labelsize = 'x-large'
-            figdir = '/home/dave/PhD/Projects/DataSets/'
+            figdir = 'processing/'
             figname = 'cd90-chordwise'
             # initialize the plot object
             fig = Figure(figsize=(16, 9), dpi=200)
@@ -1813,7 +1812,7 @@ class AirfoilProperties:
         """
 
         # plot settings
-        figdir = kwargs.get('figdir', '/home/dave/PhD/Projects/DataSets/')
+        figdir = kwargs.get('figdir', 'processing/')
         labelsize = kwargs.get('labelsize', 'x-large')
         # a row from the airfoil database holding runs or runs_merge
 #        dbrow = kwargs.get('dbrow', None)
@@ -2403,7 +2402,7 @@ class AirfoilProperties:
         # TODO: still need to implement printing when selecting from database
         # directly
 
-        filepath = kwargs.get('filepath', '/home/dave/PhD/Projects/DataSets/')
+        filepath = kwargs.get('filepath', 'processing/')
         re = format(dbrow['reynolds'], '1.0f')
         tmp = '_' + resolution + 'res'
         filename = dbrow['airfoilname'] +'_Re_'+ re + tmp + '.dat'

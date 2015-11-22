@@ -24,6 +24,7 @@ import plotting
 import ojf_post
 
 PATH_DB = 'database/'
+OJFPATH_RAW = 'data/raw/'
 
 def symlink_to_hs_folder(source_folder, path_db, symf='symlinks_hs_mimer/'):
     """
@@ -2202,12 +2203,11 @@ def make_symlinks_filtered():
 
     # -------------------------------------------------------------------------
     # SYMLINKS, DATABASE FOR THE DSPACE, BLADE, AND WIND TUNNEL RESULTS
-    path_db = PATH_DB
-    source_folder = '/home/dave/PhD_data/OJF_data_edit/02/'
-    symlink_to_folder(source_folder, path_db)
-    source_folder = '/home/dave/PhD_data/OJF_data_edit/04/'
-    symlink_to_folder(source_folder, path_db)
-    build_db(path_db, calibrate=False, dashplot=False)
+    source_folder = os.path.join(OJFPATH_RAW, '02/')
+    symlink_to_folder(source_folder, PATH_DB)
+    source_folder = os.path.join(OJFPATH_RAW, '04/')
+    symlink_to_folder(source_folder, PATH_DB)
+    build_db(PATH_DB, calibrate=False, dashplot=False)
     # -------------------------------------------------------------------------
 
 def make_symlinks_all(path_db, data_source_root):
@@ -2263,7 +2263,6 @@ if __name__ == '__main__':
 #    plot_rpm_vs_blade(prefix, 'stiff')
 
     # read a single file for debugging/checking
-#    path_db = '/home/dave/PhD_data/OJF_data_edit/database/'
 #    case = '0213_run_108_8.0ms_dc1_samoerai_fixyaw_pwm1000_highrpm'
-#    res = ojfresult.ComboResults(path_db+'symlinks/', case)
+#    res = ojfresult.ComboResults(PATH_DB+'symlinks/', case)
 #    stats = res.statistics()

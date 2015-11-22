@@ -224,9 +224,6 @@ class Filters:
         #------------------------------------------------
         # Setup the figure parameters
         #------------------------------------------------
-#        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
-#        figfile = 'filterdesign'
-
         plot = plotting.A4Tuned()
         plot.setup(figpath+figfile, nr_plots=3, grandtitle=figfile,
                          figsize_y=20, wsleft_cm=2.)
@@ -363,7 +360,7 @@ class Filters:
         #------------------------------------------------
         # Setup the figure parameters
         #------------------------------------------------
-        figpath = '/home/dave/PhD/Projects/PostProcessing/OJF_tests/'
+        figpath = 'processing/'
         figfile = 'filterdesign'
 
         plot = plotting.A4Tuned()

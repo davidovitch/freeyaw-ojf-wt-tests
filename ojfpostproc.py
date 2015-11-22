@@ -714,7 +714,7 @@ def structural_prop():
     rho_foam = 200 # consistent with the PVC_H200 material density
 
     # load the general blade layout
-    quasi_dat='/home/dave/PhD/Projects/Hawc2Models/ojf_post/blade_hawtopt/'
+    quasi_dat = 'data/model/blade_hawtopt/'
     blade = np.loadtxt(quasi_dat + 'blade.dat')
     blade[:,0] = blade[:,0] - blade[0,0]
     blade = misc._linear_distr_blade(blade)
@@ -791,7 +791,7 @@ def structural_prop():
         # and the radius of gyration is also incorrect.
         print 'converting to st format: ' + 'result-st-'+str(k)
         # for an octave saved text file
-        tp = '/home/dave/Projects/0_TUDelft/cross_section_modeling/'
+        tp = 'data/model/cross_section_modeling/'
         data = np.loadtxt(tp+'result-st-'+str(k), skiprows=5)
         st_beam = data[:,0:19]
 

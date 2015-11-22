@@ -668,7 +668,7 @@ def plot_ct_vs_lambda(cao):
     # -------------------------------------------------------------------------
     # load the OJF runs that where used for the HAWC2 simulations again
     # -------------------------------------------------------------------------
-    prefix = 'symlinks_all_psicor'
+    prefix = 'symlinks_all'
     db = ojfdb.ojf_db(prefix, debug=False)
     ojf, ojfcases, ojfheader = db.select(['04'], [], [], runs_inc=runs_inc)
 
@@ -762,7 +762,7 @@ def plot_ct_vs_yawerror_vs_lambda(cao):
     # -------------------------------------------------------------------------
     # load the OJF runs that where used for the HAWC2 simulations again
     # -------------------------------------------------------------------------
-    prefix = 'symlinks_all_psicor'
+    prefix = 'symlinks_all'
     inc = ['force', '_STC_']
     db = ojfdb.ojf_db(prefix, debug=False)
     ojf, ojfcases, ojfheader = db.select(['04'], inc, [])#, runs_inc=runs_inc)
@@ -1504,7 +1504,7 @@ def ojf_to_hawc2(**kwargs):
     generator = kwargs.get('generator', False)
 
     path_db = kwargs.get('path_db', PATH_DB)
-    database = kwargs.get('database', 'symlinks_all_psicor')
+    database = kwargs.get('database', 'symlinks_all')
     inc = kwargs.get('inc', [])
     exc = kwargs.get('exc', [])
     months = kwargs.get('months', ['02','04'])
@@ -2868,7 +2868,7 @@ def fixyawerror_bladeload_azimuths():
     cao = sim.Cases(POSTDIR, sim_id, resdir=RESDIR, loadstats=True)
 
     # the OJF statistic database
-    db = ojfdb.ojf_db('symlinks_all_psicor')
+    db = ojfdb.ojf_db('symlinks_all')
 
     # some random cases
 #    cname = cao.cases.keys()[0]
@@ -2944,7 +2944,7 @@ def freeyaw_comparison():
     cao = sim.Cases(POSTDIR, sim_id, resdir=RESDIR, loadstats=True)
 
     # the OJF statistic database
-    db = ojfdb.ojf_db('symlinks_all_psicor')
+    db = ojfdb.ojf_db('symlinks_all')
 
     # mappings for sim_id = 'fr_05_free'
     # because we did not include the OJF case name in the sim_id,
@@ -3064,7 +3064,7 @@ def waketimecnst():
 if __name__ == '__main__':
 
     dummy = False
-    db = ojfdb.ojf_db('symlinks_all_psicor')
+    db = ojfdb.ojf_db('symlinks_all')
 
     # ------------------------------------------------------------------------
     # LAUNCHES
@@ -3112,7 +3112,7 @@ if __name__ == '__main__':
 
 #    sim_id = 'th_04'
 #    cao = sim.Cases(POSTDIR, sim_id, resdir=RESDIR, loadstats=True)
-#    db = ojfdb.ojf_db('symlinks_all_psicor')
+#    db = ojfdb.ojf_db('symlinks_all')
 #    cname = cao.cases.keys()[0]
 #    ojfcase = cao.cases[cname]['[ojf_case]']
 #    ojfcase = ''.join(ojfcase.split('_STC_')[:-1])

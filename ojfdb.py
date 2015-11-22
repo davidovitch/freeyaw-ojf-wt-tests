@@ -2248,9 +2248,9 @@ if __name__ == '__main__':
 
 #    build_db(path_db, 'symlinks_all', calibrate=True, dashplot=True)
 #    build_db(path_db, 'symlinks_all', calibrate=True, dashplot=True,
-#             output='symlinks_all_psicor', key_inc=['dcsweep'])
+#             output='symlinks_all', key_inc=['dcsweep'])
 
-#    prefix = 'symlinks_all_psicor'
+#    prefix = 'symlinks_all'
 #    plot_rpm_wind(prefix)
 #    plot_voltage_current(prefix)
 #    plot_rpm_vs_towerstrain(prefix)

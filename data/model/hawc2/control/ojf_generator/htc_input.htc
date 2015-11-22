@@ -1,0 +1,42 @@
+begin dll;
+    begin type2_dll;
+        name ojf_generator;
+        filename ./control/ojf_generator.dll ;
+        dll_subroutine_init   init;
+        dll_subroutine_update update;
+        ; array size of outgoing (wrt HAWC2) and ingoing data
+        arraysizes_init 11 1 ;
+        arraysizes_update 2 1 ;
+        begin init;
+            ; if time does not fall between the boundaries set in t0 t1,
+            ; K2 is always set as the fallback torque constant
+            constant  1 [gen_K0] ; K0, Torque constant t<=t0
+            constant  2 [gen_t0] ; t1
+            constant  3 [gen_K1] ; K1, Torque constant t0<t<=t1
+            constant  4 [gen_t1] ; t2
+            constant  5 [gen_K2] ; K2, Torque constant t1<t
+            constant  6 [gen_T_min] ; min allowable output Torque [Nm]
+            constant  7 [gen_T_max] ; max allowable output Torque [Nm]
+            constant  8 [gen_filt_type]; 0=no filt, 1=1st order filter, 2=2nd
+            constant  9 [gen_1_tau]; 1 filt:
+            constant 10 [gen_2_f0] ; 2 filt: low pass cut-off freq
+            constant 11 [gen_2_ksi]; 2 filt: critical damping ratio
+        end init;
+        begin output;
+            ; put time first! when having it as last in the list, the 
+            ; value was not passed on correctly to DLL, WHY????
+            general time;
+            ; 1: units: rad, vel=rad/s
+            ; 5: units are convert to degrees, vel=deg/s
+            ; only 1: only the angle is transferred
+            ; only 2: only the rotation speed
+            ; DLL input rotor speed
+            constraint bearing1 shaft_nacelle 1 only 2;
+        end output;
+        ;
+        begin actions;
+            ; input vector, input for HAWC2, output for DLL
+            mbdy moment_ext shaft 1 3 shaft_nacelle; gen torque [Nm]
+        end actions;
+    end type2_dll;
+end dll;

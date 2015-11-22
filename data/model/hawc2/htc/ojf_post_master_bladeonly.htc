@@ -1,0 +1,263 @@
+[sim]begin simulation;
+[sim]    time_stop    [time_stop];
+[sim]    solvertype   1 ;    (newmark)
+[sim]    on_no_convergence continue ;
+[sim]    convergence_limits  [epsresq]  [epsresd]  [epsresg] ;
+[sim];    1. epsresq, residual on internal-external forces,
+[sim];    default=10.0
+[sim];    2. epsresd, residual on increment, default=1.0
+[sim];    3. epsresg, residual on constraint equations,
+[sim];    default=0.7
+[sim][logfile]    logfile ./logfiles/[case_id].log ;
+[sim][animation]    animation ./animation/[case_id].dat;    
+[sim];
+[sim]    begin newmark;
+[sim]        deltat    [dt_sim]; 
+[sim]    end newmark;
+[sim]end simulation;
+;
+begin new_htc_structure;
+; Optional - Calculated beam properties of the bodies are written to file
+[beam_output] beam_output_file_name  ./eigenfreq/[case_id]_beam.dat;
+; Optional - Body initial position and orientation are written to file
+[body_output] body_output_file_name  ./eigenfreq/[case_id]_body.dat;
+[body_eigena] body_eigenanalysis_file_name ./eigenfreq/[case_id]_eigen_body.dat;
+[stru_eigena] structure_eigenanalysis_file_name ./eigenfreq/[case_id]_eigen_strc.dat;
+;
+begin main_body;
+    ; the blade root was not mounted directly on the balance. So compensate
+    ; for that by modelling this blade extension
+    name        balance_arm ;
+    type        timoschenko ;
+    nbodies     1;
+    node_distribution     c2_def ;
+    damping_posdef   0.0  0.0  0.0   1.0E+01   1.0E+01   1.0E+01;
+    begin timoschenko_input;
+        filename ./data/[st_file] ;
+        set 5 2 ; generic stiff but less light
+    end timoschenko_input;
+    begin c2_def;
+        nsec 2;
+        sec 1  0.0  0.0   0.0    0.0 ;  x,y,z,twist
+        sec 2  0.0  0.0  -0.304  0.0 ;  balance is located here
+        ;
+    end c2_def ;
+end main_body;
+;
+begin main_body;
+    name        blade;
+    type        timoschenko ;
+    nbodies     [nr_bodies_blade] ;
+    node_distribution     c2_def ;
+    damping_posdef   [damp_blade_mx] [damp_blade_my] [damp_blade_mz] [damp_blade_kx] [damp_blade_ky] [damp_blade_kz];
+    ; add the tip mass for static deflection curves
+[conc_tipmass]    concentrated_mass [nr_nodes_blade]  0  0  0  [bladetipmass]  0  0  0  0  0  0;
+    begin timoschenko_input;
+        filename ./data/[st_file] ;
+        set [st_blade_set] [st_blade_subset] ;
+    end timoschenko_input;
+    begin c2_def;
+        [blade_htc_node_input]
+        ;
+    end c2_def ;
+end main_body;
+;
+begin orientation;
+;
+    ; ----------------------------------------------------------
+    ; blade setup horizontally, LE pointing into the wind
+    ; blade_x = - wind_u; blade setup vertically, pointing upwards
+[horizontal]    begin base;
+[horizontal]        mbdy              blade;
+[horizontal]        inipos            0.0  0.0  0.0;
+[horizontal]        ; z-axis pointing sidewards, so it is horizontal
+[horizontal]        mbdy_eulerang     0   90   0;
+[horizontal]        ; rotate LE pointing into the wind: blade_x = -wind_u = -glob_y
+[horizontal]        mbdy_eulerang     0    0  90;
+[horizontal]    end base;
+    ; ----------------------------------------------------------
+    ; blade setup vertically, pointing upwards
+    ; balance_arm is required because that's where we measured the forces
+    ; the balans arm is connected to the ground
+[vertical]    begin base;
+[vertical]        mbdy              balance_arm ;
+[vertical]        inipos            0.0  0.0  0.0;
+[vertical]        mbdy_eulerang     0.0  0.0  0.0;
+[vertical]    end base;
+[vertical]    ;
+[vertical]    begin relative;
+[vertical]        mbdy1              balance_arm last;
+[vertical]        mbdy2              blade 1;
+[vertical]        ; z-axis pointing upwards, against the gravity vector
+[vertical]        mbdy2_eulerang     0.0  180  0.0;
+[vertical]        ; rotate LE pointing into the wind: blade_x = -wind_u = -glob_y
+[vertical]        mbdy2_eulerang     0    0   90;
+[vertical]        mbdy2_eulerang     0    0   [pitch_angle];
+[vertical]    end relative;
+end orientation;
+;
+begin constraint;
+    ;
+    ; fix blade to the ground for the horizontal stuff, no balance arm
+[horizontal]    begin fix0;
+[horizontal]        mbdy blade;
+[horizontal]    end fix0;
+;
+[vertical]    ; fix the balance_arm to the ground, than put the blade on top of it
+[vertical]    begin fix0;
+[vertical]        mbdy balance_arm;
+[vertical]    end fix0;
+[vertical]    ;
+[vertical]    begin fix1;
+[vertical]        mbdy1 balance_arm last;
+[vertical]        mbdy2 blade 1;
+[vertical]    end fix1;
+;
+end constraint;
+;
+end new_htc_structure;
+;
+;
+;
+; ------------------------------------------------------------------------------
+; Wind section
+; ------------------------------------------------------------------------------
+;
+begin wind ;
+    density                 1.225 ; 
+    wsp                     [windspeed]  ;
+    tint                    0.01 ; +- 0.5 and 1.0% for OJF according to Fanzhong
+    horizontal_input        1     ; 0=false, 1=true
+    windfield_rotations     [wyaw]  [wtilt]  0.0 ; yaw, tilt, rotation
+    ; global coordinates for the centre start point of the turbulence box
+    center_pos0             0  0   0;
+    ;0=none,1=constant (vertically uniform wind speed) ,2=log, 3=power, 4=linear 
+    shear_format            [shear_type]  [shear_exp] ;
+    turb_format             [turb_format]  ; 0=none, 1=mann, 2=flex
+    tower_shadow_method     [tower_shadow] ; 0=none, 1=pot flow, 2=jet, 4=jet_2
+[windramp]    wind_ramp_factor   0.0 [t1_windramp] 0 1.0 ;
+;    
+    begin mann;
+    ; L, alfaeps, gamma, seed, highfrq compensation
+    create_turb_parameters 29.4 1.0 3.7 [turb_seed] 1.0 ;
+        filename_u    ./turb/[turb_base_name]u.bin ;      keyword25
+        filename_v    ./turb/[turb_base_name]v.bin ;  
+        filename_w    ./turb/[turb_base_name]w.bin ;
+        box_dim_u    [turb_grid_x]  [turb_dx] ;                           
+        box_dim_v    [turb_grid_yz] [turb_dy];                            
+        box_dim_w    [turb_grid_yz] [turb_dz];                        
+    std_scaling   1.0 0.8 0.5 ;
+    end mann;
+;
+end wind;
+;
+; ------------------------------------------------------------------------------
+; Section Aero
+; ------------------------------------------------------------------------------
+;
+; 
+begin aero ;
+    nblades  1;
+    ; NOTE TO SELF: this is not the rotation vector! It indicates suction and
+    ; pressure side to link aero and structural frames of reference
+    ; vector pointing from pressure to suction side
+    hub_vec blade 2;
+    link 1 mbdy_c2_def blade;
+    ae_filename        ./data/[ae_file];      
+    pc_filename        ./data/[pc_file];
+    induction_method   [induction_method] ; 0=none, 1=normal, 2=near weake
+    aerocalc_method    [aerocalc_method]  ; 0=no aero, 1=with aerodynamics
+    aerosections       [aerosections] ;
+    ae_sets            [aeset];
+    tiploss_method     [tiploss] ;     0=none, 1=prandtl   
+    dynstall_method    [dynstall] ;    0=none, 1=stig øye method,2=mhh method
+    ;
+end aero ;
+;
+[vertical]begin aerodrag;
+[vertical]    begin aerodrag_element;
+[vertical]        mbdy_name balance_arm;
+[vertical]        aerodrag_sections uniform 10;
+[vertical]        update_states 0;
+[vertical]        nsec 4;
+[vertical]        ; Distance in [m] along the main_body c2_def line.
+[vertical]        ; Positive directed from node 1 to node “last”.
+[vertical]        sec   1   0.00    0.0   0.00;
+[vertical]        sec   2   0.132   0.0   0.00;
+[vertical]        sec   3   0.133   1.2   0.05;
+[vertical]        sec   4   0.304   1.2   0.05;
+[vertical]    end aerodrag_element;
+[vertical]end aerodrag;
+;
+begin output;
+    filename results/[case_id];
+    time [t0] [time_stop];
+    buffer 20 ;
+    general time ;
+    data_format  [out_format];
+    ; ------------------------------------------------
+    ; BALANCE FORCES AND MOMENTS
+    ; ------------------------------------------------
+    mbdy momentvec balance_arm 1 0 balance_arm # balance ;
+    mbdy forcevec  balance_arm 1 0 balance_arm # balance ;
+    ; ------------------------------------------------
+    ; BLADE AERODYNAMICS
+    ; ------------------------------------------------
+    ;
+    aero vrel 1 0.2;
+    aero vrel 1 0.3;
+    aero vrel 1 0.4;
+    aero vrel 1 0.5;
+    aero vrel 1 0.55;
+    aero vrel 1 0.6;
+    ;
+    aero alfa 1 0.2;
+    aero alfa 1 0.3;
+    aero alfa 1 0.4;
+    aero alfa 1 0.5;
+    aero alfa 1 0.55;
+    aero alfa 1 0.6;
+    ;
+    aero cl   1 0.2;
+    aero cl   1 0.3;
+    aero cl   1 0.4;
+    aero cl   1 0.5;
+    aero cl   1 0.55;
+    aero cl   1 0.6;
+    ;
+    aero cd   1 0.2;
+    aero cd   1 0.3;
+    aero cd   1 0.4;
+    aero cd   1 0.5;
+    aero cd   1 0.55;
+    aero cd   1 0.6;
+    ;
+    ; ------------------------------------------------
+    ; BLADE FORCES AND DISPLACEMENTS
+    ; ------------------------------------------------
+    mbdy momentvec blade 1 2 local # blade root strain gauge;
+    mbdy momentvec blade 4 2 local # blade 30% strain gauge ;
+    ; is there a difference now?
+    mbdy momentvec blade 1 2 blade # blade root strain gauge;
+    mbdy momentvec blade 4 2 blade # blade 30% strain gauge ;
+    ; forces
+    mbdy forcevec  blade 1 2 blade # blade root strain gauge;
+    mbdy forcevec  blade 4 2 blade # blade 30% strain gauge ;
+    ; blade tip rotation
+    aero rotation 1   3   0.4    1;
+    aero rotation 1   3   0.555  1;
+    ; blade displacements
+    mbdy state pos blade  1 0.0 blade;
+    mbdy state pos blade  1 1.0 blade;
+    mbdy state pos blade  2 1.0 blade;
+    mbdy state pos blade  3 1.0 blade;
+    mbdy state pos blade  4 1.0 blade;
+    mbdy state pos blade  5 1.0 blade;
+    mbdy state pos blade  6 1.0 blade;
+    mbdy state pos blade  7 1.0 blade;
+    mbdy state pos blade  8 1.0 blade;
+    mbdy state pos blade  9 1.0 blade;
+    mbdy state pos blade 10 1.0 blade;
+    mbdy state pos blade 11 1.0 blade;
+end output;
+exit;

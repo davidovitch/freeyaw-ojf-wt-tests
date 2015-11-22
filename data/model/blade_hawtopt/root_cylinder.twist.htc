@@ -1,0 +1,103 @@
+sec 1   [x1]     0     0.162   [tw1];
+sec 2   [x2]     0     0.185   [tw2];
+sec 3   [x3]     0     0.208   [tw3];
+sec 4   [x4]     0     0.231   [tw4];
+sec 5   [x5]     0     0.255   [tw5];
+sec 6   [x6]     0     0.278   [tw6];
+sec 7   [x7]     0     0.301   [tw7];
+sec 8   [x8]     0     0.324   [tw8];
+sec 9   [x9]     0     0.347   [tw9];
+sec 10   [x10]     0     0.370   [tw10];
+sec 11   [x11]     0     0.393   [tw11];
+sec 12   [x12]     0     0.416   [tw12];
+sec 13   [x13]     0     0.440   [tw13];
+sec 14   [x14]     0     0.463   [tw14];
+sec 15   [x15]     0     0.486   [tw15];
+sec 16   [x16]     0     0.509   [tw16];
+sec 17   [x17]     0     0.532   [tw17];
+sec 18   [x18]     0     0.555   [tw18];
+sec 19   [x19]     0     0.578   [tw19];
+sec 20   [x20]     0     0.601   [tw20];
+sec 21   [x21]     0     0.625   [tw21];
+sec 22   [x22]     0     0.648   [tw22];
+sec 23   [x23]     0     0.671   [tw23];
+sec 24   [x24]     0     0.694   [tw24];
+sec 25   [x25]     0     0.717   [tw25];
+
+master.tags_def['[tw1]']  =  -9.562
+master.tags_def['[tw2]']  =  -9.641
+master.tags_def['[tw3]']  =  -9.047
+master.tags_def['[tw4]']  =  -8.165
+master.tags_def['[tw5]']  =  -7.364
+master.tags_def['[tw6]']  =  -6.612
+master.tags_def['[tw7]']  =  -6.172
+master.tags_def['[tw8]']  =  -5.797
+master.tags_def['[tw9]']  =  -5.575
+master.tags_def['[tw10]']  =  -5.405
+master.tags_def['[tw11]']  =  -5.276
+master.tags_def['[tw12]']  =  -5.153
+master.tags_def['[tw13]']  =  -5.027
+master.tags_def['[tw14]']  =  -4.861
+master.tags_def['[tw15]']  =  -4.669
+master.tags_def['[tw16]']  =  -4.434
+master.tags_def['[tw17]']  =  -4.151
+master.tags_def['[tw18]']  =  -3.841
+master.tags_def['[tw19]']  =  -3.476
+master.tags_def['[tw20]']  =  -3.102
+master.tags_def['[tw21]']  =  -2.709
+master.tags_def['[tw22]']  =  -2.319
+master.tags_def['[tw23]']  =  -1.933
+master.tags_def['[tw24]']  =  -1.500
+master.tags_def['[tw25]']  =  -0.813
+
+master.tags_def['[z1]'] = 0.162
+master.tags_def['[z2]'] = 0.185
+master.tags_def['[z3]'] = 0.208
+master.tags_def['[z4]'] = 0.231
+master.tags_def['[z5]'] = 0.255
+master.tags_def['[z6]'] = 0.278
+master.tags_def['[z7]'] = 0.301
+master.tags_def['[z8]'] = 0.324
+master.tags_def['[z9]'] = 0.347
+master.tags_def['[z10]'] = 0.370
+master.tags_def['[z11]'] = 0.393
+master.tags_def['[z12]'] = 0.416
+master.tags_def['[z13]'] = 0.440
+master.tags_def['[z14]'] = 0.463
+master.tags_def['[z15]'] = 0.486
+master.tags_def['[z16]'] = 0.509
+master.tags_def['[z17]'] = 0.532
+master.tags_def['[z18]'] = 0.555
+master.tags_def['[z19]'] = 0.578
+master.tags_def['[z20]'] = 0.601
+master.tags_def['[z21]'] = 0.625
+master.tags_def['[z22]'] = 0.648
+master.tags_def['[z23]'] = 0.671
+master.tags_def['[z24]'] = 0.694
+master.tags_def['[z25]'] = 0.717
+
+master.tags_def['[x1-nosweep]'] =  0.0
+master.tags_def['[x2-nosweep]'] =  0.0
+master.tags_def['[x3-nosweep]'] =  0.0
+master.tags_def['[x4-nosweep]'] =  0.0
+master.tags_def['[x5-nosweep]'] =  0.0
+master.tags_def['[x6-nosweep]'] =  0.0
+master.tags_def['[x7-nosweep]'] =  0.0
+master.tags_def['[x8-nosweep]'] =  0.0
+master.tags_def['[x9-nosweep]'] =  0.0
+master.tags_def['[x10-nosweep]'] =  0.0
+master.tags_def['[x11-nosweep]'] =  0.0
+master.tags_def['[x12-nosweep]'] =  0.0
+master.tags_def['[x13-nosweep]'] =  0.0
+master.tags_def['[x14-nosweep]'] =  0.0
+master.tags_def['[x15-nosweep]'] =  0.0
+master.tags_def['[x16-nosweep]'] =  0.0
+master.tags_def['[x17-nosweep]'] =  0.0
+master.tags_def['[x18-nosweep]'] =  0.0
+master.tags_def['[x19-nosweep]'] =  0.0
+master.tags_def['[x20-nosweep]'] =  0.0
+master.tags_def['[x21-nosweep]'] =  0.0
+master.tags_def['[x22-nosweep]'] =  0.0
+master.tags_def['[x23-nosweep]'] =  0.0
+master.tags_def['[x24-nosweep]'] =  0.0
+master.tags_def['[x25-nosweep]'] =  0.0

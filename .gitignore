@@ -1,5 +1,7 @@
 data/raw*
 *.pyc
 symlinks/*
-database
+database/*
+data/calibrated/*
+data/calibration-WIP/*
 

@@ -459,9 +459,10 @@ def convert_pkl_index_df(path_db, db_id='symlinks'):
         df_dict['runid'].append(runid)
 
     df = pd.DataFrame(df_dict)
+    df.sort_values('basename', inplace=True)
     df.to_hdf(fname + '.h5', 'table', complevel=9, complib='blosc')
-    df.to_csv(fname + '.csv')
-    df.to_excel(fname + '.xls')
+    df.to_csv(fname + '.csv', index=False)
+    df.to_excel(fname + '.xls', index=False)
 
 
 def build_db(path_db, prefix, **kwargs):
@@ -503,8 +504,8 @@ def build_db(path_db, prefix, **kwargs):
         Pandas DataFrame.
 
     """
-    folder_df = kwargs.get('path_df', 'DataFrames/')
-    folder_csv = kwargs.get('path_df', 'CSV/')
+    folder_df = kwargs.get('folder_df', 'data/calibrated/DataFrame/')
+    folder_csv = kwargs.get('folder_csv', 'data/calibrated/CSV/')
     output = kwargs.get('output', prefix)
     dashplot = kwargs.get('dashplot', False)
     calibrate = kwargs.get('calibrate', True)
@@ -531,6 +532,16 @@ def build_db(path_db, prefix, **kwargs):
     # create the figure folder if it doesn't exist
     try:
         os.mkdir(path_db+'figures_%s/' % output)
+    except OSError:
+        pass
+
+    try:
+        os.mkdir(folder_df)
+    except OSError:
+        pass
+
+    try:
+        os.mkdir(folder_csv)
     except OSError:
         pass
 
@@ -600,9 +611,9 @@ def build_db(path_db, prefix, **kwargs):
             pass
 
         if dataframe:
-            ftarget = os.path.join(path_db, folder_df, resfile + '.h5')
+            ftarget = os.path.join(folder_df, resfile + '.h5')
             df = res.to_df(ftarget, complevel=9, complib='blosc')
-            df.to_csv(os.path.join(path_db, folder_csv, resfile + '.csv'))
+            df.to_csv(os.path.join(folder_csv, resfile + '.csv'))
             if df_stats is None:
                 # only take the unique entries, cnames contains all possible
                 # mappings

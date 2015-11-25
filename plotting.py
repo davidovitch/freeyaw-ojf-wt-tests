@@ -1115,12 +1115,9 @@ class A4Tuned:
         # the pad between the legend handle and text
         #mpl.rcParams['legend.handletextpad'] = 2
         # the pad between the axes and legend border
-        #mpl.rcParams['legend.borderaxespad'] = 2
+        mpl.rcParams['legend.borderaxespad'] = 0
         # the spacing between columns
         #mpl.rcParams['legend.columnspacing'] = 2
-
-
-
 
     def setup(self, figfile, **kwargs):
         """
@@ -1365,6 +1362,7 @@ class A4Tuned:
         # determine the number of subplots and corresponding A4 or A3 format
         # 6 subplots per A4
         channels = kwargs.get('channels', None)
+        self.interactive = kwargs.get('interactive', False)
 
         if channels:
             nr_channels = len(channels)

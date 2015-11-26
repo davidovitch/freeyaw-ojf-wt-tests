@@ -21,8 +21,10 @@ The results have been discussed in much more detail in the PhD thesis of David V
 
 When referring to the this data-set, please cite the above mentioned PhD thesis.
 
-This repository does not include that raw and calibrated result files. The current version of this data set is [v2015-11-26](https://data.deic.dk/shared/62ffdf2d57c8a0133a7f3a43671d0e23) and contains the following:
+This Github repository does not include the raw and calibrated result files, but has to be downloaded separately due to its size. The current version of the data set is [v2015-11-26](https://data.deic.dk/shared/62ffdf2d57c8a0133a7f3a43671d0e23) and contains the following:
 
-* unedited, raw result files: [data/raw](https://data.deic.dk/shared/2d9ae456b8cbefd0b399f9f1403f4497)
-* calibrated, unified result files, in pandas.DataFrame HDF5 format: [calibrated/DataFrame](https://data.deic.dk/shared/98ff753fd65e9ee589a5e11d837a20a1)
-* calibrated, unified result files, in CSV format (plain text): [calibrated/CSV](https://data.deic.dk/shared/bcccf37b2adf03cd56652974603c541b)
+* unedited, raw result files: [data/raw](https://data.deic.dk/shared/2d9ae456b8cbefd0b399f9f1403f4497) (5.5GB)
+* calibrated, unified result files, in pandas.DataFrame HDF5 format: [calibrated/DataFrame](https://data.deic.dk/shared/98ff753fd65e9ee589a5e11d837a20a1) (5.4GB)
+* calibrated, unified result files, in CSV format (plain text): [calibrated/CSV](https://data.deic.dk/shared/bcccf37b2adf03cd56652974603c541b) (3.8GB)
+
+These data files are compressed with [7zip](http://www.7-zip.org/) and the archives are split in parts of maximum 1000MB.

@@ -444,8 +444,12 @@ def symlinks_to_dcsweep(source_folder, path_db, db_id):
 def convert_pkl_index_df(path_db, db_id='symlinks'):
     """
     Convert the pickled database index db_index and db_index_runid to a
-    DataFrame. The database is simply a dictionary holding (basename,runid)
-    key/value pairs (runid has it the other way around)
+    DataFrame. The database is a dictionary holding (basename,runid)
+    key/value pairs (runid has it the other way around).
+    Additionally, the file name is scanned for other known patterns such as
+    dc, wind speeds, type of blades, type of run, etc. All these values
+    are then placed in respective columns so you can more easily select only
+    those cases you are interested in.
     """
 
 #    path_db += db_id + '/'
@@ -454,16 +458,88 @@ def convert_pkl_index_df(path_db, db_id='symlinks'):
     with open(fname + '.pkl') as f:
         db_index = pickle.load(f)
 
-    df_dict = {'basename':[], 'runid':[]}
+    df_dict = {'basename':[], 'runid':[], 'dc':[], 'blades':[], 'yaw_mode':[],
+               'dcsweep':[], 'rpm_change':[], 'coning':[], 'yaw_mode2':[],
+               'the_rest':[], 'windspeed':[], 'sweepid':[], 'month':[], 'day':[]}
+    blades = set(['flexies', 'flex', 'stiffblades', 'stiff', 'samoerai'])
+    onoff = set(['spinup', 'spinupfast', 'spinuppartial', 'slowdown',
+                 'speedup', 'shutdown', 'spinningdown', 'startup'])
+    allitems = set([])
+    ignore = set(['basename', 'runid', 'month', 'day'])
+
     for basename, runid in db_index.iteritems():
         df_dict['basename'].append(basename)
         df_dict['runid'].append(runid)
+        df_dict['month'].append(runid[:2])
+        df_dict['day'].append(runid[2:4])
+
+        # get as much out of the file name as possible
+        items = basename.split('_')
+        allitems = allitems | set(items)
+        found = {k:False for k in df_dict.keys()}
+        therest = []
+        for k in items:
+            if k == 'dcsweep':
+                df_dict['dcsweep'].append(k)
+                found['dcsweep'] = True
+                if len(runid) > 13:
+                    df_dict['runid'][-1] = runid[:-2]
+                    df_dict['sweepid'].append(runid[-2:])
+                    found['sweepid'] = True
+            elif k.startswith('dc'):
+                # in case that fails, we don't know: like when dc is
+                # something like 0.65-0.70
+                try:
+                    df_dict['dc'].append(float(k.replace('dc', '')))
+                except ValueError:
+                    df_dict['dc'].append(-1.0)
+                found['dc'] = True
+            elif k in blades:
+                df_dict['blades'].append(k)
+                found['blades'] = True
+            elif k.find('yaw') > -1:
+                if not found['yaw_mode']:
+                    df_dict['yaw_mode'].append(k)
+                    found['yaw_mode'] = True
+                else:
+                    df_dict['yaw_mode2'].append(k)
+                    found['yaw_mode2'] = True
+            elif k.find('coning') > -1:
+                df_dict['coning'].append(k)
+                found['coning'] = True
+            elif k in onoff and not found['rpm_change']:
+                df_dict['rpm_change'].append(k)
+                found['rpm_change'] = True
+            elif k[-2:] == 'ms':
+                try:
+                    df_dict['windspeed'].append(float(k[:-2]))
+                except:
+                    df_dict['windspeed'].append(-1.0)
+                found['windspeed'] = True
+            elif basename.find(k) < 0 or runid.find(k) < 0:
+                therest.append(k)
+
+        df_dict['the_rest'].append('_'.join(therest))
+        found['the_rest'] = True
+
+        for key, value in found.iteritems():
+            if not value and key not in ignore:
+                # to make sure dc items are floats (no mixing of datatypes)
+                if key == 'dc' or key == 'windspeed':
+                    df_dict[key].append(-1.0)
+                else:
+                    df_dict[key].append('')
+
+    for k in sorted(allitems):
+        print(k)
+
+    misc.check_df_dict(df_dict)
 
     df = pd.DataFrame(df_dict)
     df.sort_values('basename', inplace=True)
     df.to_hdf(fname + '.h5', 'table', complevel=9, complib='blosc')
     df.to_csv(fname + '.csv', index=False)
-    df.to_excel(fname + '.xls', index=False)
+    df.to_excel(fname + '.xlsx', index=True)
 
 
 def dc_from_casename(case):

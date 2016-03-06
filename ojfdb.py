@@ -22,6 +22,7 @@ import pandas as pd
 import ojfresult
 import plotting
 import ojf_post
+import misc
 
 PATH_DB = 'database/'
 OJFPATH_RAW = 'data/raw/'
@@ -465,6 +466,20 @@ def convert_pkl_index_df(path_db, db_id='symlinks'):
     df.to_excel(fname + '.xls', index=False)
 
 
+def dc_from_casename(case):
+        # try to read the dc from the case file name
+        items = case.split('_')
+        for k in items:
+            if k.startswith('dc'):
+                # in case that fails, we don't know: like when dc is
+                # something like 0.65-0.70
+                try:
+                    return float(k.replace('dc', ''))
+                except ValueError:
+                    return -1.0
+        return np.nan
+
+
 def build_db(path_db, prefix, **kwargs):
     """
     Create the statistics for each OJF case in the index database
@@ -512,6 +527,8 @@ def build_db(path_db, prefix, **kwargs):
     key_inc = kwargs.get('key_inc', [])
     resample = kwargs.get('resample', False)
     dataframe = kwargs.get('dataframe', False)
+    save_df = kwargs.get('save_df', False)
+    save_df_csv = kwargs.get('save_df_csv', False)
     continue_build = kwargs.get('continue_build', True)
     db_index_file = kwargs.get('db_index_file', 'db_index_%s.pkl' % prefix)
 
@@ -522,7 +539,7 @@ def build_db(path_db, prefix, **kwargs):
 
     # remove the files we've already done
     if continue_build:
-        source_folder = os.path.join(path_db, folder_df)
+        source_folder = os.path.join(folder_df)
         for root, dirs, files in os.walk(source_folder, topdown=True):
             for fname in files:
                 db_index.pop(fname[:-3])
@@ -611,9 +628,13 @@ def build_db(path_db, prefix, **kwargs):
             pass
 
         if dataframe:
-            ftarget = os.path.join(folder_df, resfile + '.h5')
+            if save_df:
+                ftarget = os.path.join(folder_df, resfile + '.h5')
+            else:
+                ftarget = None
             df = res.to_df(ftarget, complevel=9, complib='blosc')
-            df.to_csv(os.path.join(folder_csv, resfile + '.csv'))
+            if save_df_csv:
+                df.to_csv(os.path.join(folder_csv, resfile + '.csv'))
             if df_stats is None:
                 # only take the unique entries, cnames contains all possible
                 # mappings
@@ -639,15 +660,20 @@ def build_db(path_db, prefix, **kwargs):
                 df_stats = True
 
             def add_stats(stats, df_dict):
-                df_dict['index'] = resfile
+                df_dict['index'].append(resfile)
                 for col in stats.index:
                     if col == 'time':
                         df_dict[col].append(res.dspace.time[-1])
-                    df_dict[col].append(stats[col])
+                    else:
+                        df_dict[col].append(stats[col])
 
                 # and empty items for those for which there is no data
                 for col in (set(all_c_columns) - {str(k) for k in stats.index}):
-                    df_dict[col].append(np.nan)
+                    if col == 'duty_cycle':
+                        dc = dc_from_casename(resfile)
+                        df_dict[col].append(dc)
+                    else:
+                        df_dict[col].append(np.nan)
                 return df_dict
 
             stats_mean = add_stats(df.mean(), stats_mean)
@@ -656,26 +682,52 @@ def build_db(path_db, prefix, **kwargs):
             stats_std = add_stats(df.std(), stats_std)
             stats_range = add_stats(df.max()-df.min(), stats_range)
 
+#        if nr > 100:
+#            break
+
     if df_stats:
-        fname = os.path.join(path_db, 'db_stats_%s_mean.h5' % output)
-        df = pd.DataFrame(stats_mean)
-        df.to_hdf(fname, 'table', compression=9, complib='blosc')
+        try:
+            fname = os.path.join(path_db, 'db_stats_%s_mean.h5' % output)
+            df = pd.DataFrame(stats_mean)
+            df.to_hdf(fname, 'table', compression=9, complib='blosc')
+            fname = os.path.join(path_db, 'db_stats_%s_mean.xlsx' % output)
+            df.to_excel(fname)
 
-        fname = os.path.join(path_db, 'db_stats_%s_min.h5' % output)
-        df = pd.DataFrame(stats_min)
-        df.to_hdf(fname, 'table', compression=9, complib='blosc')
+            fname = os.path.join(path_db, 'db_stats_%s_min.h5' % output)
+            df = pd.DataFrame(stats_min)
+            df.to_hdf(fname, 'table', compression=9, complib='blosc')
+            fname = os.path.join(path_db, 'db_stats_%s_min.xlsx' % output)
+            df.to_excel(fname)
 
-        fname = os.path.join(path_db, 'db_stats_%s_max.h5' % output)
-        df = pd.DataFrame(stats_max)
-        df.to_hdf(fname, 'table', compression=9, complib='blosc')
+            fname = os.path.join(path_db, 'db_stats_%s_max.h5' % output)
+            df = pd.DataFrame(stats_max)
+            df.to_hdf(fname, 'table', compression=9, complib='blosc')
+            fname = os.path.join(path_db, 'db_stats_%s_max.xlsx' % output)
+            df.to_excel(fname)
 
-        fname = os.path.join(path_db, 'db_stats_%s_std.h5' % output)
-        df = pd.DataFrame(stats_std)
-        df.to_hdf(fname, 'table', compression=9, complib='blosc')
+            fname = os.path.join(path_db, 'db_stats_%s_std.h5' % output)
+            df = pd.DataFrame(stats_std)
+            df.to_hdf(fname, 'table', compression=9, complib='blosc')
+            fname = os.path.join(path_db, 'db_stats_%s_std.xlsx' % output)
+            df.to_excel(fname)
 
-        fname = os.path.join(path_db, 'db_stats_%s_range.h5' % output)
-        df = pd.DataFrame(stats_range)
-        df.to_hdf(fname, 'table', compression=9, complib='blosc')
+            fname = os.path.join(path_db, 'db_stats_%s_range.h5' % output)
+            df = pd.DataFrame(stats_range)
+            df.to_hdf(fname, 'table', compression=9, complib='blosc')
+            fname = os.path.join(path_db, 'db_stats_%s_range.xlsx' % output)
+            df.to_excel(fname)
+
+        except ValueError:
+            print('stead_mean')
+            misc.check_df_dict(stats_mean)
+            print('stats_min')
+            misc.check_df_dict(stats_min)
+            print('stats_max')
+            misc.check_df_dict(stats_max)
+            print('stats_std')
+            misc.check_df_dict(stats_std)
+            print('stats_range')
+            misc.check_df_dict(stats_range)
 
     # load an existing database first, update
     try:

@@ -3193,6 +3193,22 @@ class ComboResults(BladeStrainFile, OJFLogFile, DspaceMatFile):
             channels.append(self.dspace.labels_ch['Tower Top acc Z'])
             channels.append(self.dspace.labels_ch['Voltage filtered'])
             channels.append(self.dspace.labels_ch['Current Filter'])
+            if 'Azimuth' in self.dspace.labels_ch:
+                channels.append(self.dspace.labels_ch['Azimuth'])
+            if 'RPM Estimator v1' in self.dspace.labels_ch:
+                channels.append(self.dspace.labels_ch['RPM Estimator v1'])
+            if 'RPM Estimator v2' in self.dspace.labels_ch:
+                channels.append(self.dspace.labels_ch['RPM Estimator v2'])
+            if 'Duty Cycle' in self.dspace.labels_ch:
+                channels.append(self.dspace.labels_ch['Duty Cycle'])
+            if 'Power' in self.dspace.labels_ch:
+                channels.append(self.dspace.labels_ch['Power'])
+            if 'Power2' in self.dspace.labels_ch:
+                channels.append(self.dspace.labels_ch['Power2'])
+            if 'Sound' in self.dspace.labels_ch:
+                channels.append(self.dspace.labels_ch['Sound'])
+            if 'Sound_gain' in self.dspace.labels_ch:
+                channels.append(self.dspace.labels_ch['Sound_gain'])
 
         return ylabels, rawdata, channels
 

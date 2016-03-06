@@ -15,6 +15,7 @@ import wafo
 import pylab as plt
 import matplotlib as mpl
 
+
 def CoeffDeter(obs, model):
     """
     Coefficient of determination
@@ -66,6 +67,7 @@ def calc_sample_rate(time, rel_error=1e-4):
 #        raise AssertionError
     return 1/deltas.mean()
 
+
 def findIntersection(fun1, fun2, x0):
     """
     Find Intersection points of two functions
@@ -94,6 +96,7 @@ def findIntersection(fun1, fun2, x0):
 
     """
     return sp.optimize.fsolve(lambda x : fun1(x) - fun2(x), x0)
+
 
 # TODO: replace this with some of the pyrain functions
 def find0(array, xi=0, yi=1, verbose=False, zerovalue=0.0):
@@ -207,6 +210,7 @@ def find0(array, xi=0, yi=1, verbose=False, zerovalue=0.0):
 
     return y0, y0i
 
+
 def remove_items(list, value):
     """Remove items from list
     The given list wil be returned withouth the items equal to value.
@@ -225,6 +229,7 @@ def remove_items(list, value):
             del list[k]
 
     return list
+
 
 class DictDB(object):
     """
@@ -334,8 +339,6 @@ class DictDB(object):
                 self.dict_sel[row] = self.dict_db[row]
 
 
-
-
 class DictDiff(object):
     """
     Calculate the difference between two dictionaries as:
@@ -377,6 +380,19 @@ class DictDiff(object):
     def unchanged(self):
         t=set(o for o in self.intersect if self.past_d[o] == self.current_d[o])
         return t
+
+
+def check_df_dict(df_dict):
+    """
+    Verify if the dictionary that needs to be transferred to a Pandas DataFrame
+    makes sense
+    """
+    collens = {}
+    for col, values in df_dict.iteritems():
+        print('%6i : %30s' % (len(values), col), type(values))
+        collens[col] = len(values)
+    return collens
+
 
 def read_excel(ftarget, sheetname, row_sel=[], col_sel=[], data_fmt='list'):
     """
@@ -445,6 +461,7 @@ def read_excel(ftarget, sheetname, row_sel=[], col_sel=[], data_fmt='list'):
     book.unload_sheet(sheetname)
     return rows
 
+
 def fit_exp(time, data, checkplot=True, method='linear', func=None, C0=0.0):
     """
     Note that all values in data have to be possitive for this method to work!
@@ -490,6 +507,7 @@ def fit_exp(time, data, checkplot=True, method='linear', func=None, C0=0.0):
         plt.grid()
 
     return fit, A, K, C
+
 
 def curve_fit_exp(time, data, checkplot=True, weights=None):
     """
@@ -548,6 +566,7 @@ def curve_fit_exp(time, data, checkplot=True, weights=None):
         plt.grid()
 
     return
+
 
 # TODO: this should be a class, so you can more easily accesss all the
 # data inbetween, switch on off block detection, use other exponential fit

@@ -2,9 +2,14 @@
 freeyaw-ojf-wt-tests
 ====================
 
+```This repository is still a work-in-progress (WIP). The documentation is
+incomplete at this point and not all of the scripts to reproduce the results are
+in the repository yet. During the months March and May 2016 the missing links
+will be added.```
+
 This repository holds the post-processing utilities that have been used to
 process wind tunnel measurements performed at the TU Delft Open Jet Facility.
-A 3 bladed, downwind, free yawing wind turbine was tested during 2 campaigns:
+A three bladed, downwind, free yawing wind turbine was tested during 2 campaigns:
 one in February 2012, and a second one in April 2012. These tests took place
 within the framework of a PhD project that took place at DTU Wind Energy in
 Denmark (some additional information can be found
@@ -45,4 +50,53 @@ and contains the following:
 
 These data files are compressed with [7zip](http://www.7-zip.org/) and the
 archives are split in parts of maximum 1000MB.
+
+
+Description of the channels
+---------------------------
+
+Channel names as used in the calibrated and unified result files as used in:
+
+* [calibrated/DataFrame](https://data.deic.dk/shared/98ff753fd65e9ee589a5e11d837a20a1)
+* [calibrated/CSV](https://data.deic.dk/shared/bcccf37b2adf03cd56652974603c541b)
+
+Channel header names:
+
+* ```time``` : time stamp [s]
+* ```rpm``` : rotor speed [rpm]
+* ```yaw_angle``` : yaw inflow angle [deg]
+* ```tower_strain_fa``` : tower base for-aft (FA) bending moment in [Nm], based on tower
+base straing gauges
+* ```tower_strain_ss``` : tower base side-side (SS) bending moment in [Nm], based on tower
+base straing gauges
+* ```towertop_acc_fa``` : acceleration in for-aft direction, measured from an
+accelerometer placed in the nacelle
+* ```towertop_acc_ss``` : acceleration in side-side direction, measured from an
+accelerometer placed in the nacelle
+* ```towertop_acc_z``` : acceleration in vertical direction, measured from an
+accelerometer placed in the nacelle
+* ```voltage_filt``` : voltage measurement
+* ```current_filt``` : current measurement
+* ```rotor_azimuth``` : rotor azimuth position, where 180 degrees refers to
+blade 3 pointing down (in tower shadow)
+* ```duty_cycle``` :
+* ```power``` : amount of power being dissipated in the resistance. Note that
+this excludes the losses in the generator, the PWM module, cabling, and the mechanical
+losses (bearings)
+* ```power2``` : not reliable
+* ```sound``` : not reliable
+* ```sound_gain``` : not reliable
+* ```hs_trigger``` :
+* ```hs_trigger_start_end``` :
+* ```rpm_pulse``` : rotor speed [rpm] based on the one pulse per revolution
+measurement
+* ```temperature``` : wind tunnel temperature [deg C]
+* ```wind_speed``` : wind speed in wind tunnel [m/s]
+* ```static_p``` : static pressure in wind tunnel [kPa]
+* ```blade2_root``` :
+* ```blade2_30pc``` :
+* ```blade1_root``` :
+* ```blade1_30pc``` :
+* ```blade_rpm_pulse``` : rotor speed [rpm] based on the one pulse per
+revolution measurement, based on pulse sensor on the wireless blade strain DAQ
 

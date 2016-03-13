@@ -2256,6 +2256,36 @@ class Cases:
         ax = fig.add_subplot(nr_rows, nr_cols, plot_nr)
 
 
+def subplots(nrows=1, ncols=1, figsize=(12,8), dpi=120, num=0):
+    """
+
+    Equivalent function of pyplot.subplots(). The difference is that this one
+    is not interactive and is used with backend plotting only.
+
+    Parameters
+    ----------
+    nrows=1, ncols=1, figsize=(12,8), dpi=120
+
+    num : dummy variable for compatibility
+
+    Returns
+    -------
+    fig, axes
+
+
+    """
+
+    fig = mpl.figure.Figure(figsize=figsize, dpi=dpi)
+    canvas = FigCanvas(fig)
+    fig.set_canvas(canvas)
+    axes = np.ndarray((nrows, ncols), dtype=np.object)
+    plt_nr = 1
+    for row in range(nrows):
+        for col in range(ncols):
+            axes[row,col] = fig.add_subplot(nrows, ncols, plt_nr)
+            plt_nr += 1
+    return fig, axes
+
 
 if __name__ == '__main__':
 

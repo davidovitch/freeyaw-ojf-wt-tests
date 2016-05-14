@@ -459,17 +459,20 @@ def convert_pkl_index_df(path_db, db_id='symlinks'):
         db_index = pickle.load(f)
 
     df_dict = {'basename':[], 'runid':[], 'dc':[], 'blades':[], 'yaw_mode':[],
-               'dcsweep':[], 'rpm_change':[], 'coning':[], 'yaw_mode2':[],
-               'the_rest':[], 'windspeed':[], 'sweepid':[], 'month':[], 'day':[]}
-    blades = set(['flexies', 'flex', 'stiffblades', 'stiff', 'samoerai'])
+               'run_type':[], 'rpm_change':[], 'coning':[], 'yaw_mode2':[],
+               'the_rest':[], 'windspeed':[], 'sweepid':[], 'month':[],
+               'day':[], 'runnr':[]}
+    blades = set(['flexies', 'flex', 'stiffblades', 'stiff', 'samoerai',
+                  'stffblades'])
     onoff = set(['spinup', 'spinupfast', 'spinuppartial', 'slowdown',
                  'speedup', 'shutdown', 'spinningdown', 'startup'])
     allitems = set([])
-    ignore = set(['basename', 'runid', 'month', 'day'])
+    ignore = set(['basename', 'runid', 'month', 'day', 'runnr'])
 
     for basename, runid in db_index.iteritems():
         df_dict['basename'].append(basename)
         df_dict['runid'].append(runid)
+        df_dict['runnr'].append(int(runid[9:12]))
         df_dict['month'].append(runid[:2])
         df_dict['day'].append(runid[2:4])
 
@@ -480,8 +483,8 @@ def convert_pkl_index_df(path_db, db_id='symlinks'):
         therest = []
         for k in items:
             if k == 'dcsweep':
-                df_dict['dcsweep'].append(k)
-                found['dcsweep'] = True
+                df_dict['run_type'].append(k)
+                found['run_type'] = True
                 if len(runid) > 13:
                     df_dict['runid'][-1] = runid[:-2]
                     df_dict['sweepid'].append(runid[-2:])
@@ -495,6 +498,8 @@ def convert_pkl_index_df(path_db, db_id='symlinks'):
                     df_dict['dc'].append(-1.0)
                 found['dc'] = True
             elif k in blades:
+                if k == 'stffblades':
+                    k = 'stiffblades'
                 df_dict['blades'].append(k)
                 found['blades'] = True
             elif k.find('yaw') > -1:

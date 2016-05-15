@@ -11,7 +11,7 @@ Make a database of all the test and their results
 import os
 import pickle
 #import logging
-#import copy
+from copy import copy
 import string
 import shutil
 
@@ -802,7 +802,9 @@ class ComboResults2stats_df(object):
         self.stats_range = add_stats(res.df.max()-res.df.min(), self.stats_range)
 
     def dict2df(self):
-        """Convert the DataFrame formatted dicts to DataFrames
+        """Convert the DataFrame formatted dictionaries to DataFrames. If
+        the conversion failes, perform post-mortem checks for debugging
+        purposes.
         """
         try:
             self.df_mean = pd.DataFrame(self.stats_mean)
@@ -834,33 +836,33 @@ class ComboResults2stats_df(object):
             print('stats_range')
             misc.check_df_dict(self.stats_range)
 
-    def save_all_stats(self, path_db, output, update=False):
+    def save_all_stats(self, path_db, prefix='symlinks_all', update=False):
         """Save to h5 and xlsx
         """
 
-        fname = os.path.join(path_db, 'db_stats_%s_mean.h5' % output)
+        fname = os.path.join(path_db, 'db_stats_%s_mean.h5' % prefix)
         self.df_mean.to_hdf(fname, 'table', compression=9, complib='blosc')
-        fname = os.path.join(path_db, 'db_stats_%s_mean.xlsx' % output)
+        fname = os.path.join(path_db, 'db_stats_%s_mean.xlsx' % prefix)
         self.df_mean.to_excel(fname)
 
-        fname = os.path.join(path_db, 'db_stats_%s_min.h5' % output)
+        fname = os.path.join(path_db, 'db_stats_%s_min.h5' % prefix)
         self.df_min.to_hdf(fname, 'table', compression=9, complib='blosc')
-        fname = os.path.join(path_db, 'db_stats_%s_min.xlsx' % output)
+        fname = os.path.join(path_db, 'db_stats_%s_min.xlsx' % prefix)
         self.df_min.to_excel(fname)
 
-        fname = os.path.join(path_db, 'db_stats_%s_max.h5' % output)
+        fname = os.path.join(path_db, 'db_stats_%s_max.h5' % prefix)
         self.df_max.to_hdf(fname, 'table', compression=9, complib='blosc')
-        fname = os.path.join(path_db, 'db_stats_%s_max.xlsx' % output)
+        fname = os.path.join(path_db, 'db_stats_%s_max.xlsx' % prefix)
         self.df_max.to_excel(fname)
 
-        fname = os.path.join(path_db, 'db_stats_%s_std.h5' % output)
+        fname = os.path.join(path_db, 'db_stats_%s_std.h5' % prefix)
         self.df_std.to_hdf(fname, 'table', compression=9, complib='blosc')
-        fname = os.path.join(path_db, 'db_stats_%s_std.xlsx' % output)
+        fname = os.path.join(path_db, 'db_stats_%s_std.xlsx' % prefix)
         self.df_std.to_excel(fname)
 
-        fname = os.path.join(path_db, 'db_stats_%s_range.h5' % output)
+        fname = os.path.join(path_db, 'db_stats_%s_range.h5' % prefix)
         self.df_range.to_hdf(fname, 'table', compression=9, complib='blosc')
-        fname = os.path.join(path_db, 'db_stats_%s_range.xlsx' % output)
+        fname = os.path.join(path_db, 'db_stats_%s_range.xlsx' % prefix)
         self.df_range.to_excel(fname)
 
 
@@ -1398,6 +1400,73 @@ class ojf_db:
             res = ojfresult.ComboResults(respath, resfile, silent=True,
                                          cal=calibrate)
             res.dashboard_a3(self.path_db + figfolder)
+
+    def add_staircase_steps(self, res, arg_stair):
+        """Add the statistics of a stair case analysis
+
+        Parameters
+        ----------
+
+        res : ojfresult.ComboResults
+
+        arg_stair : ndarray()
+            as given by staircase.StairCase.arg_stair
+        """
+
+        def add_to_database(res, istart, istop):
+            """
+            add the carufelly selected steady states from a stair case
+            to the database
+
+            Al stair cases are marked with _STC_%i
+            """
+            db_stats = {}
+            # dividing by 100 is safe, since we set points_per_stair=800,
+            # so we do not risque of having a non unique key
+            case = '%s_STC_%i' % (res.resfile, istart/100)
+            # stats is already a dictionary
+            db_stats[case] = res.stats.copy()
+            # save the indices into the statsdict for later reference
+            db_stats[case]['STC index resampled'] = [istart, istop]
+            # add the channel discriptions
+            db_stats[case]['dspace labels_ch'] = copy(res.dspace.labels_ch)
+            # incase there is no OJF data
+            try:
+                db_stats[case]['ojf labels'] = copy(res.ojf.labels)
+            except AttributeError:
+                pass
+
+            return db_stats
+
+        # and save into the database
+        for k in range(arg_stair.shape[1]):
+            i1 = arg_stair[0,k]
+            i2 = arg_stair[1,k]
+            # calculate all the means, std, min, max and range for each channel
+            res.statistics(i1=i1, i2=i2)
+            # and add to the database dict
+            self.db_stats.update(add_to_database(res, i1, i2))
+
+    def save_updates(self):
+        """Save any updates made to the statistics database
+        """
+        # and update the database
+        try:
+            # if it exists, update the file first before saving
+            FILE = open(os.path.join(PATH_DB, 'db_stats_%s.pkl' % self.prefix))
+            db_stats_update = pickle.load(FILE)
+            # overwrite the old entries with new ones! not the other way around
+            db_stats_update.update(self.db_stats)
+            FILE.close()
+        except IOError:
+            # no need to update an existing database file
+            db_stats_update = self.db_stats
+        # and save the database stats
+        FILE = open(os.path.join(PATH_DB, 'db_stats_%s.pkl' % self.prefix), 'wb')
+        pickle.dump(db_stats_update, FILE, protocol=2)
+        FILE.close()
+        print 'updated db: %sdb_stats_%s.pkl' % (PATH_DB, self.prefix)
+
 
 ###############################################################################
 ### PLOTS

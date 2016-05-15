@@ -9,24 +9,16 @@ time ranges so we can actually calculate how fast the yaw angle is recovering
 """
 
 # built in modules
-import pickle
 import os
-from copy import copy
 
 import numpy as np
 import pylab as plt
 
-# 3th party modules
-#import numpy as np
-# custom modules
-#import Simulations as sim
-#import plotting
-#import ojfvshawc2
-#from ojf_post import master_tags, variable_tag_func, post_launch
 import ojfdb
 import ojfresult
 import plotting
 import filters
+from staircase import StairCase
 
 PATH_DB = 'database/'
 
@@ -34,32 +26,7 @@ PATH_DB = 'database/'
 ### STEADY YAW ERR PERF
 ###############################################################################
 
-def add_to_database(res, istart, istop):
-    """
-    add the carufelly selected steady states from the forced yaw error
-    to the database
-
-    Al stair cases are marked with _STC_%i
-    """
-    db_stats = {}
-    # dividing by 100 is safe, since we set points_per_stair=800, so we do not
-    # risque of having a non unique key
-    case = '%s_STC_%i' % (res.resfile, istart/100)
-    # stats is already a dictionary
-    db_stats[case] = res.stats.copy()
-    # save the indices into the statsdict for later reference
-    db_stats[case]['STC index resampled'] = [istart, istop]
-    # add the channel discriptions
-    db_stats[case]['dspace labels_ch'] = copy(res.dspace.labels_ch)
-    # incase there is no OJF data
-    try:
-        db_stats[case]['ojf labels'] = copy(res.ojf.labels)
-    except AttributeError:
-        pass
-
-    return db_stats
-
-def results_filtering(cr, figpath, fig_descr, arg_stair):
+def results_filtering(cr, figpath, fig_descr, arg_stair, db_type='df'):
     """
     Like the ComboResults.dashboard_a3, but now include the filtered signal
     and the subtracted values.
@@ -83,9 +50,8 @@ def results_filtering(cr, figpath, fig_descr, arg_stair):
     arg_stair : array(2,n)
         Start/stop indices to n stairs
 
-    arg_st_fl : array(n) (not used)
-        array with the indices of the stairs, invalid points are masked
-
+    df_type : str, default='df'
+        df for DataFrame statistics format, pkl for pickled format (depricated)
 
     """
 
@@ -165,23 +131,13 @@ def results_filtering(cr, figpath, fig_descr, arg_stair):
                grandtitle=grandtitle, wsleft_cm=1.6, wsright_cm=1.6,
                hspace_cm=2.5, wspace_cm=7.0)
 
-    isel, db_stats = [], {}
+    isel = []
     for k in range(arg_stair.shape[1]):
-        # for the yaw angle selection: the yaw angle is steady for the
-        # whole duration of the stair, but the other measurements are not!
-        # therefore delay the starting stair point 50%
-        if fig_descr.find('YAW') > -1:
-            delta = int( (arg_stair[1,k]-arg_stair[0,k])/1.25 )
-            i1 = arg_stair[0,k]+delta
-            isel.append(np.r_[i1:arg_stair[1,k]])
-        else:
-            i1 = arg_stair[0,k]
-            isel.append(np.r_[i1:arg_stair[1,k]])
+        i1 = arg_stair[0,k]
         i2 = arg_stair[1,k]
+        isel.append(np.r_[i1:i2])
         # calculate all the means, std, min, max and range for each channel
         cr.statistics(i1=i1, i2=i2)
-        # and save into the database
-        db_stats.update(add_to_database(cr, i1, i2))
 
         # quickly check if the average RPM and actuall measurements are close
         # also assess how messy the yaw angle is bumping around
@@ -205,24 +161,6 @@ def results_filtering(cr, figpath, fig_descr, arg_stair):
         axx2.set_ylabel('Yaw angle')
 
     ppp.save_fig()
-
-    # and update the database
-    prefix = 'symlinks_all'
-    try:
-        # if it exists, update the file first before saving
-        FILE = open(os.path.join(PATH_DB, 'db_stats_%s.pkl' % prefix))
-        db_stats_update = pickle.load(FILE)
-        # overwrite the old entries with new ones! not the other way around
-        db_stats_update.update(db_stats)
-        FILE.close()
-    except IOError:
-        # no need to update an existing database file
-        db_stats_update = db_stats
-    # and save the database stats
-    FILE = open(os.path.join(PATH_DB, 'db_stats_%s.pkl' % prefix), 'wb')
-    pickle.dump(db_stats_update, FILE, protocol=2)
-    FILE.close()
-    print 'updated db: %sdb_stats_%s.pkl' % (PATH_DB, prefix)
 
     # -------------------------------------------------
     # plotting dSPACE selection
@@ -378,7 +316,7 @@ def results_filtering(cr, figpath, fig_descr, arg_stair):
     np.savetxt(figpath + cr.resfile + fig_descr, datastair)
 
 
-def freeyaw_steady_points(resfile):
+def freeyaw_steady_points(resfile, db):
     """
     Select the steady points on the forced free yaw OJF cases.
 
@@ -387,14 +325,14 @@ def freeyaw_steady_points(resfile):
 
     figpath = 'figures/forced_yaw_error/'
 
-    # we use the standard calcict cases
-    cd = ojfresult.CalibrationData
-
     respath = os.path.join(PATH_DB, 'symlinks_all/')
-    res = ojfresult.ComboResults(respath, resfile, silent=False, sync=True)
+    res = ojfresult.ComboResults(respath, resfile, silent=False, sync=True,
+                                 cal=True)
     # RPM from pulse only returns the pulses, nothing else is done
-    res._calibrate_dspace(cd.caldict_dspace_04)
-    res._calibrate_blade(cd.caldict_blade_04)
+#    # we use the standard calcict cases
+#    cd = ojfresult.CalibrationData
+#    res._calibrate_dspace(cd.caldict_dspace_04)
+#    res._calibrate_blade(cd.caldict_blade_04)
     res._resample()
     res.dashboard_a3(figpath)
 
@@ -421,14 +359,13 @@ def freeyaw_steady_points(resfile):
     # this is a more robust approach when combined with the moving the start
     # index of the stair argument more close to the end index
     ext = '_YAWargs'
-    sc = ojfresult.StairCase(plt_progress=False, pprpath=figpath,
-                figpath=figpath, figfile=resfile+'_yaw', runid=resfile+'_yaw')
+    sc = StairCase(plt_progress=False, pprpath=figpath, figpath=figpath,
+                   figfile=resfile+'_yaw', runid=resfile+'_yaw')
     time_stair, data_stair = sc.setup_filter(res.dspace.time,
                 res.dspace.data[:,iyaw], smooth_window=1.5,
                 cutoff_hz=False, dt=1, dt_treshold=2.0e-4,
                 stair_step_tresh=1.5, smoothen='moving',
                 points_per_stair=800)
-    results_filtering(res, figpath, ext, sc.arg_stair)
 
 #    # and for the thrust
 #    sc = ojfresult.StairCase(plt_progress=False, pprpath=figpath,
@@ -476,6 +413,23 @@ def freeyaw_steady_points(resfile):
 #                stair_step_tresh=0.015, smoothen='moving',
 #                points_per_stair=800)
 
+    # for the yaw angle selection: the yaw angle is steady for the
+    # whole duration of the stair, but the other measurements are not!
+    # therefore delay the starting stair point 50%
+    if ext.find('YAW') > -1:
+        delta = (sc.arg_stair[1,:] - sc.arg_stair[0,:]) / 1.25
+        delta = delta.astype(np.int)
+        sc.arg_stair[0,:] += delta
+
+    # make plots to inspect the extraction process, save stair step points in
+    # text files
+    results_filtering(res, figpath, ext, sc.arg_stair)
+
+    # save statistics of each stair step to database
+    db.add_staircase_steps(res, sc.arg_stair)
+    db.save_updates()
+
+
 def select_freeyaw():
     """
     Select all the forced free yawing cases and derive properties for
@@ -500,7 +454,7 @@ def select_freeyaw():
     for case in cases:
         # '0410_run_332'
         if not int(case.split('_')[2]) == 413:
-            freeyaw_steady_points(case)
+            freeyaw_steady_points(case, db)
         else:
             continue
 
@@ -590,6 +544,5 @@ if __name__ == '__main__':
     dummy = False
 
 #    select_freeyaw()
-#    yawerror_performance()
 
-    freeyaw_april_timings()
+#    freeyaw_april_timings()

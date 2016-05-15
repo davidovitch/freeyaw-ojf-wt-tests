@@ -473,8 +473,8 @@ def convert_pkl_index_df(path_db, db_id='symlinks'):
         df_dict['basename'].append(basename)
         df_dict['runid'].append(runid)
         df_dict['runnr'].append(int(runid[9:12]))
-        df_dict['month'].append(runid[:2])
-        df_dict['day'].append(runid[2:4])
+        df_dict['month'].append(int(runid[:2]))
+        df_dict['day'].append(int(runid[2:4]))
 
         # get as much out of the file name as possible
         items = basename.split('_')
@@ -649,6 +649,9 @@ def build_db(path_db, prefix, **kwargs):
 
     nr, nrfiles = 0, len(db_index)
 
+    # initialize the DataFrame formatted dictionary
+    CR2stats_df = ComboResults2stats_df()
+
     # and cycle through all the files present
     for resfile in db_index:
 
@@ -716,99 +719,15 @@ def build_db(path_db, prefix, **kwargs):
             df = res.to_df(ftarget, complevel=9, complib='blosc')
             if save_df_csv:
                 df.to_csv(os.path.join(folder_csv, resfile + '.csv'))
-            if df_stats is None:
-                # only take the unique entries, cnames contains all possible
-                # mappings
-                all_c_columns = list(set(res.dspace.cnames.values()))
-                all_c_columns.append('time')
-                # also add cnames for OJF and BLADE
-                if not res.isojfdata:
-                    res.ojf = ojfresult.OJFLogFile(ojffile=None)
-                all_c_columns.extend(res.ojf.cnames)
-                if not res.isbladedata:
-                    res.blade = ojfresult.BladeStrainFile(None)
-                all_c_columns.extend(res.blade.cnames)
-                stats_mean = {col:[] for col in all_c_columns}
-                stats_mean['index'] = []
-                stats_min = {col:[] for col in all_c_columns}
-                stats_min['index'] = []
-                stats_max = {col:[] for col in all_c_columns}
-                stats_max['index'] = []
-                stats_std = {col:[] for col in all_c_columns}
-                stats_std['index'] = []
-                stats_range = {col:[] for col in all_c_columns}
-                stats_range['index'] = []
-                df_stats = True
 
-            def add_stats(stats, df_dict):
-                df_dict['index'].append(resfile)
-                for col in stats.index:
-                    if col == 'time':
-                        df_dict[col].append(res.dspace.time[-1])
-                    else:
-                        df_dict[col].append(stats[col])
-
-                # and empty items for those for which there is no data
-                for col in (set(all_c_columns) - {str(k) for k in stats.index}):
-                    if col == 'duty_cycle':
-                        dc = dc_from_casename(resfile)
-                        df_dict[col].append(dc)
-                    else:
-                        df_dict[col].append(np.nan)
-                return df_dict
-
-            stats_mean = add_stats(df.mean(), stats_mean)
-            stats_min = add_stats(df.min(), stats_min)
-            stats_max = add_stats(df.max(), stats_max)
-            stats_std = add_stats(df.std(), stats_std)
-            stats_range = add_stats(df.max()-df.min(), stats_range)
+            CR2stats_df.add_all_stats(res)
 
 #        if nr > 100:
 #            break
 
     if df_stats:
-        try:
-            fname = os.path.join(path_db, 'db_stats_%s_mean.h5' % output)
-            df = pd.DataFrame(stats_mean)
-            df.to_hdf(fname, 'table', compression=9, complib='blosc')
-            fname = os.path.join(path_db, 'db_stats_%s_mean.xlsx' % output)
-            df.to_excel(fname)
-
-            fname = os.path.join(path_db, 'db_stats_%s_min.h5' % output)
-            df = pd.DataFrame(stats_min)
-            df.to_hdf(fname, 'table', compression=9, complib='blosc')
-            fname = os.path.join(path_db, 'db_stats_%s_min.xlsx' % output)
-            df.to_excel(fname)
-
-            fname = os.path.join(path_db, 'db_stats_%s_max.h5' % output)
-            df = pd.DataFrame(stats_max)
-            df.to_hdf(fname, 'table', compression=9, complib='blosc')
-            fname = os.path.join(path_db, 'db_stats_%s_max.xlsx' % output)
-            df.to_excel(fname)
-
-            fname = os.path.join(path_db, 'db_stats_%s_std.h5' % output)
-            df = pd.DataFrame(stats_std)
-            df.to_hdf(fname, 'table', compression=9, complib='blosc')
-            fname = os.path.join(path_db, 'db_stats_%s_std.xlsx' % output)
-            df.to_excel(fname)
-
-            fname = os.path.join(path_db, 'db_stats_%s_range.h5' % output)
-            df = pd.DataFrame(stats_range)
-            df.to_hdf(fname, 'table', compression=9, complib='blosc')
-            fname = os.path.join(path_db, 'db_stats_%s_range.xlsx' % output)
-            df.to_excel(fname)
-
-        except ValueError:
-            print('stead_mean')
-            misc.check_df_dict(stats_mean)
-            print('stats_min')
-            misc.check_df_dict(stats_min)
-            print('stats_max')
-            misc.check_df_dict(stats_max)
-            print('stats_std')
-            misc.check_df_dict(stats_std)
-            print('stats_range')
-            misc.check_df_dict(stats_range)
+        CR2stats_df.dict2df()
+        CR2stats_df.save_all_stats(path_db, output)
 
     # load an existing database first, update
     try:
@@ -826,6 +745,123 @@ def build_db(path_db, prefix, **kwargs):
     FILE = open(path_db + 'db_stats_%s.pkl' % output, 'wb')
     pickle.dump(db_stats_update, FILE, protocol=2)
     FILE.close()
+
+
+class ComboResults2stats_df(object):
+    """add the statistics of a given case to the statistics DataFrame
+    """
+
+    def __init__(self):
+        """Initialize all columns
+        """
+        # only take the unique entries, cnames contains all possible mappings
+        dspace = ojfresult.DspaceMatFile(matfile=None)
+        self.all_c_columns = list(set(dspace.cnames.values()))
+        self.all_c_columns.append('time')
+        # also add cnames for OJF
+        ojf = ojfresult.OJFLogFile(ojffile=None)
+        self.all_c_columns.extend(ojf.cnames)
+        # and the blade strains
+        blade = ojfresult.BladeStrainFile(None)
+        self.all_c_columns.extend(blade.cnames)
+        # create a DataFrame formatted dictionary
+        self.stats_mean = {col:[] for col in self.all_c_columns + ['index']}
+        self.stats_min = {col:[] for col in self.all_c_columns + ['index']}
+        self.stats_max = {col:[] for col in self.all_c_columns + ['index']}
+        self.stats_std = {col:[] for col in self.all_c_columns + ['index']}
+        self.stats_range = {col:[] for col in self.all_c_columns + ['index']}
+
+    def add_all_stats(self, res):
+        """add all stats from ComboResults to DataFrame formatted dictionaries
+        """
+        # TODO: should also work with df if not ComboResults is given
+
+        def add_stats(stats, df_dict):
+            df_dict['index'].append(res.resfile)
+            for col in stats.index:
+                if col == 'time':
+                    df_dict[col].append(res.dspace.time[-1])
+                else:
+                    df_dict[col].append(stats[col])
+
+            # and empty items for those for which there is no data
+            for col in (set(self.all_c_columns) - {str(k) for k in stats.index}):
+                if col == 'duty_cycle':
+                    dc = dc_from_casename(self.res.resfile)
+                    df_dict[col].append(dc)
+                else:
+                    df_dict[col].append(np.nan)
+            return df_dict
+
+        if not hasattr(res, 'df'):
+            res.to_df()
+        self.stats_mean = add_stats(res.df.mean(), self.stats_mean)
+        self.stats_min = add_stats(res.df.min(), self.stats_min)
+        self.stats_max = add_stats(res.df.max(), self.stats_max)
+        self.stats_std = add_stats(res.df.std(), self.stats_std)
+        self.stats_range = add_stats(res.df.max()-res.df.min(), self.stats_range)
+
+    def dict2df(self):
+        """Convert the DataFrame formatted dicts to DataFrames
+        """
+        try:
+            self.df_mean = pd.DataFrame(self.stats_mean)
+        except ValueError:
+            print('stats_mean')
+            misc.check_df_dict(self.stats_mean)
+
+        try:
+            self.df_min = pd.DataFrame(self.stats_min)
+        except ValueError:
+            print('stats_min')
+            misc.check_df_dict(self.stats_min)
+
+        try:
+            self.df_max = pd.DataFrame(self.stats_max)
+        except ValueError:
+            print('stats_max')
+            misc.check_df_dict(self.stats_max)
+
+        try:
+            self.df_std = pd.DataFrame(self.stats_std)
+        except ValueError:
+            print('stats_std')
+            misc.check_df_dict(self.stats_std)
+
+        try:
+            self.df_range = pd.DataFrame(self.stats_range)
+        except ValueError:
+            print('stats_range')
+            misc.check_df_dict(self.stats_range)
+
+    def save_all_stats(self, path_db, output, update=False):
+        """Save to h5 and xlsx
+        """
+
+        fname = os.path.join(path_db, 'db_stats_%s_mean.h5' % output)
+        self.df_mean.to_hdf(fname, 'table', compression=9, complib='blosc')
+        fname = os.path.join(path_db, 'db_stats_%s_mean.xlsx' % output)
+        self.df_mean.to_excel(fname)
+
+        fname = os.path.join(path_db, 'db_stats_%s_min.h5' % output)
+        self.df_min.to_hdf(fname, 'table', compression=9, complib='blosc')
+        fname = os.path.join(path_db, 'db_stats_%s_min.xlsx' % output)
+        self.df_min.to_excel(fname)
+
+        fname = os.path.join(path_db, 'db_stats_%s_max.h5' % output)
+        self.df_max.to_hdf(fname, 'table', compression=9, complib='blosc')
+        fname = os.path.join(path_db, 'db_stats_%s_max.xlsx' % output)
+        self.df_max.to_excel(fname)
+
+        fname = os.path.join(path_db, 'db_stats_%s_std.h5' % output)
+        self.df_std.to_hdf(fname, 'table', compression=9, complib='blosc')
+        fname = os.path.join(path_db, 'db_stats_%s_std.xlsx' % output)
+        self.df_std.to_excel(fname)
+
+        fname = os.path.join(path_db, 'db_stats_%s_range.h5' % output)
+        self.df_range.to_hdf(fname, 'table', compression=9, complib='blosc')
+        fname = os.path.join(path_db, 'db_stats_%s_range.xlsx' % output)
+        self.df_range.to_excel(fname)
 
 
 class ojf_db:

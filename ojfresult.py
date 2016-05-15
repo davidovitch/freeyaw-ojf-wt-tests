@@ -847,10 +847,9 @@ class DspaceMatFile:
             self.cnames[key.replace('"', '')] = self.cnames[key]
 
         self.matfile = matfile
-        # file name only, excluding the path
-        self.resfile = matfile.split('/')[-1]
-
         if matfile:
+            # file name only, excluding the path
+            self.resfile = matfile.split('/')[-1]
             self.time, self.data, self.labels = self.read(matfile)
 
     def remove_rpm_spike(self, plot=False):
@@ -3752,6 +3751,8 @@ class ComboResults(BladeStrainFile, OJFLogFile, DspaceMatFile):
 
         if fpath is not None:
             df.to_hdf(fpath, 'table', complevel=complevel, complib=complib)
+
+        self.df = df
 
         return df
 

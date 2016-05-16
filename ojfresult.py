@@ -589,7 +589,7 @@ class OJFLogFile:
 
         self.ojffile = ojffile
 
-        self.cnames = ['RPM_fan', 'temperature', 'static_p', 'delta_p'
+        self.cnames = ['RPM_fan', 'temperature', 'static_p', 'delta_p',
                        'wind_speed']
 
         if ojffile:

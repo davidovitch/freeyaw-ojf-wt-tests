@@ -17,13 +17,10 @@ import matplotlib as mpl
 # set the backend
 #mpl.use('GTKCairo')
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigCanvas
-#from matplotlib.backends.backend_ps import FigureCanvasPS as FigCanvas
-#from matplotlib.backend_bases import FigureCanvasBase
-#from matplotlib.backends.backend_ps import FigureCanvasPS
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigCanvas
 import matplotlib.font_manager as mpl_font
 from matplotlib.ticker import FormatStrFormatter
-from matplotlib import tight_layout as tight_layout
+#from matplotlib import tight_layout as tight_layout
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import pylab as plt
 
@@ -427,7 +424,6 @@ class template:
         print 'saving: ' + figpath
         fig.savefig(figpath + '.png')
         fig.savefig(figpath + '_tip.eps')
-        canvas.close()
         fig.clear()
 
 def match_axis_ticks(ax1, ax2, ax1_format=None, ax2_format=None):
@@ -592,7 +588,6 @@ class StatResults:
         print 'saving: ' + figpath
         self.fig.savefig(figpath + '.png')
         self.fig.savefig(figpath + '.eps')
-        self.canvas.close()
         self.fig.clear()
 
 
@@ -1007,7 +1002,6 @@ class StatDesings:
         print 'saving: ' + figpath
         fig.savefig(figpath + '.png')
         fig.savefig(figpath + '.eps')
-        canvas.close()
         fig.clear()
 
 
@@ -1487,7 +1481,6 @@ class A4Tuned:
 #        self.fig.savefig(self.figfile + '.svg')
         # FigCanvasBase does not have close argument
         if not self.interactive:
-            self.canvas.close()
             self.fig.clear()
         print 'done'
 
@@ -1931,7 +1924,6 @@ class PlotStData:
         # and save
         fig.savefig(figpath + figname + '.png', orientation='landscape')
         fig.savefig(figpath + figname + '.eps', orientation='landscape')
-        canvas.close()
         fig.clear()
 
 def hawc2dashboard():

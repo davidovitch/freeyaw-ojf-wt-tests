@@ -542,7 +542,7 @@ def convert_pkl_index_df(path_db, db_id='symlinks'):
 
     df = pd.DataFrame(df_dict)
     df.sort_values('basename', inplace=True)
-    df.to_hdf(fname + '.h5', 'table', complevel=9, complib='blosc')
+    df.to_hdf(fname + '.h5', 'table', complevel=9)#, complib='blosc')
     df.to_csv(fname + '.csv', index=False)
     df.to_excel(fname + '.xlsx', index=True)
 
@@ -561,7 +561,7 @@ def dc_from_casename(case):
         return np.nan
 
 
-def build_db(path_db, prefix, **kwargs):
+def build_db_df(path_db, prefix, **kwargs):
     """
     Create the statistics for each OJF case in the index database
     =============================================================
@@ -595,10 +595,6 @@ def build_db(path_db, prefix, **kwargs):
 
     resample : boolean, default=False
 
-    dataframe : boolean, default=False
-        From a single case combine dSPACE, OJF and blade strain into a single
-        Pandas DataFrame.
-
     """
     folder_df = kwargs.get('folder_df', 'data/calibrated/DataFrame/')
     folder_csv = kwargs.get('folder_csv', 'data/calibrated/CSV/')
@@ -607,16 +603,13 @@ def build_db(path_db, prefix, **kwargs):
     calibrate = kwargs.get('calibrate', True)
     key_inc = kwargs.get('key_inc', [])
     resample = kwargs.get('resample', False)
-    dataframe = kwargs.get('dataframe', False)
     save_df = kwargs.get('save_df', False)
     save_df_csv = kwargs.get('save_df_csv', False)
     continue_build = kwargs.get('continue_build', True)
-    db_index_file = kwargs.get('db_index_file', 'db_index_%s.pkl' % prefix)
 
-    # read the database
-    FILE = open(path_db + db_index_file)
-    db_index = pickle.load(FILE)
-    FILE.close()
+    # initialize the database
+    db = ojf_db_df(prefix=prefix, path_db=path_db, load_index=True)
+    db_index = db.index.index.tolist()
 
     # remove the files we've already done
     if continue_build:
@@ -625,11 +618,11 @@ def build_db(path_db, prefix, **kwargs):
             for fname in files:
                 db_index.pop(fname[:-3])
     # respath is where all the symlinks are
-    respath = path_db + prefix + '/'
+    respath = os.path.join(path_db, prefix + '/')
 
     # create the figure folder if it doesn't exist
     try:
-        os.mkdir(path_db+'figures_%s/' % output)
+        os.mkdir(os.path.join(path_db, 'figures_%s/' % output))
     except OSError:
         pass
 
@@ -643,14 +636,7 @@ def build_db(path_db, prefix, **kwargs):
     except OSError:
         pass
 
-    # save the statistics in a dict
-    db_stats = {}
-    df_stats = None
-
     nr, nrfiles = 0, len(db_index)
-
-    # initialize the DataFrame formatted dictionary
-    CR2stats_df = ComboResults2stats_df()
 
     # and cycle through all the files present
     for resfile in db_index:
@@ -690,70 +676,81 @@ def build_db(path_db, prefix, **kwargs):
         if resample:
             res._resample()
 
-        #except:
-            #logging.warn('ignored: %s' % resfile)
-            #logging.warn(sys.exc_info()[0])
-            #continue
-
         # make a dashboard plot
         if dashplot:
-            res.dashboard_a3(path_db+'figures_%s/' % output)
+            res.dashboard_a3(os.path.join(path_db, 'figures_%s/' % output))
 
-        # calculate all the means, std, min, max and range for each channel
-        res.statistics()
-        # stats is already a dictionary
-        db_stats[resfile] = res.stats
-        # add the channel discriptions
-        db_stats[resfile]['dspace labels_ch'] = res.dspace.labels_ch
-        # incase there is no OJF data
-        try:
-            db_stats[resfile]['ojf labels'] = res.ojf.labels
-        except AttributeError:
-            pass
+        df_res = res.to_df()
+        # statistics
+        db.add_stats(resfile, df_res)
 
-        if dataframe:
-            if save_df:
-                ftarget = os.path.join(folder_df, resfile + '.h5')
-            else:
-                ftarget = None
-            df = res.to_df(ftarget, complevel=9, complib='blosc')
-            if save_df_csv:
-                df.to_csv(os.path.join(folder_csv, resfile + '.csv'))
-
-            CR2stats_df.add_all_stats(res)
+        if save_df:
+            ftarget = os.path.join(folder_df, resfile + '.h5')
+            df_res.to_hdf(ftarget, 'table', complevel=9, complib='blosc')
+        if save_df_csv:
+            df_res.to_csv(os.path.join(folder_csv, resfile + '.csv'))
 
 #        if nr > 100:
 #            break
 
-    if df_stats:
-        CR2stats_df.dict2df()
-        CR2stats_df.save_all_stats(path_db, output)
-
-    # load an existing database first, update
-    try:
-        # if it exists, update the file first before saving
-        FILE = open(path_db + 'db_stats_%s.pkl' % output)
-        db_stats_update = pickle.load(FILE)
-        # overwrite the old entries with new ones! not the other way around
-        db_stats_update.update(db_stats)
-        FILE.close()
-    except IOError:
-        # no need to update an existing database file
-        db_stats_update = db_stats
-
-    # and save the database stats
-    FILE = open(path_db + 'db_stats_%s.pkl' % output, 'wb')
-    pickle.dump(db_stats_update, FILE, protocol=2)
-    FILE.close()
+    # and save all the statistics
+    db.save_stats(path_db=path_db, prefix=prefix, update=continue_build)
 
 
-class ComboResults2stats_df(object):
-    """add the statistics of a given case to the statistics DataFrame
+class ojf_db_df(object):
+    """Class to conviently select and load all measurements and their
+    statistics.
+
+    Members
+    -------
+
+    df_dict_mean, df_dict_min, df_dict_max, df_dict_std, df_dict_range
+
+    df_mean, df_min, df_max, df_std, df_range
     """
 
-    def __init__(self):
-        """Initialize all columns
+    def __init__(self, prefix='symlinks_all', path_db='database/',
+                 load_index=True):
+        self.path_db = path_db
+        if load_index:
+            self.index_fname = os.path.join(path_db, 'db_index_%s.h5' % prefix)
+            self.load_index()
+        self.stat_types = ['mean', 'min', 'max', 'std', 'range']
+
+    def load_index(self, fname=None):
+        """Load the index DataFrame. When fname is None, use self.index_fname.
         """
+        if fname is None:
+            fname = self.index_fname
+        self.index = pd.read_hdf(fname, 'table')
+        if not self.index.index.name == 'basename':
+            self.index.set_index('basename', inplace=True)
+        self.index_cols = set(self.index.columns)
+        # this is expensive, only worth when doing a LOT of lookups (>100)
+#        self.index_names = set(self.index.tolist())
+
+    def load_stats(self, prefix='symlinks_all'):
+        for stat in self.stat_types:
+            rpl = (prefix, stat)
+            fname = os.path.join(self.path_db, 'db_stats_%s_%s.h5' % rpl)
+            setattr(self, stat, pd.read_hdf(fname, 'table'))
+
+    def load_measurement(self, fname):
+        """Load a measurement data file.
+        """
+        if fname[-2:] == 'h5':
+            return pd.read_hdf(fname, 'table')
+        elif fname[-3:] == 'csv':
+            return pd.read_csv(fname)
+        elif fname[-4:] in ['.xls', 'xlsx']:
+            return pd.read_excel(fname)
+        else:
+            raise ValueError('Provide either h5, csv, xls, or xlsx file.')
+
+    def _init_df_dict_stats(self):
+        """Initialize all columns for the stats DataFrames
+        """
+
         # only take the unique entries, cnames contains all possible mappings
         dspace = ojfresult.DspaceMatFile(matfile=None)
         self.all_c_columns = list(set(dspace.cnames.values()))
@@ -764,106 +761,166 @@ class ComboResults2stats_df(object):
         # and the blade strains
         blade = ojfresult.BladeStrainFile(None)
         self.all_c_columns.extend(blade.cnames)
-        # create a DataFrame formatted dictionary
-        self.stats_mean = {col:[] for col in self.all_c_columns + ['index']}
-        self.stats_min = {col:[] for col in self.all_c_columns + ['index']}
-        self.stats_max = {col:[] for col in self.all_c_columns + ['index']}
-        self.stats_std = {col:[] for col in self.all_c_columns + ['index']}
-        self.stats_range = {col:[] for col in self.all_c_columns + ['index']}
+        # create a DataFrame formatted dictionary for each of the stat types
+        for stat in self.stat_types:
+            setattr(self, 'df_dict_' + stat,
+                    {col:[] for col in self.all_c_columns + ['index']})
 
-    def add_all_stats(self, res):
-        """add all stats from ComboResults to DataFrame formatted dictionaries
+    def _init_df_dict_index(self):
+        """Initialize all columns for the index DataFrame
         """
-        # TODO: should also work with df if not ComboResults is given
+        cols = self.index.columns.tolist() + ['index']
+        self.df_dict_index = {k:[] for k in cols}
 
-        def add_stats(stats, df_dict):
-            df_dict['index'].append(res.resfile)
-            for col in stats.index:
-                if col == 'time':
-                    df_dict[col].append(res.dspace.time[-1])
-                else:
-                    df_dict[col].append(stats[col])
+    def _add_stats_df_dict(self, resfile, df_stats, df_dict) :
+        """Add df_stats to df_dict with resfile on the index column.
 
-            # and empty items for those for which there is no data
-            for col in (set(self.all_c_columns) - {str(k) for k in stats.index}):
-                if col == 'duty_cycle':
-                    dc = dc_from_casename(self.res.resfile)
-                    df_dict[col].append(dc)
-                else:
-                    df_dict[col].append(np.nan)
-            return df_dict
+        Parameters
+        ----------
 
-        if not hasattr(res, 'df'):
-            res.to_df()
-        self.stats_mean = add_stats(res.df.mean(), self.stats_mean)
-        self.stats_min = add_stats(res.df.min(), self.stats_min)
-        self.stats_max = add_stats(res.df.max(), self.stats_max)
-        self.stats_std = add_stats(res.df.std(), self.stats_std)
-        self.stats_range = add_stats(res.df.max()-res.df.min(), self.stats_range)
+        resfile : str
+            name of the result file from the index
 
-    def dict2df(self):
+        df_stats : DataFrame
+            Statistics of a measurement DataFrame (df_res)
+
+        df_dict : dictionary
+            DataFrame formatted dictionary of the to be added statistics.
+            Should be df_dict_mean, df_dict_min, etc.
+        """
+
+        df_dict['index'].append(resfile)
+        for col in df_stats.index:
+            df_dict[col].append(df_stats[col])
+
+        # and empty items for those for which there is no data
+        for col in (set(self.all_c_columns) - set(df_stats.index.tolist())):
+            if col == 'duty_cycle':
+                dc = dc_from_casename(resfile)
+                df_dict[col].append(dc)
+            else:
+                df_dict[col].append(np.nan)
+        return df_dict
+
+    def _add_index_df_dict(self, resfile, index_row):
+        """Add a new entry to the index.
+        """
+        self.df_dict_index['index'].append(resfile)
+        for col, value in index_row.items():
+            self.df_dict_index[col].append(value)
+        # add empty values for any missing keys
+        for col in (set(self.index_cols) - set(index_row.keys())):
+            self.df_dict_index[col].append(np.nan)
+
+    def add_stats(self, resfile, df_res, index_row={}):
+        """Add stats from ComboResults to DataFrame formatted dictionaries,
+        and save as attributes: df_dict_%s, using mean, min, max, std, range.
+        Also add to the index database.
+
+        Parameters
+        ----------
+
+        resfile : str
+            Name used for the index entry (should be unique).
+
+        df_res : DataFrame
+            Measurement result DataFrame
+
+        index_row : dict, default={}
+            Entries for the index columns (except for the index of the index)
+        """
+        if not hasattr(self, 'df_dict_mean'):
+            self._init_df_dict_stats()
+        if not hasattr(self, 'df_dict_index'):
+            self._init_df_dict_index()
+
+        # complain if already exists in the index
+        if (resfile in self.df_dict_mean) or (hasattr(self, 'mean') and \
+            resfile in self.mean.index):
+            raise IndexError('Index already exists in db: %s' % resfile)
+        # add to the index
+        self._add_index_df_dict(resfile, index_row)
+
+        rf = resfile
+        self._add_stats_df_dict(rf, df_res.mean(), self.df_dict_mean)
+        self._add_stats_df_dict(rf, df_res.min(), self.df_dict_min)
+        self._add_stats_df_dict(rf, df_res.max(), self.df_dict_max)
+        self._add_stats_df_dict(rf, df_res.std(), self.df_dict_std)
+        df_range = df_res.max() - df_res.min()
+        self._add_stats_df_dict(rf, df_range, self.df_dict_range)
+
+    def add_staircase_stats(self, resfile, df_res, arg_stair):
+        """Add statistics for each of the given intervals. Also creates an
+        index entry for each step.
+        """
+
+        index_row = self.index.loc[resfile].to_dict()
+
+        for k in range(arg_stair.shape[1]):
+            i1 = arg_stair[0,k]
+            i2 = arg_stair[1,k]
+            # add stair step number to resfile name to create unique index
+            resfile_step = '%s_step_%02i' % (resfile, k)
+            index_row['sweepid'] = '%i_%i' % (i1, i2)
+            index_row['run_type'] = 'stair_step'
+            # and add to the database dict
+            self.add_stats(resfile_step, df_res[i1:i2], index_row=index_row)
+
+    def _dict2df(self):
         """Convert the DataFrame formatted dictionaries to DataFrames. If
-        the conversion failes, perform post-mortem checks for debugging
-        purposes.
-        """
-        try:
-            self.df_mean = pd.DataFrame(self.stats_mean)
-        except ValueError:
-            print('stats_mean')
-            misc.check_df_dict(self.stats_mean)
-
-        try:
-            self.df_min = pd.DataFrame(self.stats_min)
-        except ValueError:
-            print('stats_min')
-            misc.check_df_dict(self.stats_min)
-
-        try:
-            self.df_max = pd.DataFrame(self.stats_max)
-        except ValueError:
-            print('stats_max')
-            misc.check_df_dict(self.stats_max)
-
-        try:
-            self.df_std = pd.DataFrame(self.stats_std)
-        except ValueError:
-            print('stats_std')
-            misc.check_df_dict(self.stats_std)
-
-        try:
-            self.df_range = pd.DataFrame(self.stats_range)
-        except ValueError:
-            print('stats_range')
-            misc.check_df_dict(self.stats_range)
-
-    def save_all_stats(self, path_db, prefix='symlinks_all', update=False):
-        """Save to h5 and xlsx
+        the conversion failes the dictionary has wrongly composed. Perform
+        post-mortem checks for debugging purposes.
         """
 
-        fname = os.path.join(path_db, 'db_stats_%s_mean.h5' % prefix)
-        self.df_mean.to_hdf(fname, 'table', compression=9, complib='blosc')
-        fname = os.path.join(path_db, 'db_stats_%s_mean.xlsx' % prefix)
-        self.df_mean.to_excel(fname)
+        for stat in self.stat_types:
+            if not hasattr(self, 'df_dict_%s' % stat):
+                continue
+            df_dict = getattr(self, 'df_dict_%s' % stat)
+            try:
+                df = pd.DataFrame(df_dict)
+                df.set_index('index', inplace=True)
+                setattr(self, 'df_%s' % stat, df)
+            except ValueError as e:
+                print('df_dict_%s' % stat)
+                misc.check_df_dict(df_dict)
+                raise e
 
-        fname = os.path.join(path_db, 'db_stats_%s_min.h5' % prefix)
-        self.df_min.to_hdf(fname, 'table', compression=9, complib='blosc')
-        fname = os.path.join(path_db, 'db_stats_%s_min.xlsx' % prefix)
-        self.df_min.to_excel(fname)
+        try:
+            self.index_up = pd.DataFrame(self.df_dict_index)
+            self.index_up.set_index('index', inplace=True)
+        except ValueError as e:
+            print('df_dict_index')
+            misc.check_df_dict(self.df_dict_index)
+            raise e
 
-        fname = os.path.join(path_db, 'db_stats_%s_max.h5' % prefix)
-        self.df_max.to_hdf(fname, 'table', compression=9, complib='blosc')
-        fname = os.path.join(path_db, 'db_stats_%s_max.xlsx' % prefix)
-        self.df_max.to_excel(fname)
+    def save_stats(self, path_db='database/', prefix='symlinks_all',
+                   update=True):
+        """Save the df_mean, etc stats in a df stats database in h5 and xlsx
+        format.
+        """
+        self._dict2df()
 
-        fname = os.path.join(path_db, 'db_stats_%s_std.h5' % prefix)
-        self.df_std.to_hdf(fname, 'table', compression=9, complib='blosc')
-        fname = os.path.join(path_db, 'db_stats_%s_std.xlsx' % prefix)
-        self.df_std.to_excel(fname)
+        if update and not hasattr(self, 'mean'):
+            self.load_stats(prefix=prefix)
 
-        fname = os.path.join(path_db, 'db_stats_%s_range.h5' % prefix)
-        self.df_range.to_hdf(fname, 'table', compression=9, complib='blosc')
-        fname = os.path.join(path_db, 'db_stats_%s_range.xlsx' % prefix)
-        self.df_range.to_excel(fname)
+        for stat in self.stat_types:
+            df_add = getattr(self, 'df_%s' % stat)
+            rpl = (prefix, stat)
+            fname = os.path.join(path_db, 'db_stats_%s_%s.h5' % rpl)
+            if update:
+                df_stat = getattr(self, stat)
+                df_add = pd.concat(df_stat, df_add)
+            # save to HDF5 and xlsx
+            df_add.to_hdf(fname, 'table')#, compression=9, complib='blosc')
+            fname = os.path.join(path_db, 'db_stats_%s_%s.xlsx' % rpl)
+            df_add.to_excel(fname)
+
+        # and update the index accordingly
+        if update:
+            if not hasattr(self, 'index'):
+                self.load_index()
+            self.index = pd.concat(self.index, self.index_up)
+            self.index.to_hdf(self.index_fname, 'table', compression=9)
 
 
 class ojf_db:

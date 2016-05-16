@@ -273,7 +273,7 @@ class StairCase:
             print 'start calculating movering average ...',
             filt = Filters()
             # take av2s window, calculate the number of samples per window
-            ws = smooth_window*sample_rate
+            ws = int(smooth_window*sample_rate)
             data = filt.smooth(data, window_len=ws, window='hanning')
             NN = len(data) - len(time)
             data = data[NN:]

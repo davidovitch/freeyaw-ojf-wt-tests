@@ -39,7 +39,7 @@ import ojfresult
 import towercal
 import bladecal
 import yawcal
-from ojfdb import ojf_db
+from ojfdb_dict import ojf_db
 
 
 RESDATA_CAL_02 = 'data/raw/02/calibration/'

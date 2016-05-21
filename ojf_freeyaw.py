@@ -12,6 +12,7 @@ time ranges so we can actually calculate how fast the yaw angle is recovering
 import os
 
 import numpy as np
+import pandas as pd
 import pylab as plt
 
 import ojfdb
@@ -26,7 +27,7 @@ PATH_DB = 'database/'
 ### STEADY YAW ERR PERF
 ###############################################################################
 
-def results_filtering(cr, figpath, fig_descr, arg_stair, db_type='df'):
+def results_filtering(cr, figpath, fig_descr, arg_stair):
     """
     Like the ComboResults.dashboard_a3, but now include the filtered signal
     and the subtracted values.
@@ -34,7 +35,7 @@ def results_filtering(cr, figpath, fig_descr, arg_stair, db_type='df'):
     Saves the datastair data, it is formatted as: ndarray(stair_nr, data_chan)
     [RPM, yaw, FA, SS, B1_r, B1_30, B2_r, B2_30, windspeed, temperature]
     Note that this is actually not necessary and rendundant, since we properly
-    added all the cases as subecases to the ojf_db database
+    added all the cases as subecases to the MeasureDb database
 
     Parameters
     ----------
@@ -49,10 +50,6 @@ def results_filtering(cr, figpath, fig_descr, arg_stair, db_type='df'):
 
     arg_stair : array(2,n)
         Start/stop indices to n stairs
-
-    df_type : str, default='df'
-        df for DataFrame statistics format, pkl for pickled format (depricated)
-
     """
 
     try:
@@ -334,7 +331,7 @@ def freeyaw_steady_points(resfile, db):
 #    res._calibrate_dspace(cd.caldict_dspace_04)
 #    res._calibrate_blade(cd.caldict_blade_04)
     res._resample()
-    res.dashboard_a3(figpath)
+#    res.dashboard_a3(figpath)
 
     # and see if the staircase filter can get what we want
     irpm = res.dspace.labels_ch['RPM']
@@ -358,6 +355,7 @@ def freeyaw_steady_points(resfile, db):
     # Select the stair ranges based on steady, constant yaw angles
     # this is a more robust approach when combined with the moving the start
     # index of the stair argument more close to the end index
+    sps = int(round(1/np.diff(res.dspace.time).mean(), 0))
     ext = '_YAWargs'
     sc = StairCase(plt_progress=False, pprpath=figpath, figpath=figpath,
                    figfile=resfile+'_yaw', runid=resfile+'_yaw')
@@ -365,7 +363,7 @@ def freeyaw_steady_points(resfile, db):
                 res.dspace.data[:,iyaw], smooth_window=1.5,
                 cutoff_hz=False, dt=1, dt_treshold=2.0e-4,
                 stair_step_tresh=1.5, smoothen='moving',
-                points_per_stair=800)
+                points_per_stair=sps*3)
 
 #    # and for the thrust
 #    sc = ojfresult.StairCase(plt_progress=False, pprpath=figpath,
@@ -418,49 +416,78 @@ def freeyaw_steady_points(resfile, db):
     # therefore delay the starting stair point 50%
     if ext.find('YAW') > -1:
         delta = (sc.arg_stair[1,:] - sc.arg_stair[0,:]) / 1.25
-        delta = delta.astype(np.int)
-        sc.arg_stair[0,:] += delta
+        sc.arg_stair[0,:] += delta.astype(np.int)
 
     # make plots to inspect the extraction process, save stair step points in
     # text files
     results_filtering(res, figpath, ext, sc.arg_stair)
 
     # save statistics of each stair step to database
-    db.add_staircase_steps(res, sc.arg_stair)
-    db.save_updates()
+    df_res = res.to_df()
+#    db = ojfdb.MeasureDb(load_index=False)
+    db.add_staircase_stats(resfile, df_res, sc.arg_stair)
+#    db.save_stats(prefix='yawstairs')
+
+    return db
 
 
 def select_freeyaw():
     """
-    Select all the forced free yawing cases and derive properties for
-    each stair case. Stair cases are selected based on the yaw angle.
+    Use the new DataFrame index to select the cases.
 
-    Select the stair ranges based on steady, constant yaw angles
-    this is a more robust approach when combined with the moving the start
-    index of the stair argument more close to the end index
+    yaw_mode = freeyawforced
+    yaw_mode = freeyaw and the_rest = forced
+
     """
+#    fname = os.path.join(PATH_DB, 'db_index_symlinks_all.h5')
+#    df_db = pd.read_hdf(fname, 'table')
+    db = ojfdb.MeasureDb(prefix='symlinks_all', path_db='database/')
+    idf = db.index
+    df_sel = idf[(idf.yaw_mode == 'freeyawforced') |
+                 ((idf.yaw_mode == 'freeyaw') & (idf.the_rest == 'forced')) |
+                 (idf.yaw_mode2 == 'yawcontrol')]
 
-    # load the OJF test database
-    db = ojfdb.ojf_db('symlinks_all')
-    exc = []
-    inc = ['forced']
-    valuedict = {}
-    std = {'yaw':[1.0, 100.0]}
-    data, cases, head = db.select(['04'], inc,  exc, valuedict=valuedict,
-                                  values_std=std)
+#    df_sel = idf[(idf.yaw_mode == 'freeyawforced') |
+#                 (idf.yaw_mode == 'freeyaw') |
+#                 (idf.yaw_mode2 == 'yawcontrol')]
 
-    # and apply the StairCase filtering to find the steady values of RPM,
-    # yaw angle, and tower for aft bending moment
-    for case in cases:
+    for case in df_sel.index:
         # '0410_run_332'
         if not int(case.split('_')[2]) == 413:
-            freeyaw_steady_points(case, db)
+            # plotting of all the cases
+            db = freeyaw_steady_points(case, db)
+            #
         else:
             continue
 
-    # now will we manually select all the time ranges so we have well defined
-    # cases as: forced yaw error -> release, instead of the mixed measurements
-    # or can we automate this?
+#    db.save_stats(prefix='yawstairs')
+    return db
+
+
+def test_add():
+
+    db = ojfdb.MeasureDb(prefix='symlinks_all', path_db='database/')
+    idf = db.index
+    df_sel = idf[(idf.yaw_mode == 'freeyawforced') |
+                 ((idf.yaw_mode == 'freeyaw') & (idf.the_rest == 'forced')) |
+                 (idf.yaw_mode2 == 'yawcontrol')]
+
+    case = df_sel.index.values[0]
+    fname = os.path.join('data', 'calibrated', 'DataFrame', case+'.h5')
+    df_res = pd.read_hdf(fname, 'table')
+
+    arg_stair = np.array([[1,200, 500], [100, 300,1000]])
+    i1 = arg_stair[0,1]
+    i2 = arg_stair[1,1]
+    resfile_step = '%s_i0_%i_i1_%i' % (case, i1, i2)
+
+    db.add_stats(resfile_step, df_res[i1:i2])
+    mean = db.df_dict_mean
+
+    db._init_df_dict_stats()
+    db._add_stats_df_dict(case, df_res[i1:i2].mean(), db.df_dict_mean)
+    mean = db.df_dict_mean
+    maxx = db.df_dict_max
 
 ###############################################################################
 ### DYNAMIC YAW ERR PERF
@@ -485,7 +512,7 @@ def freeyaw_april_timings():
 
     # ------------------------------------------------------------------------
     # dashboard plot of all the april freeyaw cases
-#    db = ojfdb.ojf_db('symlinks_all_psicor')
+#    db = ojfdb.MeasureDb('symlinks_all_psicor')
 #    inc = ['free']
 #    exc = ['force']
 #    data, cases, head = db.select(['04'], inc,  exc)
@@ -542,7 +569,5 @@ def freeyaw_april_timings():
 if __name__ == '__main__':
 
     dummy = False
-
-#    select_freeyaw()
-
+#    db = select_freeyaw()
 #    freeyaw_april_timings()

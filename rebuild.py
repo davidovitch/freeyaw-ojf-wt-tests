@@ -24,17 +24,16 @@ def rebuild_symlink_database():
 
     # create a stastistics database
     # create a dashboard plot for all the cases
-    ojfdb.build_db_df(path_db, 'symlinks_all', calibrate=True, dashplot=True,
-                     dataframe=True, resample=True, continue_build=True,
-                     save_df=True, save_df_csv=True)
+    ojfdb.build_stats_db(path_db, 'symlinks_all', calibrate=True, dashplot=True,
+                         dataframe=True, resample=True, continue_build=True,
+                         save_df=True, save_df_csv=True)
 
     # only rebuild the statistics database
-    ojfdb.build_db_df(path_db, 'symlinks_all', calibrate=True, dashplot=False,
-                     dataframe=True, resample=True, continue_build=False,
-                     save_df=False, save_df_csv=False)
+    ojfdb.build_stats_db(path_db, 'symlinks_all', calibrate=True, dashplot=False,
+                         dataframe=True, resample=True, continue_build=False,
+                         save_df=False, save_df_csv=False)
 
     # add the freeyaw stair cases to the stats collection
-    ojf
 
 
 def rebuild_calibration_data():

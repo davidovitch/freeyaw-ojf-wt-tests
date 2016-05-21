@@ -40,7 +40,7 @@ import ojf_post
 #import towercal
 #import bladecal
 #import yawcal
-#from ojfdb import ojf_db
+#from ojfdb import MeasureDb
 
 plt.rc('font', family='serif')
 plt.rc('xtick', labelsize=10)
@@ -58,7 +58,7 @@ RESDATA_CAL_04 = 'data/raw/04/calibration/'
 PROCESSING = 'processing/'
 
 df_index = pd.read_hdf('database/db_index_symlinks_all.h5', 'table')
-df_index.set_index('basename', inplace=True)
+#df_index.set_index('basename', inplace=True)
 df_mean = pd.read_hdf('database/db_stats_symlinks_all_mean.h5', 'table')
 df_mean.set_index('index', inplace=True)
 df_std = pd.read_hdf('database/db_stats_symlinks_all_mean.h5', 'table')

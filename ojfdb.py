@@ -7,11 +7,8 @@ Make a database of all the test and their results
 @author: dave
 """
 
-#import sys
 import os
 import pickle
-#import logging
-from copy import copy
 import string
 import shutil
 
@@ -23,6 +20,7 @@ import ojfresult
 import plotting
 import ojf_post
 import misc
+from ojfdb_dict import ojf_db
 
 PATH_DB = 'database/'
 OJFPATH_RAW = 'data/raw/'
@@ -465,7 +463,8 @@ def convert_pkl_index_df(path_db, db_id='symlinks'):
     blades = set(['flexies', 'flex', 'stiffblades', 'stiff', 'samoerai',
                   'stffblades'])
     onoff = set(['spinup', 'spinupfast', 'spinuppartial', 'slowdown',
-                 'speedup', 'shutdown', 'spinningdown', 'startup'])
+                 'speedup', 'shutdown', 'spinningdown', 'startup', 'speedup',
+                 'speedingup'])
     allitems = set([])
     ignore = set(['basename', 'runid', 'month', 'day', 'runnr'])
 
@@ -561,7 +560,7 @@ def dc_from_casename(case):
         return np.nan
 
 
-def build_db_df(path_db, prefix, **kwargs):
+def build_stats_db(path_db, prefix, **kwargs):
     """
     Create the statistics for each OJF case in the index database
     =============================================================
@@ -608,7 +607,7 @@ def build_db_df(path_db, prefix, **kwargs):
     continue_build = kwargs.get('continue_build', True)
 
     # initialize the database
-    db = ojf_db_df(prefix=prefix, path_db=path_db, load_index=True)
+    db = MeasureDb(prefix=prefix, path_db=path_db, load_index=True)
     db_index = db.index.index.tolist()
 
     # remove the files we've already done
@@ -697,7 +696,7 @@ def build_db_df(path_db, prefix, **kwargs):
     db.save_stats(path_db=path_db, prefix=prefix, update=continue_build)
 
 
-class ojf_db_df(object):
+class MeasureDb(object):
     """Class to conviently select and load all measurements and their
     statistics.
 

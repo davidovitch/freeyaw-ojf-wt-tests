@@ -29,7 +29,7 @@ import plotting
 import misc
 import ojfresult
 import ojf_post
-import ojfdb
+from ojfdb_dict import ojf_db
 
 sti = HawcPy.ModelData.st_headers
 
@@ -669,7 +669,7 @@ def plot_ct_vs_lambda(cao):
     # load the OJF runs that where used for the HAWC2 simulations again
     # -------------------------------------------------------------------------
     prefix = 'symlinks_all'
-    db = ojfdb.ojf_db(prefix, debug=False)
+    db = ojf_db(prefix, debug=False)
     ojf, ojfcases, ojfheader = db.select(['04'], [], [], runs_inc=runs_inc)
 
     # -------------------------------------------------------------------------
@@ -764,7 +764,7 @@ def plot_ct_vs_yawerror_vs_lambda(cao):
     # -------------------------------------------------------------------------
     prefix = 'symlinks_all'
     inc = ['force', '_STC_']
-    db = ojfdb.ojf_db(prefix, debug=False)
+    db = ojf_db(prefix, debug=False)
     ojf, ojfcases, ojfheader = db.select(['04'], inc, [])#, runs_inc=runs_inc)
     # OJF TSR's
     ojf_tsr = db.tsr(ojf)
@@ -1432,7 +1432,7 @@ def ojf_to_hawc2(**kwargs):
     Translate OJF simulation parameters to HAWC2 settings
     =====================================================
 
-    The OJF selection is made using ojfdb.ojf_db.select(), and all its
+    The OJF selection is made using ojfdb_dict.ojf_db.select(), and all its
     parameters are keyword arguments. Here only the OJF derivable parameters
     are set and nothing else. The master_tags have to be set elsewhere
 
@@ -1514,7 +1514,7 @@ def ojf_to_hawc2(**kwargs):
     rpm_setter = kwargs.get('rpm_setter', 'all')
 
     # load the OJF test database
-    db = ojfdb.ojf_db(database, path_db=path_db)
+    db = ojf_db(database, path_db=path_db)
     data, ojf_cases, header = db.select(months, inc, exc, valuedict=valuedict,
                             runs_inc=runs_inc)
 
@@ -2868,7 +2868,7 @@ def fixyawerror_bladeload_azimuths():
     cao = sim.Cases(POSTDIR, sim_id, resdir=RESDIR, loadstats=True)
 
     # the OJF statistic database
-    db = ojfdb.ojf_db('symlinks_all')
+    db = ojf_db('symlinks_all')
 
     # some random cases
 #    cname = cao.cases.keys()[0]
@@ -2944,7 +2944,7 @@ def freeyaw_comparison():
     cao = sim.Cases(POSTDIR, sim_id, resdir=RESDIR, loadstats=True)
 
     # the OJF statistic database
-    db = ojfdb.ojf_db('symlinks_all')
+    db = ojf_db('symlinks_all')
 
     # mappings for sim_id = 'fr_05_free'
     # because we did not include the OJF case name in the sim_id,
@@ -3064,7 +3064,7 @@ def waketimecnst():
 if __name__ == '__main__':
 
     dummy = False
-    db = ojfdb.ojf_db('symlinks_all')
+    db = ojf_db('symlinks_all')
 
     # ------------------------------------------------------------------------
     # LAUNCHES
@@ -3112,7 +3112,7 @@ if __name__ == '__main__':
 
 #    sim_id = 'th_04'
 #    cao = sim.Cases(POSTDIR, sim_id, resdir=RESDIR, loadstats=True)
-#    db = ojfdb.ojf_db('symlinks_all')
+#    db = ojf_db('symlinks_all')
 #    cname = cao.cases.keys()[0]
 #    ojfcase = cao.cases[cname]['[ojf_case]']
 #    ojfcase = ''.join(ojfcase.split('_STC_')[:-1])

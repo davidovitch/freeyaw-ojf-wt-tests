@@ -7,6 +7,7 @@ Created on Sun Jan 20 18:14:02 2013
 
 import numpy as np
 import scipy as sp
+from scipy import signal
 
 import DataChecks as chk
 from misc import calc_sample_rate
@@ -73,7 +74,7 @@ class Filters:
             msg += " or 'blackman'"
             raise ValueError, msg
 
-        s = np.r_[x[window_len-1:0:-1],x,x[-1:-window_len:-1]]
+        s = np.r_[x[window_len-1:0:-1], x, x[-1:-window_len:-1]]
         #print(len(s))
         if window == 'flat': #moving average
             w = np.ones(window_len,'d')
@@ -110,6 +111,37 @@ class Filters:
         data_filt = sp.signal.lfilter(b, a, data)
 
         return data_filt
+
+    def butter_lowpass(self, sps, data, order=2, cutoff_hz=1.0):
+        """Simple Butterworth lowpass filter.
+        Source:
+        https://oceanpython.org/2013/03/11/signal-filtering-butterworth-filter/
+        """
+        # Normalized wrt Nyquist frequency
+        Wn = cutoff_hz*2.0/sps
+        # design filter
+        B, A = signal.butter(order, Wn, output='ba')
+        # Second, apply the filter
+        return signal.filtfilt(B, A, data)
+
+    def linregress(self, x, y, samples):
+        """Perform a linear regression at each sample, looking forward for
+        the specified amount of samples. Returns array of lenght len(x)-samples.
+
+        Returns
+        -------
+
+        regress : ndarray(len(x)-samples, 5)
+            2nd dimension holds: slope, intercept, r_value, p_value, std_err
+            (outcome of scipy.stats.linregress)
+        """
+        regress = np.ndarray((len(x)-samples, 5))
+
+        for i in xrange(regress.shape[0]):
+            i1 = i + samples
+            # slope, intercept, r_value, p_value, std_err
+            regress[i,:] = sp.stats.linregress(x[i:i1], y=y[i:i1])
+        return regress
 
     def fir(self, time, data, **kwargs):
         """
@@ -194,8 +226,7 @@ class Filters:
         N, beta = sp.signal.kaiserord(ripple_db, width)
 
         # Use firwin with a Kaiser window to create a lowpass FIR filter.
-        taps = sp.signal.firwin(N, cutoff_hz/nyq_rate,
-                                  window=('kaiser', beta))
+        taps = sp.signal.firwin(N, cutoff_hz/nyq_rate, window=('kaiser', beta))
 
         # Use lfilter to filter x with the FIR filter.
         filtered_x = sp.signal.lfilter(taps, 1.0, data)
@@ -211,7 +242,7 @@ class Filters:
 
         if plot:
             self.plot_fir(figpath, figfile, time, data, filtered_x, N, delay,
-                 sample_rate, taps, nyq_rate)
+                          sample_rate, taps, nyq_rate)
 
         return filtered_x, N, delay
 

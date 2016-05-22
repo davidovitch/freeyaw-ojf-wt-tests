@@ -722,7 +722,7 @@ class MeasureDb(object):
         if fname is None:
             fname = self.index_fname
         self.index = pd.read_hdf(fname, 'table')
-        if not self.index.index.name == 'basename':
+        if not self.index.index.name == 'basename' and 'basename' in self.index:
             self.index.set_index('basename', inplace=True)
         self.index_cols = set(self.index.columns)
         # this is expensive, only worth when doing a LOT of lookups (>100)
@@ -908,7 +908,7 @@ class MeasureDb(object):
             fname = os.path.join(path_db, 'db_stats_%s_%s.h5' % rpl)
             if update:
                 df_stat = getattr(self, stat)
-                df_add = pd.concat(df_stat, df_add)
+                df_add = pd.concat([df_stat, df_add])
             # save to HDF5 and xlsx
             df_add.to_hdf(fname, 'table')#, compression=9, complib='blosc')
             fname = os.path.join(path_db, 'db_stats_%s_%s.xlsx' % rpl)
@@ -918,8 +918,9 @@ class MeasureDb(object):
         if update:
             if not hasattr(self, 'index'):
                 self.load_index()
-            self.index = pd.concat(self.index, self.index_up)
+            self.index = pd.concat([self.index, self.index_up])
             self.index.to_hdf(self.index_fname, 'table', compression=9)
+            self.index.to_excel(self.index_fname.replace('.h5', '.xlsx'))
 
 ###############################################################################
 ### PLOTS

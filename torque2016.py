@@ -60,9 +60,9 @@ PROCESSING = 'processing/'
 df_index = pd.read_hdf('database/db_index_symlinks_all.h5', 'table')
 #df_index.set_index('basename', inplace=True)
 df_mean = pd.read_hdf('database/db_stats_symlinks_all_mean.h5', 'table')
-df_mean.set_index('index', inplace=True)
-df_std = pd.read_hdf('database/db_stats_symlinks_all_mean.h5', 'table')
-df_std.set_index('index', inplace=True)
+#df_mean.set_index('index', inplace=True)
+df_std = pd.read_hdf('database/db_stats_symlinks_all_std.h5', 'table')
+#df_std.set_index('index', inplace=True)
 
 
 def ct(df):
@@ -97,13 +97,49 @@ def power_torque_rpm(df):
     return df.tower_strain_ss * (df.rpm*np.pi/30.0) * -1.0
 
 
+def ct_vs_yawangle():
+    """
+    """
+
+    # april only
+    sel_ind = df_index[df_index.month==4]
+    sel_std = df_std[df_std.index.isin(sel_ind.index.tolist())]
+    # std should be low enough
+    sel_std = df_std[(df_std.yaw_angle > -1.2) & (df_std.yaw_angle < 1.2)]
+    # corresponding avarages
+    sel_mean = df_mean[df_mean.index.isin(sel_std.index.tolist())]
+
+    istiff = sel_ind[(sel_ind.blades=='stiff') | (sel_ind.blades=='stiffblades')]
+    stiff = df_mean[df_mean.index.isin(istiff.index.tolist())]
+
+    iflex = sel_ind[sel_ind.blades=='flex']
+    flex = df_mean[df_mean.index.isin(iflex.index.tolist())]
+
+    iflexies = sel_ind[sel_ind.blades=='flexies']
+    flexies = df_mean[df_mean.index.isin(iflexies.index.tolist())]
+
+    isam = sel_ind[sel_ind.blades=='samoerai']
+    sam = df_mean[df_mean.index.isin(isam.index.tolist())]
+
+    plt.figure('$C_T$ vs $\\psi$ (yaw angle)')
+    plt.plot(stiff.yaw_angle, ct(stiff), 'rs', label='stiff')
+    plt.plot(flex.yaw_angle, ct(flex), 'b<', label='flex')
+    plt.plot(flexies.yaw_angle, ct(flexies), 'g>', label='flexies')
+    plt.plot(sam.yaw_angle, ct(sam), 'ko', label='samoerai')
+    plt.ylim([-0.1, 0.8])
+    plt.legend(loc='best')
+    plt.grid()
+
+
 def power():
     """
     Can de tower bottom SS moment be correlated to rotor torque?
-    * there doesn't seem to be any relation between SS_moment*RPM
+
+    TODO:
+        * proper statistical corrolation plots
     """
 
-    sel_ind = df_index[df_index.month=='04'].copy()
+    sel_ind = df_index[df_index.month==4].copy()
     sel_std = df_std[df_std.index.isin(sel_ind.index.tolist())].copy()
     sel_std = df_std[(df_std.yaw_angle > -1) & (df_std.yaw_angle < 1)]
     sel_mean = df_mean[df_mean.index.isin(sel_std.index.tolist())].copy()
@@ -112,10 +148,12 @@ def power():
     plt.figure(0)
     plt.plot(tsr(sel_mean), sel_mean.power, 'rs')
     plt.plot(tsr(sel_mean), power_torque_rpm(sel_mean), 'b>', alpha=0.7)
+    plt.xlim([0,10])
 
     plt.figure(1)
     plt.plot(sel_mean.rpm, sel_mean.power, 'rs')
     plt.plot(sel_mean.rpm, power_torque_rpm(sel_mean), 'b>', alpha=0.7)
+#    plt.xlim([0,10])
 
     plt.figure(2)
     plt.plot(sel_mean.duty_cycle, sel_mean.power, 'rx')
@@ -142,7 +180,7 @@ def rpm_vs_tower_ss():
 def select_samoerai():
 
     sel_def = df_index[df_index.blades=='samoerai'].copy()
-    sel_def = sel_def[sel_def.month=='04']
+    sel_def = sel_def[sel_def.month==4]
 
     sel_std = df_std[df_std.index.isin(sel_def.index.tolist())].copy()
     sel_std = sel_std[(sel_std.yaw_angle > -1) & (sel_std.yaw_angle < 1)]

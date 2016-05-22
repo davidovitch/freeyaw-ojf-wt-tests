@@ -18,15 +18,16 @@ import os
 
 import numpy as np
 import pandas as pd
-import pylab as plt
+from matplotlib import pyplot as plt
 
 import ojfdb
 import ojfresult
 import plotting
 import filters
-from staircase import StairCase
+from staircase import StairCase, StairCaseIO
 
 PATH_DB = 'database/'
+PATH_DATA_CAL_HDF = 'data/calibrated/DataFrame/'
 
 ###############################################################################
 ### STEADY YAW ERR PERF
@@ -486,13 +487,22 @@ def add_freeyaw_steady_steps():
     figpath = 'figures/steps_freeyaw_play/'
     for case in idf.index:
         try:
-            db = freeyaw_steady_points(case, db, figpath)
+            fname = os.path.join(PATH_DATA_CAL_HDF, case + '.h5')
+            res = pd.read_hdf(fname, 'table')
+            time = res.time.values
+            figname = os.path.join(figpath, case + '_filter_stairs.png')
+
+            # low RPM: much bigger window
+
+            sc = StairCaseIO(time, freq_ds=10, plot_progress=True)
+            sc.get_steps([res.yaw_angle.values, res.rpm.values], cutoff_hz=1.0,
+                         order=2, window=3.0, x_threshold=0.8, figname=figname)
+
         except Exception as e:
             print(e)
             print('*'*80)
-    db.save_stats(prefix='symlinks_all', update=True)
+#    db.save_stats(prefix='symlinks_all', update=True)
     return db
-
 
 
 def test_add():
@@ -601,4 +611,5 @@ if __name__ == '__main__':
 
     dummy = False
 #    db = add_yawcontrol_stair_steps()
+    db = add_freeyaw_steady_steps()
 #    freeyaw_april_timings()

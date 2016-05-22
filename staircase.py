@@ -5,15 +5,37 @@ Created on Sun Jan 20 18:08:12 2013
 @author: dave
 """
 
+#from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from __future__ import absolute_import
+
+import math
+
 import numpy as np
 import scipy as sp
-import pylab as plt
+#from scipy import signal
+import matplotlib as mpl
+from matplotlib import pyplot as plt
+from matplotlib.collections import BrokenBarHCollection as region
 from scipy.interpolate import UnivariateSpline
 from matplotlib.ticker import FormatStrFormatter
+import pandas as pd
 
 import plotting
 from misc import calc_sample_rate
 from filters import Filters
+
+plt.rc('font', family='serif')
+plt.rc('xtick', labelsize=10)
+plt.rc('ytick', labelsize=10)
+plt.rc('axes', labelsize=12)
+plt.rc('text', usetex=True)
+plt.rc('legend', fontsize=11)
+plt.rc('legend', numpoints=1)
+plt.rc('legend', borderaxespad=0)
+mpl.rcParams['text.latex.unicode'] = True
+
 
 class StairCase:
 
@@ -646,3 +668,355 @@ class StairCase:
 
         ax1.grid(True)
         plot.save_fig()
+
+
+class StairCaseIO(Filters):
+    """
+    Filter signal, extract steady values, based on and input/output signal
+    strategy. One signal is the input of the system, which needs to be steady,
+    and the output is the response of the system.
+    """
+
+    def __init__(self, time, freq_ds=10, plot_progress=True):
+        """
+        Parameters
+        ----------
+
+        time : ndarray(n)
+
+        freq_ds : float, default=0.1
+            Frequency in Hz of the downsampled signal. Downsampling is applied
+            after the low pass filter.
+
+        outputs : ndarray(m,n)
+            Signals corresponding to the output of the system
+
+        inputs : ndarray(m,n), default=None
+            Signals that corresponds to the inputs of the system. When None,
+            inputs are ignored and now additional overlaying is done in order
+            to achieve both steady curves on the in- and outputs.
+        """
+        self.sps = calc_sample_rate(time)
+        self.t_ds = np.arange(time[0], time[-1], 1.0/freq_ds)
+        self.time = time
+        self.freq_ds = freq_ds
+
+    def get_steps(self, sigs, cutoff_hz=1.0, order=2, window=4.0,
+                  x_threshold=2.0, figname=None):
+        """
+        Parameters
+        ----------
+
+        sigs : list(ndarray(n), ndarray(n))
+            List of signals (1D-arrays)
+        """
+
+        x = sigs[0]
+        y = sigs[1]
+        xf, xf_ds, xf_ds_dt, x_regress = self.conditioning(x, cutoff_hz=cutoff_hz,
+                                                    order=order, window=window)
+        xf_ds_regress = x_regress[:,0]
+        yf, yf_ds, yf_ds_dt, y_regress = self.conditioning(y, cutoff_hz=cutoff_hz,
+                                                    order=order, window=window)
+        yf_ds_regress = y_regress[:,0]
+
+        # select on the product of yf_ds_regress * xf_ds_regress,
+        # both need to be steady!
+        xw = 1.0
+        yw = 0.6
+        xy_ds = xf_ds_regress*xw + yf_ds_regress*yw
+
+        xf_sel_mask, xf_sel_arg = self.select(xy_ds, x_threshold)
+
+        step_ds_mask, steps_ds = self.steady_steps(xf_sel_mask,
+                                                   step_lenght=window)
+        # save steps in high-res sampling of the original signal
+        steps = np.round(steps_ds * self.sps / self.freq_ds, 0).astype(np.int)
+        np.savetxt(figname.replace('.png', '_steps.txt'), steps)
+#        steps_ds_times = self.t_ds[steps_ds.flatten()]
+#        steps = np.ndarray(steps_ds.shape) * np.nan
+#        for k in range(steps.shape[0]):
+#            t0 = self.t_ds[steps[k,0]]
+#            t1 = self.t_ds[steps[k,1]]
+#            steps[k,0] = np.abs(self.time - t0).argmin()
+#            steps[k,0] = np.abs(self.time - t1).argmin()
+
+        if figname is not None:
+            print('start plotting...')
+            fig, axes = plotting.subplots(nrows=3, ncols=1, figsize=(8,9),
+                                          dpi=120)
+            ax = axes[0,0]
+            ax.set_title('original and filtered signals')
+            ax.plot(self.time, x, 'r-', alpha=0.3)
+            ax.plot(self.time, xf, 'r-')
+            ax.grid()
+            axr = ax.twinx()
+            axr.plot(self.time, y, 'g-', alpha=0.3)
+            axr.plot(self.time, yf, 'g-')
+
+            ax = axes[1,0]
+            ax.set_title('select threshold: %1.02f' % x_threshold)
+            t_mask = self.t_ds.copy()
+            t_mask[~xf_sel_mask] = np.nan
+            x_mask = xf_ds.copy()
+            x_mask[~xf_sel_mask] = np.nan
+            ax.plot(self.t_ds, xf_ds, 'r-', alpha=1.0, label='xf ds')
+            ax.plot(self.t_ds, x_mask, 'k-+', alpha=0.7, label='xf select')
+            ax.grid()
+            axr = ax.twinx()
+            axr.plot(self.t_ds, yf_ds, 'g-', alpha=0.8, label='yx ds')
+            y_mask = yf_ds.copy()
+            y_mask[~xf_sel_mask] = np.nan
+            axr.plot(self.t_ds, y_mask, 'k-+', alpha=0.7, label='yf select')
+            xmin = axr.get_ylim()[0]
+            xmax = axr.get_ylim()[1]
+            collection = region.span_where(self.t_ds, ymin=xmin, ymax=xmax,
+                                           where=xf_sel_mask, facecolor='grey',
+                                           alpha=0.4)
+            axr.add_collection(collection)
+            leg = plotting.one_legend(ax, axr, loc='best')
+            leg.get_frame().set_alpha(0.5)
+
+            ax = axes[2,0]
+            ax.set_title('lin regress and step window: %1.2f seconds' % window)
+            ax.plot(self.t_ds, np.abs(xf_ds_regress), 'r-',
+                    label='xf lin regress', alpha=0.9)
+            xmin = ax.get_ylim()[0]
+            xmax = ax.get_ylim()[1]
+            collection = region.span_where(self.t_ds, ymin=xmin, ymax=xmax,
+                                           where=step_ds_mask, facecolor='grey',
+                                           alpha=0.4)
+            ax.add_collection(collection)
+            axr = ax.twinx()
+            axr.plot(self.t_ds, np.abs(yf_ds_regress), 'g-',
+                     label='yf lin regress', alpha=0.9)
+            ax, axr = plotting.match_yticks(ax, axr)
+            ax.grid()
+            leg = plotting.one_legend(ax, axr, loc='best')
+            leg.get_frame().set_alpha(0.5)
+
+            fig.tight_layout()
+            fig.savefig(figname)
+            print(figname)
+
+    def conditioning(self, x, cutoff_hz=1.0, order=2, window=4.0):
+        """Apply several filter strategies before attempting to extract the
+        steady state parts of the signal.
+
+        Parameters
+        ----------
+
+        x : ndarray(n)
+
+        cutoff_hz : float, default=1.0 Hz
+
+        order : int, default=2
+
+        window : float, default=4.0 seconds
+        """
+        window_s = int(window*self.freq_ds)
+        xf = self.butter_lowpass(self.sps, x, order=order, cutoff_hz=cutoff_hz)
+        xf_ds = sp.interpolate.griddata(self.time, xf, self.t_ds)
+        xf_ds_regress = self.linregress(self.t_ds, xf_ds, window_s)
+#        # only keep the slopes
+#        xf_ds_regress = regress[:,0]
+
+#        # append nans at the beginning and end of linregress
+#        window_p1 = int(math.floor(window_s / 2.0))
+#        window_p2 = window_p1 + int(math.fmod(window_s, 2))
+#        # half the window upfront
+#        nans = np.ndarray((window_p1, xf_ds_regress.shape[1])) * np.nan
+#        xf_ds_regress = np.append(nans, xf_ds_regress, axis=0)
+#        # half the window after
+#        nans = np.ndarray((window_p2, xf_ds_regress.shape[1])) * np.nan
+#        xf_ds_regress = np.append(xf_ds_regress, nans, axis=0)
+
+        # entire window upfront
+        nans = np.ndarray((window_s, xf_ds_regress.shape[1])) * np.nan
+        xf_ds_regress = np.append(nans, xf_ds_regress, axis=0)
+
+        xf_ds_dt = np.diff(xf_ds) * self.freq_ds
+        return xf, xf_ds, xf_ds_dt, xf_ds_regress
+
+    def select(self, x, x_threshold):
+        """After filtering, only select points for which the derivatives are low
+        """
+        # maybe also select on another channel? Like the output?
+
+        # if no threshold is given, just take the 20% of the max value
+
+        x_select_mask = np.abs(x).__le__(x_threshold)
+        # reduce to 1D
+        x_select_arg = np.argwhere(np.abs(x) <= x_threshold).flatten()
+        return x_select_mask, x_select_arg
+
+    def steady_steps(self, x_mask, step_lenght=2.0):
+        """Find continues steps. By using the mask (boolean array) we can find
+        chunks of samples that are continiously within the threshold selection.
+
+        boolean_array.argmin indicates the first False value, argmax first True
+
+        """
+        step_lenght_s = int(round(step_lenght * self.freq_ds, 0))
+        step_mask = np.zeros(x_mask.shape, dtype=bool)
+        steps = np.ones((len(step_mask),2)) * np.nan
+
+        # find blocks with a minimum number of continious samples that have
+        # passed the select() procedure
+        i = 0
+        k = 0
+        x_len = len(x_mask)
+        while i < x_len:
+            # find the next True index
+            j0 = x_mask[i:].argmax()
+            # end of the current block: first False value
+            j1 = x_mask[i:].argmin()
+            # when at beginning of False block, j0 > j1, and move
+            # to the first True value again
+            if j0 > j1:
+                j1 = j0
+            # when only True/False values remain until end of array
+            elif j0 == j1:
+                # but when only False remains we're done
+                if not x_mask[i+j0]:
+                    i = x_len
+                j1 = x_len - i
+            if j1 - j0 >= step_lenght_s:
+                step_mask[i+j0:i+j1] = True
+                # and mark j0/j1 of each block
+                steps[k,:] = [i+j0, i+j1]
+                k += 1
+            i += j1
+        return step_mask, steps[~np.isnan(steps[:,0]),:]
+
+
+class Tests():
+
+    def test_StairCaseiO(self):
+        fname = '/home/dave/Repositories/public/0_davidovitch/'
+        fname += 'freeyaw-ojf-wt-tests/data/calibrated/DataFrame/'
+        fname += '0212_run_064_9.0ms_dc1_freeyawplaying_stiffblades'
+        fname += '_coning_pwm1000_highrpm.h5'
+        res = pd.read_hdf(fname, 'table')
+        time = res.time.values
+
+        figname = '/home/dave/Repositories/public/0_davidovitch/'
+        figname += 'freeyaw-ojf-wt-tests/figures/steps_freeyaw_play/'
+        figname += '0212_run_064_9.0ms_dc1_freeyawplaying_stiffblades'
+        figname += '_coning_pwm1000_highrpm_StairCaseIO.png'
+
+        sc = StairCaseIO(time, freq_ds=10, plot_progress=True)
+        sc.get_steps([res.yaw_angle.values, res.rpm.values], cutoff_hz=1.0,
+                     order=2, window=4.0, x_threshold=0.1, figname=figname)
+
+    def test_linregress(self):
+        """
+        """
+        fname = '/home/dave/Repositories/public/0_davidovitch/'
+        fname += 'freeyaw-ojf-wt-tests/data/calibrated/DataFrame/'
+        fname += '0212_run_064_9.0ms_dc1_freeyawplaying_stiffblades'
+        fname += '_coning_pwm1000_highrpm.h5'
+        res = pd.read_hdf(fname, 'table')
+        time = res.time.values
+        sps = 1.0 / np.diff(time).mean()
+
+        freq_down = 0.1
+        window = 4.0
+
+        ff = Filters()
+
+        data = res.rpm.values
+        data_f = ff.butter_lowpass(sps, data, order=2, cutoff_hz=1.0)
+        time_down = np.arange(time[0], time[-1], freq_down)
+        data_f_down = sp.interpolate.griddata(time, data_f, time_down)
+        regress = ff.linregress(time_down, data_f_down, int(window/freq_down))
+        diff = np.diff(data_f_down) / freq_down
+
+        plt.figure('rpm')
+        plt.plot(time, data, 'r-')
+        plt.plot(time_down, data_f_down, 'k--')
+        plt.twinx()
+        plt.plot(time_down[:-int(window/freq_down)], np.abs(regress[:,0]), 'b--')
+        plt.plot(time_down[:-1], np.abs(diff), 'g--')
+        plt.ylim([0, 5])
+        plt.grid()
+
+        data = res.yaw_angle.values
+        data_f = ff.butter_lowpass(sps, data, order=2, cutoff_hz=1.0)
+        data_f_down = sp.interpolate.griddata(time, data_f, time_down)
+        regress = ff.linregress(time_down, data_f_down, int(window/freq_down))
+        diff = np.diff(data_f_down) / freq_down
+
+        plt.figure('yaw')
+        plt.plot(time, data, 'r-')
+        plt.plot(time_down, data_f_down, 'k--')
+        plt.twinx()
+        plt.plot(time_down[:-int(window/freq_down)], np.abs(regress[:,0]), 'b--')
+        plt.plot(time_down[:-1], np.abs(diff), 'g--')
+        plt.ylim([0, 5])
+        plt.grid()
+
+    def test_stair_freeyaw(self):
+        """
+        """
+        fname = '/home/dave/Repositories/public/0_davidovitch/'
+        fname += 'freeyaw-ojf-wt-tests/data/calibrated/DataFrame/'
+        fname += '0212_run_064_9.0ms_dc1_freeyawplaying_stiffblades'
+        fname += '_coning_pwm1000_highrpm.h5'
+        res = pd.read_hdf(fname, 'table')
+        time = res.time.values
+        sps = 1.0 / np.diff(time).mean()
+
+        ff = Filters()
+
+        cutoff_hz = 1.0
+        order = 2
+        Wn = cutoff_hz*2.0/sps
+        B, A = sp.signal.butter(order, Wn, output='ba')
+        yawf = sp.signal.filtfilt(B, A, res.yaw_angle.values)
+
+        # YAW
+        plt.figure('yaw')
+        plt.plot(res.time, res.yaw_angle, 'r-')
+        plt.plot(res.time, yawf, 'b-')
+
+        B, A = sp.signal.butter(order, 1.0*2.0/sps, output='ba')
+        yawf2 = sp.signal.filtfilt(B, A, res.yaw_angle.values)
+        plt.plot(res.time, yawf2, 'k--')
+
+        # RPM
+        data = res.rpm.values
+        data_f = ff.butter_lowpass(sps, data, order=2, cutoff_hz=1.0)
+
+        plt.figure('rpm')
+        plt.plot(res.time, data, 'r-')
+        plt.plot(res.time, data_f, 'b-')
+
+
+#        filtered_x, N, delay = ff.fir(time, res.rpm, cutoff_hz=1.0,
+#                                      freq_trans_width=1.0, ripple_db=50.0)
+#        plt.plot(res.time, filtered_x, 'k--')
+
+        smooth_window = 2.0
+        ws = int(smooth_window*sps)
+        data_s = ff.smooth(res.rpm, window_len=ws, window='hanning')
+        NN = len(data_s) - len(time)
+        data_s = data_s[NN:]
+#        time_s = time[NN:]
+        plt.plot(time+(smooth_window/2.0), data_s, 'k--')
+
+        # and up again in order not to brake the plotting further down
+        time_down = np.arange(time[0], time[-1], 0.1)
+        data_f_down = sp.interpolate.griddata(time, data_f, time_down)
+
+        plt.plot(time_down, data_f_down, 'm-', alpha=0.7)
+
+#        # and upsampling again
+#        data = sp.interpolate.griddata(time_down, data_down, time)
+
+        slope, intercept, r_value, p_value, std_err \
+            = sp.stats.linregress(data_f_down, y=time_down)
+
+
+if __name__ == '__main__':
+    Tests().test_StairCaseiO()

@@ -1190,7 +1190,7 @@ class A4Tuned:
             # input is now in cm, standard A4 with 1cm margins
             # was 27.7 before
             # figure size x based on latex pagewidth for thesis
-            figsize_x = kwargs.get('figsize_x', size_x_perfig)
+            figsize_x = kwargs.get('figsize_x', 38/2.0)
             figsize_y = kwargs.get('figsize_y', fixsize_y_dyn)
         elif self.nr_plots < 13 and self.nr_plots > 4 and self.nr_cols < 0:
             self.nr_rows = math.ceil(self.nr_plots/2.)
@@ -2277,6 +2277,43 @@ def subplots(nrows=1, ncols=1, figsize=(12,8), dpi=120, num=0):
             axes[row,col] = fig.add_subplot(nrows, ncols, plt_nr)
             plt_nr += 1
     return fig, axes
+
+
+def one_legend(*args, **kwargs):
+    # or more general: not only simple line plots (bars, hist, ...)
+    objs = []
+    for ax in args:
+        objs += ax.get_legend_handles_labels()[0]
+#    objs = [ax.get_legend_handles_labels()[0] for ax in args]
+    labels = [obj.get_label() for obj in objs]
+    # place the legend on the last axes
+    leg = ax.legend(objs, labels, **kwargs)
+    return leg
+
+
+def match_yticks(ax1, ax2, nr_ticks_forced=None, extend=False):
+    """
+    """
+
+    if nr_ticks_forced is None:
+        nr_yticks1 = len(ax1.get_yticks())
+    else:
+        nr_yticks1 = nr_ticks_forced
+        ylim1 = ax1.get_ylim()
+        yticks1 = np.linspace(ylim1[0], ylim1[1], num=nr_yticks1).tolist()
+        ax1.yaxis.set_ticks(yticks1)
+
+    ylim2 = ax2.get_ylim()
+    yticks2 = np.linspace(ylim2[0], ylim2[1], num=nr_yticks1).tolist()
+    ax2.yaxis.set_ticks(yticks2)
+
+    if extend:
+        offset1 = (ylim1[1] - ylim1[0])*0.1
+        ax1.set_ylim(ylim1[0]-offset1, ylim1[1]+offset1)
+        offset2 = (ylim2[1] - ylim2[0])*0.1
+        ax2.set_ylim(ylim2[0]-offset2, ylim2[1]+offset2)
+
+    return ax1, ax2
 
 
 if __name__ == '__main__':

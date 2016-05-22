@@ -8,6 +8,11 @@ time ranges so we can actually calculate how fast the yaw angle is recovering
 @author: dave
 """
 
+from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from __future__ import absolute_import
+
 # built in modules
 import os
 
@@ -313,14 +318,12 @@ def results_filtering(cr, figpath, fig_descr, arg_stair):
     np.savetxt(figpath + cr.resfile + fig_descr, datastair)
 
 
-def freeyaw_steady_points(resfile, db):
+def freeyaw_steady_points(resfile, db, figpath):
     """
     Select the steady points on the forced free yaw OJF cases.
 
     We only consider data with sane tower strain, so only April!
     """
-
-    figpath = 'figures/forced_yaw_error/'
 
     respath = os.path.join(PATH_DB, 'symlinks_all/')
     res = ojfresult.ComboResults(respath, resfile, silent=False, sync=True,
@@ -431,14 +434,18 @@ def freeyaw_steady_points(resfile, db):
     return db
 
 
-def select_freeyaw():
+def add_yawcontrol_stair_steps():
     """
     Use the new DataFrame index to select the cases.
 
     yaw_mode = freeyawforced
     yaw_mode = freeyaw and the_rest = forced
 
+    Extract the steps from the staircase measurements, and add to index
+    and statistics database.
+
     """
+    figpath = 'figures/forced_yaw_error/'
 #    fname = os.path.join(PATH_DB, 'db_index_symlinks_all.h5')
 #    df_db = pd.read_hdf(fname, 'table')
     db = ojfdb.MeasureDb(prefix='symlinks_all', path_db='database/')
@@ -455,13 +462,37 @@ def select_freeyaw():
         # '0410_run_332'
         if not int(case.split('_')[2]) == 413:
             # plotting of all the cases
-            db = freeyaw_steady_points(case, db)
+            db = freeyaw_steady_points(case, db, figpath)
             #
         else:
             continue
 
-#    db.save_stats(prefix='yawstairs')
+#    db.save_stats(prefix='yawstairs', update=False)
+    db.save_stats(prefix='symlinks_all', update=True)
     return db
+
+
+def add_freeyaw_steady_steps():
+    """
+    """
+    db = ojfdb.MeasureDb(prefix='symlinks_all', path_db='database/')
+    idf = db.index
+    idf = idf[(idf.rpm_change=='') & (idf.sweepid=='') &
+              (idf.yaw_mode.str.startswith('free'))]
+    # remove cases that have been used for add_yawcontrol_stair_steps()
+    idf = idf[(idf.yaw_mode != 'freeyawforced') & (idf.the_rest != 'forced') &
+              (idf.yaw_mode2 != 'yawcontrol') ]
+
+    figpath = 'figures/steps_freeyaw_play/'
+    for case in idf.index:
+        try:
+            db = freeyaw_steady_points(case, db, figpath)
+        except Exception as e:
+            print(e)
+            print('*'*80)
+    db.save_stats(prefix='symlinks_all', update=True)
+    return db
+
 
 
 def test_add():
@@ -569,5 +600,5 @@ def freeyaw_april_timings():
 if __name__ == '__main__':
 
     dummy = False
-#    db = select_freeyaw()
+#    db = add_yawcontrol_stair_steps()
 #    freeyaw_april_timings()

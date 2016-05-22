@@ -9,6 +9,7 @@ import ojfdb
 import towercal
 import yawcal
 import bladecal
+import ojf_freeyaw
 
 
 def rebuild_symlink_database():
@@ -33,7 +34,8 @@ def rebuild_symlink_database():
                          dataframe=True, resample=True, continue_build=False,
                          save_df=False, save_df_csv=False)
 
-    # add the freeyaw stair cases to the stats collection
+    # add the freeyaw control stair cases to the stats collection
+    ojf_freeyaw.add_yawcontrol_stair_steps()
 
 
 def rebuild_calibration_data():

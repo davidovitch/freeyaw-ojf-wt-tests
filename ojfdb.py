@@ -1537,111 +1537,31 @@ def plot_rpm_vs_blade(prefix, blade):
     iblade = hd['B2 30']
     doplot(figfile, iblade, title, ylabel)
 
-def plot_ct_vs_lambda_rotors(prefix):
-    """
-    Compare the CT of the swept, and non swept blades
-    """
 
-    path_db = PATH_DB
-    db = ojf_db(prefix, debug=True, path_db=path_db)
-
-    figpath = 'figures/overview/'
-    scale = 1.5
-
-    exc = ['coning']
-    std = {'RPM':[0,10], 'yaw':[0, 0.5], 'wind':[0, 0.1]}
-    apr10,ca,hd = db.select(['04'], [], exc, values_std=std,
-                            valuedict={'wind':[9.82, 10.18],'yaw':[-1.0,0.5]})
-    apr9,ca,hd = db.select(['04'], [], exc, values_std=std,
-                           valuedict={'wind':[8.82, 9.18],'yaw':[-1.0,0.5]})
-    apr8,ca,hd = db.select(['04'], [], exc, values_std=std,
-                           valuedict={'wind':[7.82, 8.18],'yaw':[-1.0,0.5]})
-    apr7,ca,hd = db.select(['04'], [], exc, values_std=std,
-                           valuedict={'wind':[6.82, 7.18],'yaw':[-1.0,0.5]})
-    apr6,ca,hd = db.select(['04'], [], exc, values_std=std,
-                           valuedict={'wind':[5.82, 6.18],'yaw':[-1.0,0.5]})
-    apr5,ca,hd = db.select(['04'], [], exc, values_std=std,
-                           valuedict={'wind':[4.82, 5.18],'yaw':[-1.0,0.5]})
-#    apr4,ca,hd = db.select(['04'], [], ex, valuedict={'wind':[3.82, 4.18]})
-
-    # --------------------------------------------------------------------
-    # CT-LAMBDA
-    # --------------------------------------------------------------------
-    figfile = '%s-ct-vs-lambda-april-swept' % prefix
-    pa4 = plotting.A4Tuned(scale=scale)
-    pa4.setup(figpath+figfile, nr_plots=1, hspace_cm=2., figsize_x=8,
-                   grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
-                   wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
-    ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
-
-    ax1.plot(db.tsr(apr10), db.ct(apr10), 'bo', label='10 m/s')
-    ax1.plot(db.tsr(apr9), db.ct(apr9), 'rs', label='9 m/s')
-    ax1.plot(db.tsr(apr8), db.ct(apr8), 'gv', label='8 m/s')
-    ax1.plot(db.tsr(apr7), db.ct(apr7), 'm<', label='7 m/s')
-    ax1.plot(db.tsr(apr6), db.ct(apr6), 'c^', label='6 m/s')
-    ax1.plot(db.tsr(apr5), db.ct(apr5), 'y>', label='5 m/s')
-#    ax1.plot(apr4), apr4), 'bo', label='4 m/s')
-
-    leg = ax1.legend(loc='best')
-    leg.get_frame().set_alpha(0.5)
-    ax1.set_title('April, fixed yaw', size=14*scale)
-    ax1.set_xlabel('tip speed ratio $\lambda$')
-    ax1.set_ylabel('thrust coefficient $C_T$')
-#    ax1.set_xlim([4, 19])
-    ax1.grid(True)
-    pa4.save_fig()
-
-    # --------------------------------------------------------------------
-    # THRUST-LAMBDA
-    # --------------------------------------------------------------------
-    ifa = hd['FA']
-    figfile = '%s-fa-vs-lambda-april-swept' % prefix
-    pa4 = plotting.A4Tuned(scale=scale)
-    pa4.setup(figpath+figfile, nr_plots=1, hspace_cm=2., figsize_x=8,
-                   grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
-                   wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
-    ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
-
-    ax1.plot(db.tsr(apr10),apr10[ifa,:],'bo', label='10 m/s')
-    ax1.plot(db.tsr(apr9), apr9[ifa,:], 'rs', label='9 m/s')
-    ax1.plot(db.tsr(apr8), apr8[ifa,:], 'gv', label='8 m/s')
-    ax1.plot(db.tsr(apr7), apr7[ifa,:], 'm<', label='7 m/s')
-    ax1.plot(db.tsr(apr6), apr6[ifa,:], 'c^', label='6 m/s')
-    ax1.plot(db.tsr(apr5), apr5[ifa,:], 'y>', label='5 m/s')
-
-    leg = ax1.legend(loc='best')
-    leg.get_frame().set_alpha(0.5)
-    ax1.set_title('April, fixed zero yaw', size=14*scale)
-    ax1.set_xlabel('tip speed ratio $\lambda$')
-    ax1.set_ylabel('Tower FA bending [Nm]')
-    ax1.grid(True)
-    pa4.save_fig()
-
-
-def plot_ct_vs_lambda():
+def plot_ct_vs_lambda(blades='straight'):
     """
     Have all the relevant stuff plotted versus the tip speed ratio lambda!
     That will gave a better understanding of the stuff
     """
 
-#    path_db = PATH_DB
-#    db = ojf_db(prefix, debug=True, path_db=path_db)
-
     figpath = 'figures/overview/'
     scale = 1.5
 
     prefix = 'symlinks_all'
-    db = MeasureDb(prefix='symlinks_all', path_db='database/')
+    db = MeasureDb(prefix=prefix, path_db='database/')
     db.load_stats()
-    #df_mean.set_index('index', inplace=True)
-#    df_std = pd.read_hdf('database/db_stats_symlinks_all_std.h5', 'table')
-#    sel_std = df_std[(df_std.yaw_angle > -1.2) & (df_std.yaw_angle < 1.2)]
-
-    mbase = db.mean[(db.std.rpm>0.0) & (db.std.rpm<10.0) &
-                    (db.std.yaw_angle>0.0) & (db.std.yaw_angle<0.5) &
-                    (db.std.wind_speed>0.0) & (db.std.wind_speed<0.1) &
-                    (db.mean.yaw_angle>-1.0) & (db.mean.yaw_angle<0.5)]
-    ibase = db.index[(db.index.coning=='') & (db.index.blades!='samoerai')]
+    mbase = db.mean[(db.std.rpm>=0.0) & (db.std.rpm<10.0) &
+                    (db.std.yaw_angle>=0.0) & (db.std.yaw_angle<0.5) &
+                    (db.std.wind_speed>=0.0) & (db.std.wind_speed<0.1) &
+                    (db.mean.yaw_angle>-1.0) & (db.mean.yaw_angle<1.0)]
+    if blades == 'straight':
+        ibase = db.index[(db.index.coning=='') & (db.index.blades!='samoerai') &
+                         (db.index.month==4)]
+    elif blades == 'swept':
+        ibase = db.index[(db.index.coning=='') & (db.index.blades=='samoerai') &
+                         (db.index.month==4)]
+    else:
+        raise(ValueError, 'blades should be straight or swept')
     mbase = mbase[mbase.index.isin(ibase.index.tolist())]
 
     apr10 = mbase[(mbase.wind_speed>9.82) & (mbase.wind_speed<10.18)]
@@ -1654,7 +1574,7 @@ def plot_ct_vs_lambda():
     # --------------------------------------------------------------------
     # CT-LAMBDA
     # --------------------------------------------------------------------
-    figfile = '%s-ct-vs-lambda-april' % prefix
+    figfile = '%s-ct-vs-lambda-april-blades-%s' % (prefix, blades)
     pa4 = plotting.A4Tuned(scale=scale)
     pa4.setup(figpath+figfile, nr_plots=1, hspace_cm=2., figsize_x=8,
                    grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
@@ -1671,17 +1591,17 @@ def plot_ct_vs_lambda():
 
     leg = ax1.legend(loc='best')
     leg.get_frame().set_alpha(0.5)
-    ax1.set_title('April, fixed yaw', size=14*scale)
+    ax1.set_title('April, zero yaw, %s blades' % blades, size=14*scale)
     ax1.set_xlabel('tip speed ratio $\lambda$')
     ax1.set_ylabel('thrust coefficient $C_T$')
-#    ax1.set_xlim([4, 19])
+    ax1.set_xlim([0, 9])
     ax1.grid(True)
     pa4.save_fig()
 
     # --------------------------------------------------------------------
     # THRUST-LAMBDA
     # --------------------------------------------------------------------
-    figfile = '%s-fa-vs-lambda-april' % prefix
+    figfile = '%s-fa-vs-lambda-april-blades-%s' % (prefix, blades)
     pa4 = plotting.A4Tuned(scale=scale)
     pa4.setup(figpath+figfile, nr_plots=1, hspace_cm=2., figsize_x=8,
                    grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
@@ -1697,9 +1617,10 @@ def plot_ct_vs_lambda():
 
     leg = ax1.legend(loc='best')
     leg.get_frame().set_alpha(0.5)
-    ax1.set_title('April, fixed zero yaw', size=14*scale)
+    ax1.set_title('April, zero yaw, %s blades' % blades, size=14*scale)
     ax1.set_xlabel('tip speed ratio $\lambda$')
     ax1.set_ylabel('Tower FA bending [Nm]')
+    ax1.set_xlim([0, 9])
     ax1.grid(True)
     pa4.save_fig()
 
@@ -2049,6 +1970,12 @@ if __name__ == '__main__':
 #    plot_blade_vs_lambda(prefix, 'stiff')
 #    plot_rpm_vs_blade(prefix, 'flex')
 #    plot_rpm_vs_blade(prefix, 'stiff')
+
+    # new df db format
+#    plot_voltage_current()
+#    plot_rpm_wind()
+#    plot_ct_vs_lambda(blades='straight')
+#    plot_ct_vs_lambda(blades='swept')
 
     # read a single file for debugging/checking
 #    case = '0213_run_108_8.0ms_dc1_samoerai_fixyaw_pwm1000_highrpm'

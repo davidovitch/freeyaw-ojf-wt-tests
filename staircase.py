@@ -670,14 +670,14 @@ class StairCase:
         plot.save_fig()
 
 
-class StairCaseIO(Filters):
+class StairCaseNG(Filters):
     """
     Filter signal, extract steady values, based on and input/output signal
     strategy. One signal is the input of the system, which needs to be steady,
     and the output is the response of the system.
     """
 
-    def __init__(self, time, freq_ds=10, plot_progress=True):
+    def __init__(self, time, freq_ds=10):
         """
         Parameters
         ----------
@@ -701,8 +701,8 @@ class StairCaseIO(Filters):
         self.time = time
         self.freq_ds = freq_ds
 
-    def get_steps(self, sigs, cutoff_hz=1.0, order=2, window=4.0,
-                  x_threshold=2.0, figname=None):
+    def get_steps(self, sigs, weights, cutoff_hz=1.0, order=2, window=4.0,
+                  x_threshold=2.0, figname=None, min_step_window=2.0):
         """
         Parameters
         ----------
@@ -722,14 +722,14 @@ class StairCaseIO(Filters):
 
         # select on the product of yf_ds_regress * xf_ds_regress,
         # both need to be steady!
-        xw = 1.0
-        yw = 0.6
-        xy_ds = xf_ds_regress*xw + yf_ds_regress*yw
+        xw = weights[0]
+        yw = weights[1]
+        xy_ds = np.abs(xf_ds_regress*xw) + np.abs(yf_ds_regress*yw)
 
         xf_sel_mask, xf_sel_arg = self.select(xy_ds, x_threshold)
 
         step_ds_mask, steps_ds = self.steady_steps(xf_sel_mask,
-                                                   step_lenght=window)
+                                                   step_lenght=min_step_window)
         # save steps in high-res sampling of the original signal
         steps = np.round(steps_ds * self.sps / self.freq_ds, 0).astype(np.int)
         np.savetxt(figname.replace('.png', '_steps.txt'), steps)
@@ -755,7 +755,7 @@ class StairCaseIO(Filters):
             axr.plot(self.time, yf, 'g-')
 
             ax = axes[1,0]
-            ax.set_title('select threshold: %1.02f' % x_threshold)
+            ax.set_title('lin regr window: %1.02f sec' % window)
             t_mask = self.t_ds.copy()
             t_mask[~xf_sel_mask] = np.nan
             x_mask = xf_ds.copy()
@@ -778,30 +778,47 @@ class StairCaseIO(Filters):
             leg.get_frame().set_alpha(0.5)
 
             ax = axes[2,0]
-            ax.set_title('lin regress and step window: %1.2f seconds' % window)
+            rpl = (x_threshold, min_step_window)
+            ax.set_title('threshold: %1.02f, min step window: %1.2f sec' % rpl)
             ax.plot(self.t_ds, np.abs(xf_ds_regress), 'r-',
                     label='xf lin regress', alpha=0.9)
+            ax.plot(self.t_ds, np.abs(yf_ds_regress), 'g-',
+                     label='yf lin regress', alpha=0.9)
+            ax.plot(self.t_ds, np.abs(xy_ds), 'k-', label='xy*w', alpha=0.7)
+            ax.axhline(y=x_threshold, linewidth=1, color='k', linestyle='--',
+                       aa=False)
+            ax.set_ylim([0,5])
             xmin = ax.get_ylim()[0]
             xmax = ax.get_ylim()[1]
             collection = region.span_where(self.t_ds, ymin=xmin, ymax=xmax,
                                            where=step_ds_mask, facecolor='grey',
                                            alpha=0.4)
             ax.add_collection(collection)
-            axr = ax.twinx()
-            axr.plot(self.t_ds, np.abs(yf_ds_regress), 'g-',
-                     label='yf lin regress', alpha=0.9)
-            ax, axr = plotting.match_yticks(ax, axr)
+#            axr = ax.twinx()
+#            axr.plot(self.t_ds, np.abs(yf_ds_regress), 'g-',
+#                     label='yf lin regress', alpha=0.9)
+#            ax, axr = plotting.match_yticks(ax, axr)
+#            axr.set_ylim([0,5])
+#            leg = plotting.one_legend(ax, axr, loc='best')
+#            leg.get_frame().set_alpha(0.5)
+
             ax.grid()
-            leg = plotting.one_legend(ax, axr, loc='best')
+            leg = ax.legend(loc='best')
             leg.get_frame().set_alpha(0.5)
 
             fig.tight_layout()
             fig.savefig(figname)
             print(figname)
 
+        return steps
+
     def conditioning(self, x, cutoff_hz=1.0, order=2, window=4.0):
         """Apply several filter strategies before attempting to extract the
         steady state parts of the signal.
+
+        Regression value at a given point is calculated based on a forward
+        looking window of a given number of seconds (set by the window
+        keyword argument).
 
         Parameters
         ----------
@@ -821,19 +838,23 @@ class StairCaseIO(Filters):
 #        # only keep the slopes
 #        xf_ds_regress = regress[:,0]
 
-#        # append nans at the beginning and end of linregress
-#        window_p1 = int(math.floor(window_s / 2.0))
-#        window_p2 = window_p1 + int(math.fmod(window_s, 2))
-#        # half the window upfront
-#        nans = np.ndarray((window_p1, xf_ds_regress.shape[1])) * np.nan
-#        xf_ds_regress = np.append(nans, xf_ds_regress, axis=0)
-#        # half the window after
-#        nans = np.ndarray((window_p2, xf_ds_regress.shape[1])) * np.nan
-#        xf_ds_regress = np.append(xf_ds_regress, nans, axis=0)
-
-        # entire window upfront
-        nans = np.ndarray((window_s, xf_ds_regress.shape[1])) * np.nan
+        # append nans at the beginning and end of linregress
+        window_p1 = int(math.floor(window_s / 2.0))
+        window_p2 = window_p1 + int(math.fmod(window_s, 2))
+        # half the window upfront
+        nans = np.ndarray((window_p1, xf_ds_regress.shape[1])) * np.nan
         xf_ds_regress = np.append(nans, xf_ds_regress, axis=0)
+        # half the window after
+        nans = np.ndarray((window_p2, xf_ds_regress.shape[1])) * np.nan
+        xf_ds_regress = np.append(xf_ds_regress, nans, axis=0)
+
+#        # entire window upfront
+#        nans = np.ndarray((window_s, xf_ds_regress.shape[1])) * np.nan
+#        xf_ds_regress = np.append(nans, xf_ds_regress, axis=0)
+
+#        # entire window added at the end, should be theoretically the best
+#        nans = np.ndarray((window_s, xf_ds_regress.shape[1])) * np.nan
+#        xf_ds_regress = np.append(xf_ds_regress, nans, axis=0)
 
         xf_ds_dt = np.diff(xf_ds) * self.freq_ds
         return xf, xf_ds, xf_ds_dt, xf_ds_regress
@@ -859,7 +880,7 @@ class StairCaseIO(Filters):
         """
         step_lenght_s = int(round(step_lenght * self.freq_ds, 0))
         step_mask = np.zeros(x_mask.shape, dtype=bool)
-        steps = np.ones((len(step_mask),2)) * np.nan
+        steps = np.ones((2,len(step_mask))) * np.nan
 
         # find blocks with a minimum number of continious samples that have
         # passed the select() procedure
@@ -881,13 +902,14 @@ class StairCaseIO(Filters):
                 if not x_mask[i+j0]:
                     i = x_len
                 j1 = x_len - i
+            # when the block contains enough samples
             if j1 - j0 >= step_lenght_s:
                 step_mask[i+j0:i+j1] = True
                 # and mark j0/j1 of each block
-                steps[k,:] = [i+j0, i+j1]
+                steps[:,k] = [i+j0, i+j1]
                 k += 1
             i += j1
-        return step_mask, steps[~np.isnan(steps[:,0]),:]
+        return step_mask, steps[:,~np.isnan(steps[0,:])]
 
 
 class Tests():
@@ -905,7 +927,7 @@ class Tests():
         figname += '0212_run_064_9.0ms_dc1_freeyawplaying_stiffblades'
         figname += '_coning_pwm1000_highrpm_StairCaseIO.png'
 
-        sc = StairCaseIO(time, freq_ds=10, plot_progress=True)
+        sc = StairCaseNG(time, freq_ds=10, plot_progress=True)
         sc.get_steps([res.yaw_angle.values, res.rpm.values], cutoff_hz=1.0,
                      order=2, window=4.0, x_threshold=0.1, figname=figname)
 

@@ -24,13 +24,13 @@ import ojfdb
 import ojfresult
 import plotting
 import filters
-from staircase import StairCase, StairCaseIO
+from staircase import StairCase, StairCaseNG
 
 PATH_DB = 'database/'
 PATH_DATA_CAL_HDF = 'data/calibrated/DataFrame/'
 
 ###############################################################################
-### STEADY YAW ERR PERF
+### YAW ERRORS, OLD
 ###############################################################################
 
 def results_filtering(cr, figpath, fig_descr, arg_stair):
@@ -468,8 +468,100 @@ def add_yawcontrol_stair_steps():
         else:
             continue
 
-#    db.save_stats(prefix='yawstairs', update=False)
-    db.save_stats(prefix='symlinks_all', update=True)
+    db.add_df_dict2stat(update=True)
+    db.save(complib=None)
+    return db
+
+
+def remove_yawcontrol_db():
+    """Remove the yawcontrol cases from the database, they where added using
+    the older stair extraction process.
+    """
+    db = ojfdb.MeasureDb(prefix='symlinks_all', path_db='database/')
+    idf = db.index
+    idf = idf[(idf.yaw_mode == 'freeyawforced') |
+              (idf.yaw_mode2 == 'yawcontrol') |
+              ((idf.yaw_mode == 'freeyaw') & (idf.the_rest == 'forced'))]
+    # extract the old steps to compare
+    idf_old = idf[idf.run_type == 'stair_step'].copy()
+    db.load_stats()
+
+#    mean_old = db.mean.loc[idf_old.index]
+#    plt.figure('yaw angle vs rpm')
+#    plt.plot(mean_old.yaw_angle, mean_old.rpm, 'rs')
+
+    db.remove_from_stats_index(idf_old.index)
+    db.save(complib=None)
+
+
+###############################################################################
+### STEADY YAW ERRORS, NG
+###############################################################################
+
+
+def remove_stair_step():
+    """Remove all the stair step cases again from index and stats. This is
+    helpfull when we want to run the stair extraction process again
+    """
+
+    db = ojfdb.MeasureDb(prefix='symlinks_all', path_db='database/')
+    db.load_stats()
+    id_rem = db.index[db.index.run_type=='stair_step'].index
+    db.remove_from_stats_index(id_rem)
+    db.save(complib='zlib')
+
+
+def add_yawcontrol_steps_ng():
+    """
+    """
+    db = ojfdb.MeasureDb(prefix='symlinks_all', path_db='database/')
+    idf = db.index#[db.index.month == 2]
+    idf = idf[(idf.yaw_mode == 'freeyawforced') |
+              (idf.yaw_mode2 == 'yawcontrol') |
+              ((idf.yaw_mode == 'freeyaw') & (idf.the_rest == 'forced'))]
+#    # remove previous extracted steps from the same cases
+#    idf = idf[idf.run_type=='']
+#    db.index = idf
+
+    figpath = 'figures/forced_yaw_error_ng/'
+    for case in idf.index:
+        try:
+            fname = os.path.join(PATH_DATA_CAL_HDF, case + '.h5')
+            res = pd.read_hdf(fname, 'table')
+            time = res.time.values
+            figname = os.path.join(figpath, case + '_filter_stairs.png')
+
+            sc = StairCaseNG(time, freq_ds=10)
+            sigs = [res.yaw_angle.values, res.rpm.values]
+            weights = [1.5, 1.0]
+
+            # low RPM: much bigger window compared to high RPM?
+            if res.rpm.mean() < 200:
+                w_lregr = 3.5
+                x_threshold = 0.3
+                min_step_window = 2.5
+            else:
+                w_lregr = 1.5
+                x_threshold = 0.6
+                min_step_window = 1.0
+            steps = sc.get_steps(sigs, weights, cutoff_hz=1.0, window=w_lregr,
+                                 x_threshold=x_threshold, figname=figname,
+                                 min_step_window=min_step_window, order=2)
+            db.add_staircase_stats(case, res, steps)
+
+        except Exception as e:
+            print(e)
+            print('*'*80)
+
+#    # evaluate the performance
+#    db._dict2df()
+#    # compare with old results
+#    plt.figure('yaw angle vs rpm')
+#    plt.plot(mean_old.yaw_angle, mean_old.rpm, 'rs')
+#    plt.plot(db.df_mean.yaw_angle, db.df_mean.rpm, 'b>', alpha=0.7)
+
+    db.add_df_dict2stat(update=True)
+    db.save(complib='zlib')
     return db
 
 
@@ -492,16 +584,32 @@ def add_freeyaw_steady_steps():
             time = res.time.values
             figname = os.path.join(figpath, case + '_filter_stairs.png')
 
-            # low RPM: much bigger window
+            sc = StairCaseNG(time, freq_ds=10)
+            sigs = [res.yaw_angle.values, res.rpm.values]
 
-            sc = StairCaseIO(time, freq_ds=10, plot_progress=True)
-            sc.get_steps([res.yaw_angle.values, res.rpm.values], cutoff_hz=1.0,
-                         order=2, window=3.0, x_threshold=0.8, figname=figname)
+            # low RPM: much bigger window compared to high RPM?
+            if res.rpm.mean() < 200:
+                w_lregr = 3.5
+                x_threshold = 0.25
+                min_step_window = 3.0
+                weights = [1.5, 1.0]
+            else:
+                w_lregr = 1.5
+                x_threshold = 0.6
+                min_step_window = 1.0
+                weights = [1.5, 1.0]
+            steps = sc.get_steps(sigs, weights, cutoff_hz=1.0, window=w_lregr,
+                                 x_threshold=x_threshold, figname=figname,
+                                 min_step_window=min_step_window, order=2)
+            db.add_staircase_stats(case, res, steps)
 
         except Exception as e:
             print(e)
             print('*'*80)
-#    db.save_stats(prefix='symlinks_all', update=True)
+
+    db.add_df_dict2stat(update=True)
+    db.save(complib='zlib')
+
     return db
 
 
@@ -610,6 +718,6 @@ def freeyaw_april_timings():
 if __name__ == '__main__':
 
     dummy = False
-#    db = add_yawcontrol_stair_steps()
-    db = add_freeyaw_steady_steps()
+#    db = add_yawcontrol_steps_ng()
+#    db = add_freeyaw_steady_steps()
 #    freeyaw_april_timings()

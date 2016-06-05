@@ -968,9 +968,8 @@ def ct(df):
     rho = 1.225
     V = df.wind_speed
     # and nodfrmalize to get the thrust coefficient
-    ct = thrust / (0.5*rho*V*V*ojf_post.model.A)
 
-    return ct
+    return thrust / (0.5*rho*V*V*ojf_post.model.A)
 
 
 ###############################################################################
@@ -997,9 +996,6 @@ def plot_voltage_current():
     prefix = 'symlinks_all'
     db = MeasureDb(prefix='symlinks_all', path_db='database/')
     db.load_stats()
-    #df_mean.set_index('index', inplace=True)
-#    df_std = pd.read_hdf('database/db_stats_symlinks_all_std.h5', 'table')
-#    sel_std = df_std[(df_std.yaw_angle > -1.2) & (df_std.yaw_angle < 1.2)]
 
     sel02_dc0 = db.index[(db.index.month==2) & (db.index.dc==0)]
     sel02_dc1 = db.index[(db.index.month==2) & (db.index.dc==1)]
@@ -1145,18 +1141,6 @@ def plot_rpm_wind():
     flex_dc1 = myaw0[myaw0.index.isin(iflex_dc1.index.tolist())]
     stiff_dc1 = myaw0[myaw0.index.isin(istiff_dc1.index.tolist())]
     dc5 = myaw0[myaw0.index.isin(idc5.index.tolist())]
-
-#    ex = ['coning', 'free']
-#    flex_dc0, ca, hd = db.select(['02','04'], ['flex'], ex,
-#                                 valuedict={'dc':0, 'yaw':[-1.0,0.5]})
-#    stiff_dc0,ca, hd = db.select(['02','04'], ['stiff'],ex,
-#                                 valuedict={'dc':0, 'yaw':[-1.0,0.5]})
-#    flex_dc1, ca, hd = db.select(['02','04'], ['flex'], ex,
-#                                 valuedict={'dc':1, 'yaw':[-1.0,0.5]})
-#    stiff_dc1,ca, hd = db.select(['02','04'], ['stiff'],ex,
-#                                 valuedict={'dc':1, 'yaw':[-1.0,0.5]})
-#    dc5, ca, hd = db.select(['02','04'], [], ex,
-#                            valuedict={'dc':0.5, 'yaw':[-1.0,0.5]})
 
     figfile = '%s-rpm-vs-wind-dc0-dc1' % prefix
     pa4 = plotting.A4Tuned(scale=scale)
@@ -1753,87 +1737,71 @@ def plot_blade_vs_lambda(prefix, blade):
     iblade = hd['B2 30']
     doplot(figfile, iblade, title, ylabel)
 
-def plot_yawerr_vs_lambda(prefix):
+def plot_yawerr_vs_lambda(blades='straight'):
 
     figpath = 'figures/overview/'
 
-    # the forced series is when different yaw errors are applied in one session
-    db = ojf_db(prefix, debug=True)
-
-    inc = ['force', '_STC_']
-    exc = []
-
-    data, ca, hd = db.select(['04'], inc, exc, values_std={}, valuedict={})
-
-#    mean = {'wind':[7.40, 7.60]}
-#    v75, ca, hd = db.select(['04'], inc, exc, values_std={}, valuedict=mean)
-#    mean = {'wind':[7.89, 8.11]}
-#    v80, ca, hd = db.select(['04'], inc, exc, values_std={}, valuedict=mean)
-#    mean = {'wind':[8.89, 9.11]}
-#    v90, ca, hd = db.select(['04'], inc, exc, values_std={}, valuedict=mean)
+    prefix = 'symlinks_all'
+    db = MeasureDb(prefix=prefix, path_db='database/')
+    db.load_stats()
+    if blades == 'straight':
+        ibase = db.index[(db.index.coning=='') & (db.index.blades!='samoerai') &
+                         (db.index.month==4) & (db.index.run_type=='stair_step')]
+    elif blades == 'swept':
+        ibase = db.index[(db.index.coning=='') & (db.index.blades=='samoerai') &
+                         (db.index.month==4) & (db.index.run_type=='stair_step')]
+    else:
+        raise(ValueError, 'blades should be straight or swept')
+    mbase = db.mean[db.mean.index.isin(ibase.index.tolist())]
+    mbase_tsr = tsr(mbase)
 
     # --------------------------------------------------------------------
     # CT-LAMBDA as function of yaw error
     # --------------------------------------------------------------------
 
     scale = 1.5
-    figfile = '%s-yawerror-vs-ct-april' % prefix
+    figfile = '%s-yawerror-vs-ct-april-%s-blades' % (prefix, blades)
     pa4 = plotting.A4Tuned(scale=scale)
     pa4.setup(figpath+figfile, nr_plots=1, hspace_cm=2., figsize_x=8,
-                   grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
-                   wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
+              grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
+              wstop_cm=1.5, figsize_y=8.5, wsbottom_cm=1.)
     ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
 
-#    ax1.plot(db.tsr(v90, hd), db.ct(v90, hd), 'rs', label='9 m/s')
-#    ax1.plot(db.tsr(v80, hd), db.ct(v80, hd), 'gv', label='8 m/s')
-#    ax1.plot(db.tsr(v75, hd), db.ct(v75, hd), 'm<', label='7.5 m/s')
-#    ax1.set_xlabel('tip speed ratio $\lambda$')
-#    ax1.set_ylabel('thrust coefficient $C_T$')
-#    leg = ax1.legend(loc='best')
-#    leg.get_frame().set_alpha(0.5)
-
-#    ax1.plot(v90[hd['yaw'],:], db.ct(v90, hd), 'rs', label='9 m/s')
-#    ax1.plot(v80[hd['yaw'],:], db.ct(v80, hd), 'gv', label='8 m/s')
-#    ax1.plot(v75[hd['yaw'],:], db.ct(v75, hd), 'm<', label='7.5 m/s')
-#    ax1.set_xlabel('yaw angle $\psi$')
-#    ax1.set_ylabel('thrust coefficient $C_T$')
-#    leg = ax1.legend(loc='best')
-#    leg.get_frame().set_alpha(0.5)
-
     # or bin on TSR instead of wind speed
-    tsr = db.tsr(data)
-    i4 = tsr.__le__(5.0)
-    i5 = tsr.__ge__(5.0)*tsr.__lt__(6.0)
-    i6 = tsr.__ge__(6.0)*tsr.__lt__(7.0)
-    i7 = tsr.__ge__(7.0)*tsr.__lt__(8.0)
-    i8 = tsr.__ge__(8.0)*tsr.__lt__(9.0)
-#    i9 = tsr.__ge__(9.0)*tsr.__lt__(11.0)
-    iyaw = hd['yaw']
-#    ax1.plot(data[iyaw,i9], db.ct(data[:,i9]),'bo',label='$9<\lambda<10$')
-    ax1.plot(data[iyaw,i8], db.ct(data[:,i8]),'rs',label='$8<\lambda<9$')
-    ax1.plot(data[iyaw,i7], db.ct(data[:,i7]),'gv',label='$7<\lambda<8$')
-    ax1.plot(data[iyaw,i6], db.ct(data[:,i6]),'m<',label='$6<\lambda<7$')
-    ax1.plot(data[iyaw,i5], db.ct(data[:,i5]),'c^',label='$5<\lambda<6$')
-    ax1.plot(data[iyaw,i4], db.ct(data[:,i4]),'y>',label='$\lambda<5$')
+    tsr04 = mbase[(mbase_tsr < 4.0)]
+    tsr45 = mbase[(mbase_tsr >= 4.0) & (mbase_tsr < 5.0)]
+    tsr56 = mbase[(mbase_tsr >= 5.0) & (mbase_tsr < 6.0)]
+    tsr67 = mbase[(mbase_tsr >= 6.0) & (mbase_tsr < 7.0)]
+    tsr78 = mbase[(mbase_tsr >= 7.0) & (mbase_tsr < 8.0)]
+    tsr89 = mbase[(mbase_tsr >= 8.0) & (mbase_tsr <= 9.0)]
+
+    ax1.plot(tsr89.yaw_angle, ct(tsr89), 'rs', label='$8<\lambda<9$')
+    ax1.plot(tsr78.yaw_angle, ct(tsr78), 'gv', label='$7<\lambda<8$')
+    ax1.plot(tsr67.yaw_angle, ct(tsr67), 'b<', label='$6<\lambda<7$')
+    ax1.plot(tsr56.yaw_angle, ct(tsr56), 'k^', label='$5<\lambda<6$')
+    ax1.plot(tsr45.yaw_angle, ct(tsr45), marker='o', color='grey', ls='',
+             label='$4<\lambda<5$')
+    ax1.plot(tsr04.yaw_angle, ct(tsr04), 'y>', label='$\lambda<4$')
 
     # add some cos or cos**2 fits
     angles = np.arange(-40.0, 40.0, 0.1)
     angles_rad = angles.copy() * np.pi/180.0
-    max_up = db.ct(data[:,i8]).max()
-    max_mid = db.ct(data[:,i5]).max()
-    max_low = db.ct(data[:,i4])
-    max_low = np.sort(max_low)[-3]
+    max_up = ct(tsr89).max()
+    max_mid = ct(tsr56).max()
+#    max_low = ct(tsr05)
+#    max_low = np.sort(max_low)[-3]
+    max_low = 0.15
     cos = np.cos(angles_rad)
-    ax1.plot(angles, cos*cos*max_up, 'r-')
-    ax1.plot(angles, cos*cos*max_mid, 'c-')
-    ax1.plot(angles, cos*cos*max_low, 'y-')
+    ax1.plot(angles, cos*cos*max_up, 'r--')
+    ax1.plot(angles, cos*cos*max_mid, 'k--')
+    ax1.plot(angles, cos*cos*max_low, 'y--')
 
     ax1.set_xlabel('yaw angle $\psi$')
     ax1.set_ylabel('thrust coefficient $C_T$')
     leg = ax1.legend(loc='center')
     leg.get_frame().set_alpha(0.5)
 
-    ax1.set_title('April, forced yaw error', size=14*scale)
+    ax1.set_title('April, forced yaw error,\n%s blade' % blades, size=14*scale)
     ax1.grid(True)
     pa4.save_fig()
 
@@ -1841,36 +1809,36 @@ def plot_yawerr_vs_lambda(prefix):
     # YawError-CT-LAMBDA as function of yaw error (CONTOUR PLOT)
     # --------------------------------------------------------------------
     # ignore the low RPM's
-    vals = {'RPM':[200,1100]}
-    data, ca, hd = db.select(['04'], inc, exc, values_std={}, valuedict=vals)
+    high_rpm = mbase[(mbase.rpm >= 200.0) & (mbase.rpm < 1100.0)]
 
     scale = 1.5
-    figfile = '%s-yawerror-vs-ct-vs-lambda-contour-april' % prefix
+    rpl = (prefix, blades)
+    figfile = '%s-yawerror-vs-ct-vs-lambda-contour-april-%s-blades' % rpl
     pa4 = plotting.A4Tuned(scale=scale)
     pa4.setup(figpath+figfile, nr_plots=1, hspace_cm=2., figsize_x=8,
-                   grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
-                   wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
+              grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
+              wstop_cm=1.4, figsize_y=8.4, wsbottom_cm=1.)
     ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
 
     # prep the data for contour plotting
-    z = db.tsr(data) # tsr
-    x = data[hd['yaw'],:] # yawerror
-    y = db.ct(data) # ct
+    z = tsr(high_rpm).values # tsr
+    x = high_rpm.yaw_angle.values # yawerror
+    y = ct(high_rpm).values # ct
     # define the grid
     xi = np.linspace(x.min(), x.max(), 50)
     yi = np.linspace(y.min(), y.max(), 50)
     # grid the data
-    zi = mpl.mlab.griddata(x,y,z,xi,yi,interp='nn')
+    zi = mpl.mlab.griddata(x,y,z,xi,yi,interp='linear')
     # contour the gridded data, plotting dots at the nonuniform data points
     # draw the contour lines
 #    ct = ax1.contour(xi,yi,zi,10,linewidths=0.5,colors='k')
     # draw the colors
-    ct = ax1.contourf(xi,yi,zi,20, cmap=mpl.cm.rainbow)
-    pa4.fig.colorbar(ct) # draw colorbar
+    contourf = ax1.contourf(xi,yi,zi,20, cmap=mpl.cm.rainbow)
+    pa4.fig.colorbar(contourf) # draw colorbar
     # plot data points
     ax1.scatter(x,y, marker='+', c='k')
 
-    ax1.set_title('April, forced yaw error', size=14*scale)
+    ax1.set_title('April, forced yaw error,\n%s blade' % blades, size=14*scale)
     ax1.grid(True)
     pa4.save_fig()
 
@@ -1976,6 +1944,8 @@ if __name__ == '__main__':
 #    plot_rpm_wind()
 #    plot_ct_vs_lambda(blades='straight')
 #    plot_ct_vs_lambda(blades='swept')
+#    plot_yawerr_vs_lambda(blades='straight')
+#    plot_yawerr_vs_lambda(blades='swept')
 
     # read a single file for debugging/checking
 #    case = '0213_run_108_8.0ms_dc1_samoerai_fixyaw_pwm1000_highrpm'

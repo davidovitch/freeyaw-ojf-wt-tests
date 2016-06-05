@@ -7,6 +7,11 @@ Make a database of all the test and their results
 @author: dave
 """
 
+#from __future__ import print_function
+from __future__ import division
+from __future__ import unicode_literals
+from __future__ import absolute_import
+
 import os
 import pickle
 import string
@@ -714,6 +719,7 @@ class MeasureDb(object):
         if load_index:
             self.index_fname = os.path.join(path_db, 'db_index_%s.h5' % prefix)
             self.load_index()
+            self.prefix = prefix
         self.stat_types = ['mean', 'min', 'max', 'std', 'range']
 
     def load_index(self, fname=None):
@@ -728,10 +734,11 @@ class MeasureDb(object):
         # this is expensive, only worth when doing a LOT of lookups (>100)
 #        self.index_names = set(self.index.tolist())
 
-    def load_stats(self, prefix='symlinks_all'):
+    def load_stats(self):
         for stat in self.stat_types:
-            rpl = (prefix, stat)
+            rpl = (self.prefix, stat)
             fname = os.path.join(self.path_db, 'db_stats_%s_%s.h5' % rpl)
+            setattr(self, '%s_fname' % stat, fname)
             setattr(self, stat, pd.read_hdf(fname, 'table'))
 
     def load_measurement(self, fname):
@@ -812,7 +819,7 @@ class MeasureDb(object):
             self.df_dict_index[col].append(np.nan)
 
     def add_stats(self, resfile, df_res, index_row={}):
-        """Add stats from ComboResults to DataFrame formatted dictionaries,
+        """Add stats from DataFrame results to df statistics dictionaries,
         and save as attributes: df_dict_%s, using mean, min, max, std, range.
         Also add to the index database.
 
@@ -869,6 +876,12 @@ class MeasureDb(object):
         """Convert the DataFrame formatted dictionaries to DataFrames. If
         the conversion failes the dictionary has wrongly composed. Perform
         post-mortem checks for debugging purposes.
+
+        Attributes df_mean are set based on df_dict_mean.
+
+        New indices are in the index_up attribute.
+
+        Besides mean, same is done for min, max, std and range.
         """
 
         for stat in self.stat_types:
@@ -892,41 +905,79 @@ class MeasureDb(object):
             misc.check_df_dict(self.df_dict_index)
             raise e
 
-    def save_stats(self, path_db='database/', prefix='symlinks_all',
-                   update=True):
-        """Save the df_mean, etc stats in a df stats database in h5 and xlsx
-        format.
+    def add_df_dict2stat(self, update=True):
+        """Convert the df_dict_mean stat (created with add_stats or
+        add_staircase_stats) to df_mean. When update is True, append df_mean
+        to mean and index. Copy of added indices are in the index_up attribute.
+
+        Besides mean, same is done for min, max, std and range.
         """
         self._dict2df()
 
-        if update and not hasattr(self, 'mean'):
-            self.load_stats(prefix=prefix)
-
         for stat in self.stat_types:
             df_add = getattr(self, 'df_%s' % stat)
-            rpl = (prefix, stat)
-            fname = os.path.join(path_db, 'db_stats_%s_%s.h5' % rpl)
             if update:
+                if not hasattr(self, stat):
+                    self.load_stats()
                 df_stat = getattr(self, stat)
-                df_add = pd.concat([df_stat, df_add])
-            # save to HDF5 and xlsx
-            df_add.to_hdf(fname, 'table')#, compression=9, complib='blosc')
-            fname = os.path.join(path_db, 'db_stats_%s_%s.xlsx' % rpl)
-            df_add.to_excel(fname)
+                df_stat = pd.concat([df_stat, df_add])
+                setattr(self, stat, df_stat)
 
-        # and update the index accordingly
+        # also add the new cases to the index
         if update:
             if not hasattr(self, 'index'):
                 self.load_index()
             self.index = pd.concat([self.index, self.index_up])
-            self.index.to_hdf(self.index_fname, 'table', compression=9)
-            self.index.to_excel(self.index_fname.replace('.h5', '.xlsx'))
+
+    def save(self, complib='blosc'):
+        """Save curren index and stats DataFrames.
+        """
+        print('saving: %s ...' % self.index_fname)
+        self.index.to_hdf(self.index_fname, 'table', compression=9,
+                          complib=complib)
+        for stat in self.stat_types:
+            df_stat = getattr(self, stat)
+            stat_fname = getattr(self, '%s_fname' % stat)
+            print('saving: %s ...' % stat_fname)
+            df_stat.to_hdf(stat_fname, 'table', compression=9, complib=complib)
+
+    def remove_from_stats_index(self, indices):
+        """Remove given indices from the index and the different stats df.
+        """
+        ind_remains = set(self.index.index.tolist()) - set(indices.tolist())
+        self.index = self.index.loc[ind_remains]
+        for stat in self.stat_types:
+            df_stat = getattr(self, stat)
+            setattr(self, stat, df_stat.loc[ind_remains])
+
+
+def tsr(df):
+    R = ojf_post.model.blade_radius
+    return R*df.rpm*np.pi/(df.wind_speed*30.0)
+
+
+def ct(df):
+
+    thrust = df.tower_strain_fa / ojf_post.model.momemt_arm_rotor
+    # TODO: calculate rho from wind tunnel temperature and static pressure
+    # rho = R*T / P   R_dryair = 287.058
+    # but this results in rho=0.825, do we need an R value for more humid air?
+#    R_dryair = 287.058
+#    kelvin = 273.15
+#    rho = (sel_mean.temperature + kelvin) * R_dryair / sel_mean.static_p
+    rho = 1.225
+    V = df.wind_speed
+    # and nodfrmalize to get the thrust coefficient
+    ct = thrust / (0.5*rho*V*V*ojf_post.model.A)
+
+    return ct
+
 
 ###############################################################################
 ### PLOTS
 ###############################################################################
 
-def plot_voltage_current(prefix):
+def plot_voltage_current():
     """
     Establish connection between measured current and rotor speed.
     Consider all the cases, aero side is completely irrelevant here.
@@ -940,31 +991,38 @@ def plot_voltage_current(prefix):
         x_grid = np.linspace(x[0], x[-1], res)
         return  x_grid, np.polyval(pol, x_grid)
 
-
-    path_db = PATH_DB
-    db = ojf_db(prefix, path_db=path_db)
-
     figpath = 'figures/overview/'
     scale = 1.5
 
+    prefix = 'symlinks_all'
+    db = MeasureDb(prefix='symlinks_all', path_db='database/')
+    db.load_stats()
+    #df_mean.set_index('index', inplace=True)
+#    df_std = pd.read_hdf('database/db_stats_symlinks_all_std.h5', 'table')
+#    sel_std = df_std[(df_std.yaw_angle > -1.2) & (df_std.yaw_angle < 1.2)]
+
+    sel02_dc0 = db.index[(db.index.month==2) & (db.index.dc==0)]
+    sel02_dc1 = db.index[(db.index.month==2) & (db.index.dc==1)]
+    sel04_dc0 = db.index[(db.index.month==4) & (db.index.dc==0)]
+    sel04_dc1 = db.index[(db.index.month==4) & (db.index.dc==1)]
+
+    m2_dc0 = db.mean[db.mean.index.isin(sel02_dc0.index.tolist())]
+    m2_dc1 = db.mean[db.mean.index.isin(sel02_dc1.index.tolist())]
+    m4_dc0 = db.mean[db.mean.index.isin(sel04_dc0.index.tolist())]
+    m4_dc1 = db.mean[db.mean.index.isin(sel04_dc1.index.tolist())]
+
     # --------------------------------------------------------------------
-    #ex = ['coning', 'free']
-    ex = []
-    dc0_02, ca, headers = db.select(['02'], [], ex, valuedict={'dc':0})
-    dc1_02, ca, headers = db.select(['02'], [], ex, valuedict={'dc':1})
-    dc0_04, ca, headers = db.select(['04'], [], ex, valuedict={'dc':0})
-    dc1_04, ca, headers = db.select(['04'], [], ex, valuedict={'dc':1})
 
     figfile = '%s-volt-vs-current' % prefix
     pa4 = plotting.A4Tuned(scale=scale)
     pa4.setup(figpath+figfile, nr_plots=1, hspace_cm=2., figsize_x=8,
-                   grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
-                   wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
+              grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
+              wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
     ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
-    ax1.plot(dc0_02[3,:], dc0_02[4,:], 'rs', label='dc0 02')
-    ax1.plot(dc1_02[3,:], dc1_02[4,:], 'gs', label='dc1 02')
-    ax1.plot(dc0_04[3,:], dc0_04[4,:], 'bd', label='dc0 04')
-    ax1.plot(dc1_04[3,:], dc1_04[4,:], 'yd', label='dc1 04')
+    ax1.plot(m2_dc0.voltage_filt, m2_dc0.current_filt, 'rs', label='dc0 02')
+    ax1.plot(m2_dc1.voltage_filt, m2_dc1.current_filt, 'gs', label='dc1 02')
+    ax1.plot(m4_dc0.voltage_filt, m4_dc0.current_filt, 'bd', label='dc0 04')
+    ax1.plot(m4_dc1.voltage_filt, m4_dc1.current_filt, 'yd', label='dc1 04')
     #ax1.plot(stiff_dc0[0,:], stiff_dc0[1,:], 'ro', label='dc0 stiff')
     #ax1.plot(flex_dc1[0,:],  flex_dc1[1,:],  'g*', label='dc1 flex')
     #ax1.plot(stiff_dc1[0,:], stiff_dc1[1,:], 'g^', label='dc1 stiff')
@@ -994,10 +1052,10 @@ def plot_voltage_current(prefix):
                    grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
                    wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
     ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
-    ax1.plot(dc0_02[1,:], dc0_02[4,:],  'rs', label='dc0 02')
-    ax1.plot(dc1_02[1,:], dc1_02[4,:],  'gs', label='dc1 02')
-    ax1.plot(dc0_04[1,:], dc0_04[4,:],  'bd', label='dc0 04')
-    ax1.plot(dc1_04[1,:], dc1_04[4,:],  'yd', label='dc1 04')
+    ax1.plot(m2_dc0.rpm, m2_dc0.current_filt, 'rs', label='dc0 02')
+    ax1.plot(m2_dc1.rpm, m2_dc1.current_filt, 'gs', label='dc1 02')
+    ax1.plot(m4_dc0.rpm, m4_dc0.current_filt, 'bd', label='dc0 04')
+    ax1.plot(m4_dc1.rpm, m4_dc1.current_filt, 'yd', label='dc1 04')
     #ax1.plot(stiff_dc0[0,:], stiff_dc0[1,:], 'ro', label='dc0 stiff')
     #ax1.plot(flex_dc1[0,:],  flex_dc1[1,:],  'g*', label='dc1 flex')
     #ax1.plot(stiff_dc1[0,:], stiff_dc1[1,:], 'g^', label='dc1 stiff')
@@ -1025,10 +1083,10 @@ def plot_voltage_current(prefix):
                    grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
                    wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
     ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
-    ax1.plot(dc0_02[1,:], dc0_02[3,:],  'rs', label='dc0 02')
-    ax1.plot(dc1_02[1,:], dc1_02[3,:],  'gs', label='dc1 02')
-    ax1.plot(dc0_04[1,:], dc0_04[3,:],  'bd', label='dc0 04')
-    ax1.plot(dc1_04[1,:], dc1_04[3,:],  'yd', label='dc1 04')
+    ax1.plot(m2_dc0.rpm, m2_dc0.voltage_filt, 'rs', label='dc0 02')
+    ax1.plot(m2_dc1.rpm, m2_dc1.voltage_filt, 'gs', label='dc1 02')
+    ax1.plot(m4_dc0.rpm, m4_dc0.voltage_filt, 'bd', label='dc0 04')
+    ax1.plot(m4_dc1.rpm, m4_dc1.voltage_filt, 'yd', label='dc1 04')
     #ax1.plot(stiff_dc0[0,:], stiff_dc0[1,:], 'ro', label='dc0 stiff')
     #ax1.plot(flex_dc1[0,:],  flex_dc1[1,:],  'g*', label='dc1 flex')
     #ax1.plot(stiff_dc1[0,:], stiff_dc1[1,:], 'g^', label='dc1 stiff')
@@ -1051,7 +1109,7 @@ def plot_voltage_current(prefix):
     pa4.save_fig()
 
 
-def plot_rpm_wind(prefix):
+def plot_rpm_wind():
     """
     """
 
@@ -1061,24 +1119,44 @@ def plot_rpm_wind(prefix):
         x_grid = np.linspace(x[0], x[-1], res)
         return  x_grid, np.polyval(pol, x_grid)
 
-    path_db = PATH_DB
-    db = ojf_db(prefix, path_db=path_db)
+    prefix = 'symlinks_all'
+    db = MeasureDb(prefix='symlinks_all', path_db='database/')
+    db.load_stats()
 
     figpath = 'figures/overview/'
     scale = 1.5
 
     # --------------------------------------------------------------------
-    ex = ['coning', 'free']
-    flex_dc0, ca, hd = db.select(['02','04'], ['flex'], ex,
-                                 valuedict={'dc':0, 'yaw':[-1.0,0.5]})
-    stiff_dc0,ca, hd = db.select(['02','04'], ['stiff'],ex,
-                                 valuedict={'dc':0, 'yaw':[-1.0,0.5]})
-    flex_dc1, ca, hd = db.select(['02','04'], ['flex'], ex,
-                                 valuedict={'dc':1, 'yaw':[-1.0,0.5]})
-    stiff_dc1,ca, hd = db.select(['02','04'], ['stiff'],ex,
-                                 valuedict={'dc':1, 'yaw':[-1.0,0.5]})
-    dc5, ca, hd = db.select(['02','04'], [], ex,
-                            valuedict={'dc':0.5, 'yaw':[-1.0,0.5]})
+    # only limited yaw angles
+    myaw0 = db.mean[(db.std.yaw_angle>-1.0) & (db.std.yaw_angle<0.5)]
+    iyaw0 = db.index[db.index.index.isin(myaw0.index.tolist())]
+    # no coning, and no free yawing, and no big rpm changes
+    iyaw0 = iyaw0[(iyaw0.coning=='') & (iyaw0.rpm_change=='') &
+                  (iyaw0.yaw_mode.str.find('free')<0)]
+
+    iflex_dc0 = iyaw0[(iyaw0.blades=='flex') & (iyaw0.dc==0)]
+    istiff_dc0 = iyaw0[(iyaw0.blades=='stiff') & (iyaw0.dc==0)]
+    iflex_dc1 = iyaw0[(iyaw0.blades=='flex') & (iyaw0.dc==1)]
+    istiff_dc1 = iyaw0[(iyaw0.blades=='stiff') & (iyaw0.dc==1)]
+    idc5 = iyaw0[(iyaw0.dc==0.5)]
+
+    flex_dc0 = myaw0[myaw0.index.isin(iflex_dc0.index.tolist())]
+    stiff_dc0 = myaw0[myaw0.index.isin(istiff_dc0.index.tolist())]
+    flex_dc1 = myaw0[myaw0.index.isin(iflex_dc1.index.tolist())]
+    stiff_dc1 = myaw0[myaw0.index.isin(istiff_dc1.index.tolist())]
+    dc5 = myaw0[myaw0.index.isin(idc5.index.tolist())]
+
+#    ex = ['coning', 'free']
+#    flex_dc0, ca, hd = db.select(['02','04'], ['flex'], ex,
+#                                 valuedict={'dc':0, 'yaw':[-1.0,0.5]})
+#    stiff_dc0,ca, hd = db.select(['02','04'], ['stiff'],ex,
+#                                 valuedict={'dc':0, 'yaw':[-1.0,0.5]})
+#    flex_dc1, ca, hd = db.select(['02','04'], ['flex'], ex,
+#                                 valuedict={'dc':1, 'yaw':[-1.0,0.5]})
+#    stiff_dc1,ca, hd = db.select(['02','04'], ['stiff'],ex,
+#                                 valuedict={'dc':1, 'yaw':[-1.0,0.5]})
+#    dc5, ca, hd = db.select(['02','04'], [], ex,
+#                            valuedict={'dc':0.5, 'yaw':[-1.0,0.5]})
 
     figfile = '%s-rpm-vs-wind-dc0-dc1' % prefix
     pa4 = plotting.A4Tuned(scale=scale)
@@ -1086,11 +1164,11 @@ def plot_rpm_wind(prefix):
                    grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
                    wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
     ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
-    ax1.plot(flex_dc0[0,:],  flex_dc0[1,:],  'rs', label='dc0 flex')
-    ax1.plot(stiff_dc0[0,:], stiff_dc0[1,:], 'ro', label='dc0 stiff')
-    ax1.plot(flex_dc1[0,:],  flex_dc1[1,:],  'g>', label='dc1 flex')
-    ax1.plot(stiff_dc1[0,:], stiff_dc1[1,:], 'g<', label='dc1 stiff')
-    ax1.plot(dc5[0,:], dc5[1,:], 'bd', label='dc0.5')
+    ax1.plot(flex_dc0.wind_speed,  flex_dc0.rpm,  'rs', label='dc0 flex')
+    ax1.plot(stiff_dc0.wind_speed, stiff_dc0.rpm, 'ro', label='dc0 stiff')
+    ax1.plot(flex_dc1.wind_speed,  flex_dc1.rpm,  'g>', label='dc1 flex')
+    ax1.plot(stiff_dc1.wind_speed, stiff_dc1.rpm, 'g<', label='dc1 stiff')
+    ax1.plot(dc5.wind_speed, dc5.rpm, 'bd', label='dc0.5')
     #ax1.plot(wind, rpm, 'b*', label='unknown')
 
 #    # fitting the data
@@ -1113,7 +1191,7 @@ def plot_rpm_wind(prefix):
     RPM_grid, V_grid = np.meshgrid(RPMs, Vs)
     TSR = R*RPM_grid*np.pi/(V_grid*30.0)
     contours = [9, 8, 7, 6, 5, 4, 3, 2, 1]
-    cs = ax1.contour(V_grid, RPM_grid, TSR, contours, colors='grey',
+    cs = ax1.contour(V_grid, RPM_grid, TSR, contours[::-1], colors='grey',
                      linewidth=0.5, linestyles='dashdot', label='TSR')
     # set the labels
     lablocs = [(10.5,1100), (12,1150), (12,1000), (12,850), (12, 700),
@@ -1130,15 +1208,16 @@ def plot_rpm_wind(prefix):
     pa4.save_fig()
 
     # --------------------------------------------------------------------
-    ex = ['coning', 'free']
-    dc_p0,ca,hd = db.select(['02','04'], [], ex,
-                            valuedict={'dc':[-0.1, 0.25], 'yaw':[-1.0,0.5]})
-    dc_p1,ca,hd = db.select(['02','04'], [], ex,
-                            valuedict={'dc':[0.25, 0.5], 'yaw':[-1.0,0.5]})
-    dc_p2,ca,hd = db.select(['02','04'], [], ex,
-                            valuedict={'dc':[0.5 , 0.75], 'yaw':[-1.0,0.5]})
-    dc_p3,ca,hd = db.select(['02','04'], [], ex,
-                            valuedict={'dc':[0.75, 1.1], 'yaw':[-1.0,0.5]})
+
+    idc_p0 = iyaw0[(iyaw0.dc>-0.1) & (iyaw0.dc<0.25)]
+    idc_p1 = iyaw0[(iyaw0.dc>0.25) & (iyaw0.dc<0.50)]
+    idc_p2 = iyaw0[(iyaw0.dc>0.50) & (iyaw0.dc<0.75)]
+    idc_p3 = iyaw0[(iyaw0.dc>0.75) & (iyaw0.dc<1.1)]
+
+    dc_p0 = myaw0[myaw0.index.isin(idc_p0.index.tolist())]
+    dc_p1 = myaw0[myaw0.index.isin(idc_p1.index.tolist())]
+    dc_p2 = myaw0[myaw0.index.isin(idc_p2.index.tolist())]
+    dc_p3 = myaw0[myaw0.index.isin(idc_p3.index.tolist())]
 
     figfile = '%s-rpm-vs-wind-dc-all' % prefix
     pa4 = plotting.A4Tuned(scale=scale)
@@ -1146,10 +1225,10 @@ def plot_rpm_wind(prefix):
                    grandtitle=False, wsleft_cm=1.5, wsright_cm=1.0,
                    wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
     ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
-    ax1.plot(dc_p0[0,:],  dc_p0[1,:], 'rs', label='$0.00 \leq dc < 0.25$')
-    ax1.plot(dc_p1[0,:],  dc_p1[1,:], 'g*', label='$0.25 \leq dc < 0.50$')
-    ax1.plot(dc_p2[0,:],  dc_p2[1,:], 'bd', label='$0.50 \leq dc < 0.75$')
-    ax1.plot(dc_p3[0,:],  dc_p3[1,:],'y^',label='$0.75 \leq dc \leq 1.00$')
+    ax1.plot(dc_p0.wind_speed,  dc_p0.rpm, 'rs', label='$0.00 \leq dc < 0.25$')
+    ax1.plot(dc_p1.wind_speed,  dc_p1.rpm, 'g*', label='$0.25 \leq dc < 0.50$')
+    ax1.plot(dc_p2.wind_speed,  dc_p2.rpm, 'bd', label='$0.50 \leq dc < 0.75$')
+    ax1.plot(dc_p3.wind_speed,  dc_p3.rpm,'y^',label='$0.75 \leq dc \leq 1.00$')
     ax1.legend(loc='upper right', bbox_to_anchor=(1.14,1.0))
     ax1.set_xlabel('Wind speed [m/s]')
     ax1.set_ylabel('Rotor speed [RPM]')
@@ -1173,11 +1252,10 @@ def plot_rpm_wind(prefix):
     for k in range(5,12):
         low = k - 0.2
         up = k + 0.2
-        data,ca,hd = db.select(['02','04'], [], ex,
-                               valuedict={'wind':[low,up], 'yaw':[-1.0,0.5]})
-
+        idc = iyaw0[(iyaw0.dc>low) & (iyaw0.dc<up)]
+        dc = myaw0[myaw0.index.isin(idc.index.tolist())]
         label = '$%i m/s$' % k
-        ax1.plot(data[2,:], data[1,:], colors[k-5], label=label)
+        ax1.plot(dc.duty_cycle, dc.rpm, colors[k-5], label=label)
 
     ax1.legend(bbox_to_anchor=(1.05,1.1), ncol=3)
     ax1.set_xlabel('duty cycle [-]]')
@@ -1185,6 +1263,7 @@ def plot_rpm_wind(prefix):
     ax1.set_xlim([-0.1, 1.1])
     ax1.grid(True)
     pa4.save_fig()
+
 
 def plot_rpm_vs_towerstrain(prefix):
     """
@@ -1538,33 +1617,39 @@ def plot_ct_vs_lambda_rotors(prefix):
     ax1.grid(True)
     pa4.save_fig()
 
-def plot_ct_vs_lambda(prefix):
+
+def plot_ct_vs_lambda():
     """
     Have all the relevant stuff plotted versus the tip speed ratio lambda!
     That will gave a better understanding of the stuff
     """
 
-    path_db = PATH_DB
-    db = ojf_db(prefix, debug=True, path_db=path_db)
+#    path_db = PATH_DB
+#    db = ojf_db(prefix, debug=True, path_db=path_db)
 
     figpath = 'figures/overview/'
     scale = 1.5
 
-    exc = ['coning', 'samoerai']
-    std = {'RPM':[0,10], 'yaw':[0, 0.5], 'wind':[0, 0.1]}
-    apr10,ca,hd = db.select(['04'], [], exc, values_std=std,
-                            valuedict={'wind':[9.82, 10.18],'yaw':[-1.0,0.5]})
-    apr9,ca,hd = db.select(['04'], [], exc, values_std=std,
-                           valuedict={'wind':[8.82, 9.18],'yaw':[-1.0,0.5]})
-    apr8,ca,hd = db.select(['04'], [], exc, values_std=std,
-                           valuedict={'wind':[7.82, 8.18],'yaw':[-1.0,0.5]})
-    apr7,ca,hd = db.select(['04'], [], exc, values_std=std,
-                           valuedict={'wind':[6.82, 7.18],'yaw':[-1.0,0.5]})
-    apr6,ca,hd = db.select(['04'], [], exc, values_std=std,
-                           valuedict={'wind':[5.82, 6.18],'yaw':[-1.0,0.5]})
-    apr5,ca,hd = db.select(['04'], [], exc, values_std=std,
-                           valuedict={'wind':[4.82, 5.18],'yaw':[-1.0,0.5]})
-#    apr4,ca,hd = db.select(['04'], [], ex, valuedict={'wind':[3.82, 4.18]})
+    prefix = 'symlinks_all'
+    db = MeasureDb(prefix='symlinks_all', path_db='database/')
+    db.load_stats()
+    #df_mean.set_index('index', inplace=True)
+#    df_std = pd.read_hdf('database/db_stats_symlinks_all_std.h5', 'table')
+#    sel_std = df_std[(df_std.yaw_angle > -1.2) & (df_std.yaw_angle < 1.2)]
+
+    mbase = db.mean[(db.std.rpm>0.0) & (db.std.rpm<10.0) &
+                    (db.std.yaw_angle>0.0) & (db.std.yaw_angle<0.5) &
+                    (db.std.wind_speed>0.0) & (db.std.wind_speed<0.1) &
+                    (db.mean.yaw_angle>-1.0) & (db.mean.yaw_angle<0.5)]
+    ibase = db.index[(db.index.coning=='') & (db.index.blades!='samoerai')]
+    mbase = mbase[mbase.index.isin(ibase.index.tolist())]
+
+    apr10 = mbase[(mbase.wind_speed>9.82) & (mbase.wind_speed<10.18)]
+    apr9 = mbase[(mbase.wind_speed>8.82) & (mbase.wind_speed<9.18)]
+    apr8 = mbase[(mbase.wind_speed>7.82) & (mbase.wind_speed<8.18)]
+    apr7 = mbase[(mbase.wind_speed>6.82) & (mbase.wind_speed<7.18)]
+    apr6 = mbase[(mbase.wind_speed>5.82) & (mbase.wind_speed<6.18)]
+    apr5 = mbase[(mbase.wind_speed>4.82) & (mbase.wind_speed<5.18)]
 
     # --------------------------------------------------------------------
     # CT-LAMBDA
@@ -1576,12 +1661,12 @@ def plot_ct_vs_lambda(prefix):
                    wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
     ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
 
-    ax1.plot(db.tsr(apr10), db.ct(apr10), 'bo', label='10 m/s')
-    ax1.plot(db.tsr(apr9), db.ct(apr9), 'rs', label='9 m/s')
-    ax1.plot(db.tsr(apr8), db.ct(apr8), 'gv', label='8 m/s')
-    ax1.plot(db.tsr(apr7), db.ct(apr7), 'm<', label='7 m/s')
-    ax1.plot(db.tsr(apr6), db.ct(apr6), 'c^', label='6 m/s')
-    ax1.plot(db.tsr(apr5), db.ct(apr5), 'y>', label='5 m/s')
+    ax1.plot(tsr(apr10), ct(apr10), 'bo', label='10 m/s')
+    ax1.plot(tsr(apr9), ct(apr9), 'rs', label='9 m/s')
+    ax1.plot(tsr(apr8), ct(apr8), 'gv', label='8 m/s')
+    ax1.plot(tsr(apr7), ct(apr7), 'm<', label='7 m/s')
+    ax1.plot(tsr(apr6), ct(apr6), 'c^', label='6 m/s')
+    ax1.plot(tsr(apr5), ct(apr5), 'y>', label='5 m/s')
 #    ax1.plot(apr4), apr4), 'bo', label='4 m/s')
 
     leg = ax1.legend(loc='best')
@@ -1596,7 +1681,6 @@ def plot_ct_vs_lambda(prefix):
     # --------------------------------------------------------------------
     # THRUST-LAMBDA
     # --------------------------------------------------------------------
-    ifa = hd['FA']
     figfile = '%s-fa-vs-lambda-april' % prefix
     pa4 = plotting.A4Tuned(scale=scale)
     pa4.setup(figpath+figfile, nr_plots=1, hspace_cm=2., figsize_x=8,
@@ -1604,12 +1688,12 @@ def plot_ct_vs_lambda(prefix):
                    wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
     ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
 
-    ax1.plot(db.tsr(apr10),apr10[ifa,:],'bo', label='10 m/s')
-    ax1.plot(db.tsr(apr9), apr9[ifa,:], 'rs', label='9 m/s')
-    ax1.plot(db.tsr(apr8), apr8[ifa,:], 'gv', label='8 m/s')
-    ax1.plot(db.tsr(apr7), apr7[ifa,:], 'm<', label='7 m/s')
-    ax1.plot(db.tsr(apr6), apr6[ifa,:], 'c^', label='6 m/s')
-    ax1.plot(db.tsr(apr5), apr5[ifa,:], 'y>', label='5 m/s')
+    ax1.plot(tsr(apr10), apr10.tower_strain_fa, 'bo', label='10 m/s')
+    ax1.plot(tsr(apr9), apr9.tower_strain_fa, 'rs', label='9 m/s')
+    ax1.plot(tsr(apr8), apr8.tower_strain_fa, 'gv', label='8 m/s')
+    ax1.plot(tsr(apr7), apr7.tower_strain_fa, 'm<', label='7 m/s')
+    ax1.plot(tsr(apr6), apr6.tower_strain_fa, 'c^', label='6 m/s')
+    ax1.plot(tsr(apr5), apr5.tower_strain_fa, 'y>', label='5 m/s')
 
     leg = ax1.legend(loc='best')
     leg.get_frame().set_alpha(0.5)
@@ -1618,6 +1702,7 @@ def plot_ct_vs_lambda(prefix):
     ax1.set_ylabel('Tower FA bending [Nm]')
     ax1.grid(True)
     pa4.save_fig()
+
 
 def plot_blade_vs_lambda(prefix, blade):
     """

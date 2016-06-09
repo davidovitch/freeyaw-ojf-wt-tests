@@ -305,6 +305,46 @@ def freeyaw():
     fig.savefig(os.path.join(fdir, fname + '.eps'))
 
 
+def freeyaw2():
+    """
+    """
+    # first, just overplot them all!
+
+    fpath = 'data/calibrated/DataFrame'
+    fdir = 'figures/freeyaw'
+
+    flex = ['0405_run_263_7.0ms_dc0.4_flexies_freeyaw_highrpm',
+            '0405_run_264_7.0ms_dc0.6_flexies_freeyaw_highrpm',
+            '0405_run_265_8.0ms_dc0.0_flexies_freeyaw_highrpm',
+            '0405_run_266_8.0ms_dc0.4_flexies_freeyaw_highrpm',
+            '0405_run_267_8.0ms_dc0.6_flexies_freeyaw_highrpm',
+            '0405_run_269_9.0ms_dc0_flexies_freeyaw_highrpm',
+            '0405_run_275_9.0ms_dc0.4_flexies_freeyaw_highrpm']
+
+    swep = ['0410_run_325_8ms_dc0_samoerai_freeyaw_highrpm',
+            '0410_run_326_8ms_dc0.4_samoerai_freeyaw_highrpm',
+            '0410_run_330_9ms_dc1_samoerai_freeyaw_highrpm']
+
+    stif = ['0413_run_418_8ms_dc0.6_stiffblades_freeyaw']
+
+    plt.figure('rpm')
+    for i, fname in enumerate(swep):
+        df = pd.read_hdf(os.path.join(fpath, fname+'.h5'), 'table')
+        plt.plot(df.time, df.rpm, label=i)
+    plt.legend(loc='best')
+    plt.grid()
+
+    plt.figure('yaw')
+    for i, fname in enumerate(swep):
+        df = pd.read_hdf(os.path.join(fpath, fname+'.h5'), 'table')
+        plt.plot(df.time, df.yaw_angle, label=i)
+    plt.legend(loc='best')
+    plt.grid()
+
+
+# good speedup case, also speedup in high rpm modus when in yaw error!
+# 0405_run_270_9.0ms_dc0_flexies_freeyaw_spinupyawerror
+
 if __name__ == '__main__':
 
     dummy = None

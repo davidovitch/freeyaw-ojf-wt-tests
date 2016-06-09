@@ -967,7 +967,7 @@ def ct(df):
 #    rho = (sel_mean.temperature + kelvin) * R_dryair / sel_mean.static_p
     rho = 1.225
     V = df.wind_speed
-    # and nodfrmalize to get the thrust coefficient
+    # and normalize to get the thrust coefficient
 
     return thrust / (0.5*rho*V*V*ojf_post.model.A)
 
@@ -1039,7 +1039,6 @@ def plot_voltage_current():
     ax1.set_ylim([-0.5, 14])
     ax1.grid(True)
     pa4.save_fig()
-
 
     # --------------------------------------------------------------------
     figfile = '%s-rpm-vs-current' % prefix
@@ -1145,8 +1144,8 @@ def plot_rpm_wind():
     figfile = '%s-rpm-vs-wind-dc0-dc1' % prefix
     pa4 = plotting.A4Tuned(scale=scale)
     pa4.setup(figpath+figfile, nr_plots=1, hspace_cm=2., figsize_x=8,
-                   grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
-                   wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
+              grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
+              wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
     ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
     ax1.plot(flex_dc0.wind_speed,  flex_dc0.rpm,  'rs', label='dc0 flex')
     ax1.plot(stiff_dc0.wind_speed, stiff_dc0.rpm, 'ro', label='dc0 stiff')
@@ -1178,8 +1177,11 @@ def plot_rpm_wind():
     cs = ax1.contour(V_grid, RPM_grid, TSR, contours[::-1], colors='grey',
                      linewidth=0.5, linestyles='dashdot', label='TSR')
     # set the labels
-    lablocs = [(10.5,1100), (12,1150), (12,1000), (12,850), (12, 700),
-               (  12, 580), (12, 420), (12, 300), (16,200)]
+    def func(v, tsr): return 30*v*tsr/(np.pi*R)
+    wind_tsr = [10.5, 12, 12, 12, 12, 12, 12, 12, 12]
+    lablocs = [(v,func(v,r)) for v, r in zip(wind_tsr, contours)]
+#    lablocs = [(10.5,1100), (12,1150), (12,1000), (12,850), (12, 700),
+#               (  12, 580), (12, 420), (12, 300), (16,200)]
     ax1.clabel(cs, fontsize=9*scale, inline=1, fmt='%1.0f', manual=lablocs,
                colors='k')
 
@@ -1206,19 +1208,64 @@ def plot_rpm_wind():
     figfile = '%s-rpm-vs-wind-dc-all' % prefix
     pa4 = plotting.A4Tuned(scale=scale)
     pa4.setup(figpath+figfile, nr_plots=1, hspace_cm=2., figsize_x=8,
-                   grandtitle=False, wsleft_cm=1.5, wsright_cm=1.0,
-                   wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
+              grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
+              wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
     ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
     ax1.plot(dc_p0.wind_speed,  dc_p0.rpm, 'rs', label='$0.00 \leq dc < 0.25$')
     ax1.plot(dc_p1.wind_speed,  dc_p1.rpm, 'g*', label='$0.25 \leq dc < 0.50$')
     ax1.plot(dc_p2.wind_speed,  dc_p2.rpm, 'bd', label='$0.50 \leq dc < 0.75$')
     ax1.plot(dc_p3.wind_speed,  dc_p3.rpm,'y^',label='$0.75 \leq dc \leq 1.00$')
-    ax1.legend(loc='upper right', bbox_to_anchor=(1.14,1.0))
+
+    # plot the tip speed ratio's as contour lines on the background
+    # iso TSR lines
+    RPMs = np.arange(0, 1300, 100)
+    Vs = np.arange(4,20,1)
+    R = ojf_post.model.blade_radius
+    RPM_grid, V_grid = np.meshgrid(RPMs, Vs)
+    TSR = R*RPM_grid*np.pi/(V_grid*30.0)
+    contours = [9,     8,  7,    6,  5,  4,  3,  2,  1]
+    wind_atc = [10.5, 11, 11, 11.5, 12, 12, 12, 12, 17.2]
+    cs = ax1.contour(V_grid, RPM_grid, TSR, contours[::-1], colors='grey',
+                     linewidth=0.5, linestyles='dashdot', label='TSR')
+    # set the labels at a given wind speed
+    lablocs = [(v,func(v,r)) for v, r in zip(wind_atc, contours)]
+#    lablocs = [(10.5,1100), (11,1150), (11,900), (11,787), (12, 700),
+#               (  12, 580), (12, 420), (12, 300), (16,200)]
+    ax1.clabel(cs, fontsize=9*scale, inline=1, fmt='%1.0f', manual=lablocs,
+               colors='k')
+
+    leg = ax1.legend(loc='upper right', bbox_to_anchor=(1.03,1.0))
+#    leg = ax1.legend(loc='upper left', ncol=2)
     ax1.set_xlabel('Wind speed [m/s]')
     ax1.set_ylabel('Rotor speed [RPM]')
     ax1.set_title('Feb and Apr, fixed zero yaw', size=14*scale)
     ax1.set_xlim([4, 19])
     ax1.grid(True)
+#    pa4.fig.tight_layout()
+    pa4.save_fig()
+
+    # -------------------------------------------------------------------------
+    # same but now RPM vs CT
+
+    figfile = '%s-rpm-vs-ct-dc-all' % prefix
+    pa4 = plotting.A4Tuned(scale=scale)
+    pa4.setup(figpath+figfile, nr_plots=1, hspace_cm=2., figsize_x=8,
+              grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
+              wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
+    ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
+    ax1.plot(dc_p0.rpm,  ct(dc_p0), 'rs', label='$0.00 \leq dc < 0.25$')
+    ax1.plot(dc_p1.rpm,  ct(dc_p1), 'g*', label='$0.25 \leq dc < 0.50$')
+    ax1.plot(dc_p2.rpm,  ct(dc_p2), 'bd', label='$0.50 \leq dc < 0.75$')
+    ax1.plot(dc_p3.rpm,  ct(dc_p3),'y^',label='$0.75 \leq dc \leq 1.00$')
+
+    leg = ax1.legend(loc='best')#, bbox_to_anchor=(1.03,1.0))
+#    leg = ax1.legend(loc='upper left', ncol=2)
+    ax1.set_xlabel('Rotor speed [RPM]')
+    ax1.set_ylabel('Thrust coeff. $C_T$ [-]')
+    ax1.set_title('Feb and Apr, fixed zero yaw', size=14*scale)
+#    ax1.set_xlim([4, 19])
+    ax1.grid(True)
+#    pa4.fig.tight_layout()
     pa4.save_fig()
 
     # --------------------------------------------------------------------
@@ -1227,8 +1274,8 @@ def plot_rpm_wind():
     figfile = '%s-rpm-vs-dc-all' % prefix
     pa4 = plotting.A4Tuned(scale=scale)
     pa4.setup(figpath+figfile, nr_plots=1, hspace_cm=2., figsize_x=8,
-                   grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
-                   wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
+              grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
+              wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
     ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
 
     colors = ['rs', 'bo', 'g*', 'y^', 'gd', 'm*', 'ys', '', '']
@@ -1236,7 +1283,8 @@ def plot_rpm_wind():
     for k in range(5,12):
         low = k - 0.2
         up = k + 0.2
-        idc = iyaw0[(iyaw0.dc>low) & (iyaw0.dc<up)]
+        idc = iyaw0[(iyaw0.windspeed>=low) & (iyaw0.windspeed<up)]
+        print(low, up, len(idc))
         dc = myaw0[myaw0.index.isin(idc.index.tolist())]
         label = '$%i m/s$' % k
         ax1.plot(dc.duty_cycle, dc.rpm, colors[k-5], label=label)
@@ -1806,6 +1854,35 @@ def plot_yawerr_vs_lambda(blades='straight'):
     pa4.save_fig()
 
     # --------------------------------------------------------------------
+    # CT-RPM as function of yaw error
+    # --------------------------------------------------------------------
+
+    scale = 1.5
+    figfile = '%s-yawerror-vs-rpm-april-%s-blades' % (prefix, blades)
+    pa4 = plotting.A4Tuned(scale=scale)
+    pa4.setup(figpath+figfile, nr_plots=1, hspace_cm=2., figsize_x=8,
+              grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
+              wstop_cm=1.5, figsize_y=8.5, wsbottom_cm=1.)
+    ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
+
+    ax1.plot(tsr89.yaw_angle, tsr89.rpm, 'rs', label='$8<\lambda<9$')
+    ax1.plot(tsr78.yaw_angle, tsr78.rpm, 'gv', label='$7<\lambda<8$')
+    ax1.plot(tsr67.yaw_angle, tsr67.rpm, 'b<', label='$6<\lambda<7$')
+    ax1.plot(tsr56.yaw_angle, tsr56.rpm, 'k^', label='$5<\lambda<6$')
+    ax1.plot(tsr45.yaw_angle, tsr45.rpm, marker='o', color='grey', ls='',
+             label='$4<\lambda<5$')
+    ax1.plot(tsr04.yaw_angle, tsr04.rpm, 'y>', label='$\lambda<4$')
+
+    ax1.set_xlabel('yaw angle $\psi$ [deg]')
+    ax1.set_ylabel('rotor speed [rpm]')
+    leg = ax1.legend(loc='lower right')
+    leg.get_frame().set_alpha(0.5)
+
+    ax1.set_title('April, forced yaw error,\n%s blade' % blades, size=14*scale)
+    ax1.grid(True)
+    pa4.save_fig()
+
+    # --------------------------------------------------------------------
     # YawError-CT-LAMBDA as function of yaw error (CONTOUR PLOT)
     # --------------------------------------------------------------------
     # ignore the low RPM's
@@ -1874,18 +1951,6 @@ def make_symlinks_hs():
     symlink_to_hs_folder(sf, path_db, symf='symlinks_hs_lacie/')
     # =========================================================================
 
-def make_symlinks_filtered():
-    """
-    """
-
-    # -------------------------------------------------------------------------
-    # SYMLINKS, DATABASE FOR THE DSPACE, BLADE, AND WIND TUNNEL RESULTS
-    source_folder = os.path.join(OJFPATH_RAW, '02/')
-    symlink_to_folder(source_folder, PATH_DB)
-    source_folder = os.path.join(OJFPATH_RAW, '04/')
-    symlink_to_folder(source_folder, PATH_DB)
-    build_db(PATH_DB, calibrate=False, dashplot=False)
-    # -------------------------------------------------------------------------
 
 def make_symlinks_all(path_db, data_source_root):
     """
@@ -1907,14 +1972,6 @@ def make_symlinks_all(path_db, data_source_root):
 ### ANALYSIS
 ###############################################################################
 
-def steady_rpms():
-    """
-    For all steady RPM's, find the corresponding other steady parematers: yaw,
-    FA, SS, blade load. Save those time series in a seperate datafile
-    """
-    # TODO: finish this
-    pass
-
 
 if __name__ == '__main__':
 
@@ -1927,6 +1984,7 @@ if __name__ == '__main__':
 #    build_db(path_db, 'symlinks_all', calibrate=True, dashplot=True,
 #             output='symlinks_all', key_inc=['dcsweep'])
 
+    # Depricated db format: ojfdb_dict.ojf_db
 #    prefix = 'symlinks_all'
 #    plot_rpm_wind(prefix)
 #    plot_voltage_current(prefix)
@@ -1939,9 +1997,9 @@ if __name__ == '__main__':
 #    plot_rpm_vs_blade(prefix, 'flex')
 #    plot_rpm_vs_blade(prefix, 'stiff')
 
-    # new df db format
+    # current df db format: MeasureDb
 #    plot_voltage_current()
-#    plot_rpm_wind()
+    plot_rpm_wind()
 #    plot_ct_vs_lambda(blades='straight')
 #    plot_ct_vs_lambda(blades='swept')
 #    plot_yawerr_vs_lambda(blades='straight')

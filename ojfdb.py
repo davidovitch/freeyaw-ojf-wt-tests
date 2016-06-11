@@ -1997,6 +1997,14 @@ if __name__ == '__main__':
 #    plot_rpm_vs_blade(prefix, 'flex')
 #    plot_rpm_vs_blade(prefix, 'stiff')
 
+    # just load the database components
+#    prefix = 'symlinks_all'
+#    db = MeasureDb(prefix='symlinks_all', path_db='database/')
+#    db.load_stats()
+#    dfm = db.mean
+#    dfs = db.std
+#    index = db.index
+
     # current df db format: MeasureDb
 #    plot_voltage_current()
     plot_rpm_wind()

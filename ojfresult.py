@@ -1246,10 +1246,6 @@ class DspaceMatFile:
 
 
 class ComboResults(BladeStrainFile, OJFLogFile, DspaceMatFile):
-    """
-    should inherit from the data files: BladeStrainFile, OJFLogFile and
-    DspaceMatFile. How to do this?
-    """
 
     def __init__(self, *args, **kwargs):
         """

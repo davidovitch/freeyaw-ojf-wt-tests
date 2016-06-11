@@ -82,7 +82,7 @@ blade 3 pointing down (in tower shadow)
 * ```duty_cycle``` :
 * ```power``` : amount of power being dissipated in the resistance. Note that
 this excludes the losses in the generator, the PWM module, cabling, and the mechanical
-losses (bearings)
+losses (bearings). This sensor can not be used for reliable rotor power measurements.
 * ```power2``` : not reliable
 * ```sound``` : not reliable
 * ```sound_gain``` : not reliable

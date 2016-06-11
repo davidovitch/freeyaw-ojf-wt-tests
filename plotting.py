@@ -5,6 +5,10 @@ Created on Wed Nov 23 11:22:50 2011
 @author: dave
 """
 
+from __future__ import division
+from __future__ import unicode_literals
+from __future__ import absolute_import
+
 # standard library
 import math
 import pickle
@@ -2280,6 +2284,10 @@ def subplots(nrows=1, ncols=1, figsize=(12,8), dpi=120, num=0):
 
 
 def one_legend(*args, **kwargs):
+    """First list all the axes as arguments. Any keyword arguments will be
+    passed on to ax.legend(). Legend will be placed on the last axes that was
+    passed as an argument.
+    """
     # or more general: not only simple line plots (bars, hist, ...)
     objs = []
     for ax in args:

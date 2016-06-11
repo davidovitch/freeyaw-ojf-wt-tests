@@ -7,6 +7,10 @@ Library for general stuff
 @author: dave
 """
 
+from __future__ import division
+from __future__ import unicode_literals
+from __future__ import absolute_import
+
 from xlrd import open_workbook
 import numpy as np
 import scipy as sp
@@ -386,12 +390,64 @@ def check_df_dict(df_dict):
     """
     Verify if the dictionary that needs to be transferred to a Pandas DataFrame
     makes sense
+
+    Returns
+    -------
+
+    collens : dict
+        Dictionary with df_dict keys as keys, len(df_dict[key]) as column.
+        In other words: the length of each column (=rows) of the soon to be df.
     """
     collens = {}
     for col, values in df_dict.iteritems():
         print('%6i : %30s' % (len(values), col), type(values))
         collens[col] = len(values)
     return collens
+
+
+def df_dict_check_datatypes(df_dict):
+    """
+    there might be a mix of strings and numbers now, see if we can have
+    the same data type throughout a column
+    nasty hack: because of the unicode -> string conversion we might not
+    overwrite the same key in the dict.
+    """
+    # FIXME: this approach will result in twice the memory useage though...
+    # we can not pop/delete items from a dict while iterating over it
+    df_dict2 = {}
+    for colkey, col in df_dict.items():
+        # if we have a list, convert to string
+        if type(col[0]).__name__ == 'list':
+            for ii, item in enumerate(col):
+                col[ii] = '**'.join(item)
+        # if we already have an array (statistics) or a list of numbers
+        # do not try to cast into another data type, because downcasting
+        # in that case will not raise any exception
+        elif type(col[0]).__name__[:3] in ['flo', 'int', 'nda']:
+            df_dict2[str(colkey)] = np.array(col)
+            continue
+        # in case we have unicodes instead of strings, we need to convert
+        # to strings otherwise the saved .h5 file will have pickled elements
+        try:
+            df_dict2[str(colkey)] = np.array(col, dtype=np.int32)
+        except OverflowError:
+            try:
+                df_dict2[str(colkey)] = np.array(col, dtype=np.int64)
+            except OverflowError:
+                df_dict2[str(colkey)] = np.array(col, dtype=np.float64)
+        except ValueError:
+            try:
+                df_dict2[str(colkey)] = np.array(col, dtype=np.float64)
+            except ValueError:
+                df_dict2[str(colkey)] = np.array(col, dtype=np.str)
+        except TypeError:
+            # in all other cases, make sure we have converted them to
+            # strings and NOT unicode
+            df_dict2[str(colkey)] = np.array(col, dtype=np.str)
+        except Exception as e:
+            print('failed to convert column %s to single data type' % colkey)
+            raise(e)
+    return df_dict2
 
 
 def read_excel(ftarget, sheetname, row_sel=[], col_sel=[], data_fmt='list'):

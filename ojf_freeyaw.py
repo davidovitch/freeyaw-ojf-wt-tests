@@ -25,6 +25,7 @@ import ojfresult
 import plotting
 import filters
 from staircase import StairCase, StairCaseNG
+#import misc
 
 PATH_DB = 'database/'
 PATH_DATA_CAL_HDF = 'data/calibrated/DataFrame/'
@@ -646,6 +647,404 @@ def test_add():
 # Much of the work is done manually: many freeyaw cases have been performed
 # in one case, so we have to manually specify the time ranges
 
+class plot_freeyaw_response(object):
+    """Plot response of single free yaw case in one plot
+    """
+
+    def __init__(self, df, t0, duration):
+
+        self.fig, self.axes = plotting.subplots(nrows=1, ncols=1,
+                                                figsize=(5,2), dpi=120)
+        self.axes = self.axes.flatten()
+        self.ax = self.axes[0]
+
+        nre = len(df.time)
+        te = df.time.values[-1]
+        i0 = int(t0*nre/te)
+        i1 = i0 + int(duration*nre/te)
+
+        self.ax.plot(df.time[i0:i1]-t0, df.rpm[i0:i1], 'b-', label='RPM')
+        self.axr = self.ax.twinx()
+        self.axr.plot(df.time[i0:i1]-t0, df.yaw_angle[i0:i1], 'r-',
+                      label='yaw [deg]', alpha=0.7)
+
+        self.ax.set_xlabel('time [s]')
+        self.ax.set_ylabel('rotor speed [RPM]')
+        self.axr.set_ylabel('yaw angle [deg]')
+        self.ax.set_xlim([0, duration])
+        self.ax.grid(True)
+
+    def set_ylim_ticks(self, ylim, nrticks=9):
+        self.ax.set_ylim([ylim[0], ylim[1]])
+        self.ax.yaxis.set_ticks(np.linspace(ylim[0], ylim[1], nrticks).tolist())
+
+    def legend_axmatch(self):
+        self.ax, self.axr = plotting.match_yticks(self.ax, self.axr)
+        self.leg = plotting.one_legend(self.ax, self.axr, loc='best',
+                                       borderaxespad=0)
+        self.leg.get_frame().set_alpha(0.6)
+
+    def save(self, fname):
+        self.fig.tight_layout()
+        self.fig.subplots_adjust(top=0.92, bottom=0.25, right=0.87)
+        print('saving: %s' % fname)
+        self.fig.savefig(fname + '.png')
+        self.fig.savefig(fname + '.eps')
+
+
+class FreeyawRespons(ojfdb.MeasureDb):
+
+    def __init__(self, interactive=True):
+        # initialize the MeasureDb first
+        super(FreeyawRespons, self).__init__()
+        self.load_stats()
+
+        self.fpath = 'data/calibrated/DataFrame'
+        self.fdir = 'figures/freeyaw'
+        self.interactive = interactive
+        cols = ['runid', 'index', 't0', 'i0', 't1', 'i1', 'duration']
+        cols_df = ['time', 'rpm', 'yaw_angle', 'tower_strain_fa',
+                   'tower_strain_ss', 'towertop_acc_fa', 'towertop_acc_ss',
+                   'towertop_acc_z', 'voltage_filt', 'current_filt',
+                   'rotor_azimuth', 'power', 'power2', 'hs_trigger',
+                   'hs_trigger_start_end', 'rpm_pulse', 'temperature',
+                   'wind_speed', 'static_p', 'blade2_root', 'blade2_30pc',
+                   'blade1_root', 'blade1_30pc', 'blade_rpm_pulse']
+        self.cols_df = set(cols_df)
+        self.df_dict = {col:[] for col in cols}
+        for col in cols_df:
+            self.df_dict['%s_init' % col] = []
+            self.df_dict['%s_end' % col] = []
+
+    def add_run(self, df, t0, duration, resfile, t_s_init=1.9, t_s_end=1.9):
+        nre = len(df.time)
+        te = df.time.values[-1]
+        i0 = int(t0*nre/te)
+        i1 = i0 + int(duration*nre/te)
+        i_s_init = int(t_s_init*nre/te)
+        i_s_end = int(t_s_end*nre/te)
+
+        if df.yaw_angle.values[i0:i0+i_s_init].mean() >= 0.0:
+            app = 'fastside'
+        else:
+            app = 'slowside'
+
+        res_init = resfile + '_%s_t0_%05.02fs_init' % (app, t0)
+        index_init = self.index.loc[resfile].to_dict()
+        index_init['sweepid'] = '%i_%i' % (i0, i0+i_s_init)
+        index_init['run_type'] = 'fyr_%s_init' % app
+        self.add_stats(res_init, df[i0:i0+i_s_init], index_row=index_init)
+
+        res_end = resfile + '_%s_t0_%05.02fs_end' % (app, t0)
+        index_end = self.index.loc[resfile].to_dict()
+        index_end['sweepid'] = '%i_%i' % (i1-i_s_end, i1)
+        index_end['run_type'] = 'fyr_%s_end' % app
+        self.add_stats(res_end, df[i1-i_s_end:i1], index_row=index_end)
+
+    def do_all_runs(self, save_stats_index=True, complib='blosc'):
+        self.interactive = False
+        for item in dir(self):
+            if item[:4] == 'run_':
+                run = getattr(self, item)
+                run()
+        if save_stats_index:
+            self.save_all_runs(complib=complib)
+
+    def save_all_runs(self, complib='blosc'):
+        self.add_df_dict2stat(update=True)
+        self.save(complib=complib)
+
+    def run_263(self):
+        """
+        """
+        fpath = 'data/calibrated/DataFrame'
+        fdir = 'figures/freeyaw'
+
+        fname = '0405_run_263_7.0ms_dc0.4_flexies_freeyaw_highrpm'
+        df = pd.read_hdf(os.path.join(fpath, fname+'.h5'), 'table')
+
+        # overview plot
+        if self.interactive:
+            plt.figure('rpm, 0405_run_263_7.0ms')
+            plt.plot(df.time, df.rpm, 'b', label='RPM')
+            plt.grid()
+            plt.twinx()
+            plt.plot(df.time, df.yaw_angle, 'r', label='yaw')
+            plt.legend(loc='best')
+
+    #    plt.figure('yaw, 0405_run_263_7.0ms')
+    #    plt.plot(df.time, df.yaw_angle, label='flex')
+    #    plt.legend(loc='best')
+    #    plt.grid()
+
+        # ---------------------------------------------------------------------
+        # detailed report plots
+        t0 = 25.7
+        duration = 12.0
+        figname = os.path.join(fdir, fname + '_t0_%03.02f' % t0)
+        q = plot_freeyaw_response(df, t0, duration)
+        q.ax.set_ylim([380, 540])
+        q.axr.set_ylim([-35, 5])
+        q.legend_axmatch()
+        q.save(figname)
+        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+
+        t0 = 52.6
+        figname = os.path.join(fdir, fname + '_t0_%03.02f' % t0)
+        q = plot_freeyaw_response(df, t0, duration)
+        q.ax.set_ylim([380, 540])
+        q.axr.set_ylim([35, -5])
+        q.legend_axmatch()
+        q.save(figname)
+        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+
+    def run_264(self):
+        """
+        """
+        fpath = 'data/calibrated/DataFrame'
+        fdir = 'figures/freeyaw'
+
+        fname = '0405_run_264_7.0ms_dc0.6_flexies_freeyaw_highrpm'
+        df = pd.read_hdf(os.path.join(fpath, fname+'.h5'), 'table')
+
+        # overview plot
+        if self.interactive:
+            plt.figure('rpm, 0405_run_264_7.0ms')
+            plt.plot(df.time, df.rpm, 'b', label='RPM')
+            plt.grid()
+            plt.twinx()
+            plt.plot(df.time, df.yaw_angle, 'r', label='yaw')
+            plt.legend(loc='best')
+
+        # ---------------------------------------------------------------------
+        # detailed report plots
+        t0 = 15.82
+        duration = 14.0
+        figname = os.path.join(fdir, fname + '_t0_%03.02f' % t0)
+        q = plot_freeyaw_response(df, t0, duration)
+        q.ax.set_ylim([340, 500])
+        q.axr.set_ylim([-35, 5])
+        q.legend_axmatch()
+        q.save(figname)
+        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+
+        # detailed report plots
+        t0 = 45.56
+        figname = os.path.join(fdir, fname + '_t0_%03.02f' % t0)
+        q = plot_freeyaw_response(df, t0, duration)
+        q.ax.set_ylim([340, 500])
+        q.axr.set_ylim([35, -5])
+        q.legend_axmatch()
+        q.save(figname)
+        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+
+    def run_265(self):
+        """
+        """
+        fpath = 'data/calibrated/DataFrame'
+        fdir = 'figures/freeyaw'
+
+        fname = '0405_run_265_8.0ms_dc0.0_flexies_freeyaw_highrpm'
+        df = pd.read_hdf(os.path.join(fpath, fname+'.h5'), 'table')
+
+        # overview plot
+        if self.interactive:
+            plt.figure('rpm, 0405_run_265_8.0ms')
+            plt.plot(df.time, df.rpm, 'b', label='RPM')
+            plt.grid()
+            plt.twinx()
+            plt.plot(df.time, df.yaw_angle, 'r', label='yaw')
+            plt.legend(loc='best')
+
+        # ---------------------------------------------------------------------
+        # detailed report plots
+        t0 = 21.16 - 2
+        duration = 14.0
+        figname = os.path.join(fdir, fname + '_t0_%03.02f' % t0)
+        q = plot_freeyaw_response(df, t0, duration)
+        q.set_ylim_ticks([550, 750])
+        q.axr.set_ylim([-35, 5])
+        q.legend_axmatch()
+        q.save(figname)
+        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+
+        # detailed report plots
+        t0 = 52.34 - 2
+        figname = os.path.join(fdir, fname + '_t0_%03.02f' % t0)
+        q = plot_freeyaw_response(df, t0, duration)
+        q.set_ylim_ticks([550, 750])
+        q.axr.set_ylim([35, -5])
+        q.legend_axmatch()
+        q.save(figname)
+        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+
+    def run_266(self):
+        """
+        """
+        fpath = 'data/calibrated/DataFrame'
+        fdir = 'figures/freeyaw'
+
+        fname = '0405_run_266_8.0ms_dc0.4_flexies_freeyaw_highrpm'
+        df = pd.read_hdf(os.path.join(fpath, fname+'.h5'), 'table')
+
+        # overview plot
+        if self.interactive:
+            plt.figure('rpm, 0405_run_266_8.0ms')
+            plt.plot(df.time, df.rpm, 'b', label='RPM')
+            plt.grid()
+            plt.twinx()
+            plt.plot(df.time, df.yaw_angle, 'r', label='yaw')
+            plt.legend(loc='best')
+
+        # ---------------------------------------------------------------------
+        # detailed report plots
+        t0 = 18.12 - 2
+        duration = 14.0
+        figname = os.path.join(fdir, fname + '_t0_%03.02f' % t0)
+        q = plot_freeyaw_response(df, t0, duration)
+        q.ax.set_ylim([500, 660])
+        q.axr.set_ylim([-35, 5])
+        q.legend_axmatch()
+        q.save(figname)
+        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+
+        # detailed report plots
+        t0 = 48.7 - 2
+        figname = os.path.join(fdir, fname + '_t0_%03.02f' % t0)
+        q = plot_freeyaw_response(df, t0, duration)
+        q.ax.set_ylim([500, 660])
+        q.axr.set_ylim([35, -5])
+        q.legend_axmatch()
+        q.save(figname)
+        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+
+    def run_267(self):
+        """
+        """
+        fpath = 'data/calibrated/DataFrame'
+        fdir = 'figures/freeyaw'
+
+        fname = '0405_run_267_8.0ms_dc0.6_flexies_freeyaw_highrpm'
+        df = pd.read_hdf(os.path.join(fpath, fname+'.h5'), 'table')
+
+        # overview plot
+        if self.interactive:
+            plt.figure('rpm, 0405_run_267_8.0ms')
+            plt.plot(df.time, df.rpm, 'b', label='RPM')
+            plt.grid()
+            plt.twinx()
+            plt.plot(df.time, df.yaw_angle, 'r', label='yaw')
+            plt.legend(loc='best')
+
+        # ---------------------------------------------------------------------
+        # detailed report plots
+        t0 = 14.48 - 2
+        duration = 14.0
+        figname = os.path.join(fdir, fname + '_t0_%03.02f' % t0)
+        q = plot_freeyaw_response(df, t0, duration)
+        q.ax.set_ylim([460, 620])
+        q.axr.set_ylim([-35, 5])
+        q.legend_axmatch()
+        q.save(figname)
+        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+
+        # detailed report plots
+        t0 = 39.01 - 2
+        figname = os.path.join(fdir, fname + '_t0_%03.02f' % t0)
+        q = plot_freeyaw_response(df, t0, duration)
+        q.ax.set_ylim([460, 620])
+        q.axr.set_ylim([35, -5])
+        q.legend_axmatch()
+        q.save(figname)
+        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+
+    def run_269(self):
+        """
+        """
+        fpath = 'data/calibrated/DataFrame'
+        fdir = 'figures/freeyaw'
+
+        fname = '0405_run_269_9.0ms_dc0_flexies_freeyaw_highrpm'
+        df = pd.read_hdf(os.path.join(fpath, fname+'.h5'), 'table')
+
+        # overview plot
+        if self.interactive:
+            plt.figure('rpm, 0405_run_269_9.0ms')
+            plt.plot(df.time, df.rpm, 'b', label='RPM')
+            plt.grid()
+            plt.twinx()
+            plt.plot(df.time, df.yaw_angle, 'r', label='yaw')
+            plt.legend(loc='best')
+
+        # ---------------------------------------------------------------------
+        # detailed report plots
+        t0 = 25.05 - 2
+        duration = 14.0
+        figname = os.path.join(fdir, fname + '_t0_%03.02f' % t0)
+        q = plot_freeyaw_response(df, t0, duration)
+        q.set_ylim_ticks([675, 875])
+        q.axr.set_ylim([-35, 5])
+        q.legend_axmatch()
+        q.save(figname)
+        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+
+        # detailed report plots
+        t0 = 52.36 - 2
+        figname = os.path.join(fdir, fname + '_t0_%03.02f' % t0)
+        q = plot_freeyaw_response(df, t0, duration)
+        q.set_ylim_ticks([675, 875])
+        q.axr.set_ylim([35, -5])
+        q.legend_axmatch()
+        q.save(figname)
+        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+
+    def run_275(self):
+        """
+        """
+        fpath = 'data/calibrated/DataFrame'
+        fdir = 'figures/freeyaw'
+
+        fname = '0405_run_275_9.0ms_dc0.4_flexies_freeyaw_highrpm'
+        df = pd.read_hdf(os.path.join(fpath, fname+'.h5'), 'table')
+
+        # overview plot
+        if self.interactive:
+            plt.figure('rpm, 0405_run_275_9.0ms')
+            plt.plot(df.time, df.rpm, 'b', label='RPM')
+            plt.grid()
+            plt.twinx()
+            plt.plot(df.time, df.yaw_angle, 'r', label='yaw')
+            plt.legend(loc='best')
+
+        # ---------------------------------------------------------------------
+        # detailed report plots
+        t0 = 21.32 - 2
+        duration = 14.0
+        figname = os.path.join(fdir, fname + '_t0_%03.02f' % t0)
+        q = plot_freeyaw_response(df, t0, duration)
+        q.set_ylim_ticks([600, 800])
+        q.axr.set_ylim([-35, 5])
+        q.legend_axmatch()
+        q.save(figname)
+        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+
+        # detailed report plots
+        t0 = 49.71 - 2
+        figname = os.path.join(fdir, fname + '_t0_%03.02f' % t0)
+        q = plot_freeyaw_response(df, t0, duration)
+        q.set_ylim_ticks([600, 800])
+        q.axr.set_ylim([35, -5])
+        q.legend_axmatch()
+        q.save(figname)
+        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+
+#swep = ['0410_run_325_8ms_dc0_samoerai_freeyaw_highrpm',
+#        '0410_run_326_8ms_dc0.4_samoerai_freeyaw_highrpm',
+#        '0410_run_330_9ms_dc1_samoerai_freeyaw_highrpm',
+#        '0213_run_131_7.0ms_dc1_samoerai_freeyawplaying_pwm1000_highrpm',
+#        ]
+
+
 def freeyaw_april_timings():
     """
     Isolate the free yawing cases, from fixed to release and if it reaches
@@ -718,6 +1117,14 @@ def freeyaw_april_timings():
 if __name__ == '__main__':
 
     dummy = False
+
+    # extract steady states from forced yaw control runs, save to index/stats
 #    db = add_yawcontrol_steps_ng()
+
+    # extract steady states from free yaw cases, save to index/stats
 #    db = add_freeyaw_steady_steps()
-#    freeyaw_april_timings()
+
+    # plot free yaw response unified way, save init/end to index/stats
+#    fyr = FreeyawRespons()
+#    fyr.do_all_runs(save_stats_index=False)
+#    fyr.save_all_runs(complib='zlib')

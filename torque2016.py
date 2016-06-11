@@ -76,7 +76,7 @@ def ct(df):
 #    rho = (sel_mean.temperature + kelvin) * R_dryair / sel_mean.static_p
     rho = 1.225
     V = df.wind_speed
-    # and nodfrmalize to get the thrust coefficient
+    # and normalize to get the thrust coefficient
     ct = thrust / (0.5*rho*V*V*ojf_post.model.A)
 
     return ct
@@ -323,23 +323,58 @@ def freeyaw2():
 
     swep = ['0410_run_325_8ms_dc0_samoerai_freeyaw_highrpm',
             '0410_run_326_8ms_dc0.4_samoerai_freeyaw_highrpm',
-            '0410_run_330_9ms_dc1_samoerai_freeyaw_highrpm']
+            '0410_run_330_9ms_dc1_samoerai_freeyaw_highrpm',
+            '0213_run_131_7.0ms_dc1_samoerai_freeyawplaying_pwm1000_highrpm',
+            ]
 
-    stif = ['0413_run_418_8ms_dc0.6_stiffblades_freeyaw']
+    stif = ['0413_run_414_8ms_dc0_stiffblades_freeyaw',
+            '0413_run_418_8ms_dc0.6_stiffblades_freeyaw']
 
-    plt.figure('rpm')
+    plt.figure('rpm, swept blade')
     for i, fname in enumerate(swep):
         df = pd.read_hdf(os.path.join(fpath, fname+'.h5'), 'table')
         plt.plot(df.time, df.rpm, label=i)
     plt.legend(loc='best')
     plt.grid()
 
-    plt.figure('yaw')
+    plt.figure('yaw, swept blade')
     for i, fname in enumerate(swep):
         df = pd.read_hdf(os.path.join(fpath, fname+'.h5'), 'table')
         plt.plot(df.time, df.yaw_angle, label=i)
     plt.legend(loc='best')
     plt.grid()
+
+    plt.figure('rpm, flex blade')
+    for i, fname in enumerate(flex):
+        df = pd.read_hdf(os.path.join(fpath, fname+'.h5'), 'table')
+        plt.plot(df.time, df.rpm, label=i)
+    plt.legend(loc='best')
+    plt.grid()
+
+    plt.figure('yaw, flex blade')
+    for i, fname in enumerate(flex):
+        df = pd.read_hdf(os.path.join(fpath, fname+'.h5'), 'table')
+        plt.plot(df.time, df.yaw_angle, label=i)
+    plt.legend(loc='best')
+    plt.grid()
+
+    # both have some overshoot in response
+    f = '0405_run_264_7.0ms_dc0.6_flexies_freeyaw_highrpm'
+    dff = pd.read_hdf(os.path.join(fpath, f+'.h5'), 'table')
+    s = '0410_run_330_9ms_dc1_samoerai_freeyaw_highrpm'
+    dfs = pd.read_hdf(os.path.join(fpath, s+'.h5'), 'table')
+    plt.figure('rpm, flex vs swept')
+    plt.plot(dff.time, dff.rpm, label='flex')
+    plt.plot(dfs.time, dfs.rpm, label='swept')
+    plt.legend(loc='best')
+    plt.grid()
+
+    plt.figure('yaw, flex vs swept')
+    plt.plot(dff.time, dff.yaw_angle, label='flex')
+    plt.plot(dfs.time, dfs.yaw_angle, label='swept')
+    plt.legend(loc='best')
+    plt.grid()
+
 
 
 # good speedup case, also speedup in high rpm modus when in yaw error!

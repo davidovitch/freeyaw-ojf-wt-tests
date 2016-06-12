@@ -15,9 +15,11 @@ from __future__ import absolute_import
 
 # built in modules
 import os
+from itertools import chain
 
 import numpy as np
 import pandas as pd
+import matplotlib as mpl
 from matplotlib import pyplot as plt
 
 import ojfdb
@@ -26,6 +28,16 @@ import plotting
 import filters
 from staircase import StairCase, StairCaseNG
 #import misc
+
+plt.rc('font', family='serif')
+plt.rc('xtick', labelsize=10)
+plt.rc('ytick', labelsize=10)
+plt.rc('axes', labelsize=12)
+plt.rc('text', usetex=True)
+plt.rc('legend', fontsize=11)
+plt.rc('legend', numpoints=1)
+plt.rc('legend', borderaxespad=0)
+mpl.rcParams['text.latex.unicode'] = True
 
 PATH_DB = 'database/'
 PATH_DATA_CAL_HDF = 'data/calibrated/DataFrame/'
@@ -651,13 +663,23 @@ class plot_freeyaw_response(object):
     """Plot response of single free yaw case in one plot
     """
 
-    def __init__(self, df, t0, duration):
+    def __init__(self, df, t0, duration, ncols=1):
 
-        self.fig, self.axes = plotting.subplots(nrows=1, ncols=1,
-                                                figsize=(5,2), dpi=120)
-        self.axes = self.axes.flatten()
-        self.ax = self.axes[0]
+        if ncols == 1:
+            self.fig, self.axes = plotting.subplots(nrows=1, ncols=ncols,
+                                                    figsize=(4,2), dpi=120)
+            self.axes = self.axes.flatten()
+            self.ax = self.axes[0]
+            self.first(df, t0, duration)
+        else:
+            self.fig, self.axes = plotting.subplots(nrows=1, ncols=2,
+                                                    figsize=(7,2), dpi=120)
+            self.axes = self.axes.flatten()
+            self.ax = self.axes[0]
+            self.ax2 = self.axes[1]
+            self.first(df, t0, duration)
 
+    def first(self, df, t0, duration):
         nre = len(df.time)
         te = df.time.values[-1]
         i0 = int(t0*nre/te)
@@ -674,6 +696,24 @@ class plot_freeyaw_response(object):
         self.ax.set_xlim([0, duration])
         self.ax.grid(True)
 
+    def second(self, df, t0, duration):
+
+        nre = len(df.time)
+        te = df.time.values[-1]
+        i0 = int(t0*nre/te)
+        i1 = i0 + int(duration*nre/te)
+
+        self.ax2.plot(df.time[i0:i1]-t0, df.rpm[i0:i1], 'b-', label='RPM')
+        self.ax2r = self.ax2.twinx()
+        self.ax2r.plot(df.time[i0:i1]-t0, df.yaw_angle[i0:i1], 'r-',
+                       label='yaw [deg]', alpha=0.7)
+
+        self.ax2.set_xlabel('time [s]')
+        self.ax2r.set_ylabel('yaw angle [deg]')
+        self.ax2.set_xlim([0, duration])
+        self.ax2.grid(True)
+
+
     def set_ylim_ticks(self, ylim, nrticks=9):
         self.ax.set_ylim([ylim[0], ylim[1]])
         self.ax.yaxis.set_ticks(np.linspace(ylim[0], ylim[1], nrticks).tolist())
@@ -686,7 +726,7 @@ class plot_freeyaw_response(object):
 
     def save(self, fname):
         self.fig.tight_layout()
-        self.fig.subplots_adjust(top=0.92, bottom=0.25, right=0.87)
+        self.fig.subplots_adjust(top=0.92, bottom=0.25, right=0.85)
         print('saving: %s' % fname)
         self.fig.savefig(fname + '.png')
         self.fig.savefig(fname + '.eps')
@@ -698,6 +738,7 @@ class FreeyawRespons(ojfdb.MeasureDb):
         # initialize the MeasureDb first
         super(FreeyawRespons, self).__init__()
         self.load_stats()
+        self.save_stats_index = False
 
         self.fpath = 'data/calibrated/DataFrame'
         self.fdir = 'figures/freeyaw'
@@ -743,6 +784,7 @@ class FreeyawRespons(ojfdb.MeasureDb):
 
     def do_all_runs(self, save_stats_index=True, complib='blosc'):
         self.interactive = False
+        self.save_stats_index = save_stats_index
         for item in dir(self):
             if item[:4] == 'run_':
                 run = getattr(self, item)
@@ -787,7 +829,8 @@ class FreeyawRespons(ojfdb.MeasureDb):
         q.axr.set_ylim([-35, 5])
         q.legend_axmatch()
         q.save(figname)
-        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+        if self.save_stats_index:
+            self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
 
         t0 = 52.6
         figname = os.path.join(fdir, fname + '_t0_%03.02f' % t0)
@@ -796,7 +839,8 @@ class FreeyawRespons(ojfdb.MeasureDb):
         q.axr.set_ylim([35, -5])
         q.legend_axmatch()
         q.save(figname)
-        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+        if self.save_stats_index:
+            self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
 
     def run_264(self):
         """
@@ -826,7 +870,8 @@ class FreeyawRespons(ojfdb.MeasureDb):
         q.axr.set_ylim([-35, 5])
         q.legend_axmatch()
         q.save(figname)
-        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+        if self.save_stats_index:
+            self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
 
         # detailed report plots
         t0 = 45.56
@@ -836,7 +881,8 @@ class FreeyawRespons(ojfdb.MeasureDb):
         q.axr.set_ylim([35, -5])
         q.legend_axmatch()
         q.save(figname)
-        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+        if self.save_stats_index:
+            self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
 
     def run_265(self):
         """
@@ -866,7 +912,8 @@ class FreeyawRespons(ojfdb.MeasureDb):
         q.axr.set_ylim([-35, 5])
         q.legend_axmatch()
         q.save(figname)
-        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+        if self.save_stats_index:
+            self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
 
         # detailed report plots
         t0 = 52.34 - 2
@@ -876,7 +923,8 @@ class FreeyawRespons(ojfdb.MeasureDb):
         q.axr.set_ylim([35, -5])
         q.legend_axmatch()
         q.save(figname)
-        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+        if self.save_stats_index:
+            self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
 
     def run_266(self):
         """
@@ -906,7 +954,8 @@ class FreeyawRespons(ojfdb.MeasureDb):
         q.axr.set_ylim([-35, 5])
         q.legend_axmatch()
         q.save(figname)
-        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+        if self.save_stats_index:
+            self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
 
         # detailed report plots
         t0 = 48.7 - 2
@@ -916,7 +965,8 @@ class FreeyawRespons(ojfdb.MeasureDb):
         q.axr.set_ylim([35, -5])
         q.legend_axmatch()
         q.save(figname)
-        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+        if self.save_stats_index:
+            self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
 
     def run_267(self):
         """
@@ -946,7 +996,8 @@ class FreeyawRespons(ojfdb.MeasureDb):
         q.axr.set_ylim([-35, 5])
         q.legend_axmatch()
         q.save(figname)
-        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+        if self.save_stats_index:
+            self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
 
         # detailed report plots
         t0 = 39.01 - 2
@@ -956,7 +1007,8 @@ class FreeyawRespons(ojfdb.MeasureDb):
         q.axr.set_ylim([35, -5])
         q.legend_axmatch()
         q.save(figname)
-        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+        if self.save_stats_index:
+            self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
 
     def run_269(self):
         """
@@ -986,7 +1038,8 @@ class FreeyawRespons(ojfdb.MeasureDb):
         q.axr.set_ylim([-35, 5])
         q.legend_axmatch()
         q.save(figname)
-        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+        if self.save_stats_index:
+            self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
 
         # detailed report plots
         t0 = 52.36 - 2
@@ -996,7 +1049,8 @@ class FreeyawRespons(ojfdb.MeasureDb):
         q.axr.set_ylim([35, -5])
         q.legend_axmatch()
         q.save(figname)
-        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+        if self.save_stats_index:
+            self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
 
     def run_275(self):
         """
@@ -1026,7 +1080,8 @@ class FreeyawRespons(ojfdb.MeasureDb):
         q.axr.set_ylim([-35, 5])
         q.legend_axmatch()
         q.save(figname)
-        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+        if self.save_stats_index:
+            self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
 
         # detailed report plots
         t0 = 49.71 - 2
@@ -1036,7 +1091,8 @@ class FreeyawRespons(ojfdb.MeasureDb):
         q.axr.set_ylim([35, -5])
         q.legend_axmatch()
         q.save(figname)
-        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+        if self.save_stats_index:
+            self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
 
     def run_325(self):
         """
@@ -1066,7 +1122,8 @@ class FreeyawRespons(ojfdb.MeasureDb):
         q.axr.set_ylim([-35, 5])
         q.legend_axmatch()
         q.save(figname)
-        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+        if self.save_stats_index:
+            self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
 
         # detailed report plots
         t0 = 46.73 - 2
@@ -1076,7 +1133,8 @@ class FreeyawRespons(ojfdb.MeasureDb):
         q.axr.set_ylim([35, -5])
         q.legend_axmatch()
         q.save(figname)
-        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+        if self.save_stats_index:
+            self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
 
     def run_326(self):
         """
@@ -1106,7 +1164,8 @@ class FreeyawRespons(ojfdb.MeasureDb):
         q.axr.set_ylim([-35, 5])
         q.legend_axmatch()
         q.save(figname)
-        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+        if self.save_stats_index:
+            self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
 
         # detailed report plots
         t0 = 47.51 - 2
@@ -1116,7 +1175,8 @@ class FreeyawRespons(ojfdb.MeasureDb):
         q.axr.set_ylim([35, -5])
         q.legend_axmatch()
         q.save(figname)
-        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+        if self.save_stats_index:
+            self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
 
     def run_330(self):
         """
@@ -1146,7 +1206,8 @@ class FreeyawRespons(ojfdb.MeasureDb):
         q.axr.set_ylim([-35, 10])
         q.legend_axmatch()
         q.save(figname)
-        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+        if self.save_stats_index:
+            self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
 
         # detailed report plots
         t0 = 51.47 - 2
@@ -1156,7 +1217,8 @@ class FreeyawRespons(ojfdb.MeasureDb):
         q.axr.set_ylim([35, -10])
         q.legend_axmatch()
         q.save(figname)
-        self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+        if self.save_stats_index:
+            self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
 
     def badrun_131(self):
         """
@@ -1197,6 +1259,157 @@ class FreeyawRespons(ojfdb.MeasureDb):
         q.legend_axmatch()
         q.save(figname)
         self.add_run(df, t0, duration, fname, t_s_init=1.9, t_s_end=1.9)
+
+
+def _get_fyr_range(gr, df_res, case):
+    sel = gr[gr['run_type'].str.startswith(case)]
+    iis = chain.from_iterable([k.split('_') for k in sel['sweepid'].values])
+    iis = np.array(list(iis), dtype=np.int)
+    i0, i1 = iis.min(), iis.max()
+    df_range = df_res[i0:i1].copy()
+    df_range['time'] -= df_range['time'].values[0]
+    return df_range
+
+
+def plot_fyr_all_normalized():
+    """Normalize RPM and yaw angle changes, compare the response
+    """
+
+    def make_patch_spines_invisible(ax):
+        ax.set_frame_on(True)
+        ax.patch.set_visible(False)
+        for sp in ax.spines.values():
+            sp.set_visible(False)
+
+    db = ojfdb.MeasureDb()
+    db.load_stats()
+    # select all fyr cases
+    isel = db.index[db.index['run_type'].str.startswith('fyr')]
+
+    fig, axes = plotting.subplots(nrows=1, ncols=1, figsize=(7,4), dpi=120)
+    axes = axes.flatten()
+    ax = axes[0]
+
+#    fig, ax = plt.subplots(nrows=1, ncols=1)
+
+    axs = ax.twinx() # inner
+    axf = ax.twinx() # outer
+    # Offset the right spine of par2.  The ticks and label have already been
+    # placed on the right by twinx above.
+    axf.spines["right"].set_position(("axes", 1.2))
+    # Having been created by twinx, par2 has its frame off, so the line of its
+    # detached spine is invisible.  First, activate the frame but make the patch
+    # and spines invisible.
+    make_patch_spines_invisible(axf)
+    # Second, show the right spine.
+    axf.spines["right"].set_visible(True)
+
+    for runid, gr in isel.groupby(isel['runid']):
+        # just take the first entry, it is the same result file
+        df_base = db.load_measurement_fromindex(gr.iloc[0])
+
+        # slow side
+        # fast side case, inner right axis
+        df = _get_fyr_range(gr, df_base, 'fyr_slow')
+        rpm_norm = df.rpm - df.rpm.values[0]
+        rpm_norm /= rpm_norm.values[-1]
+        ax.plot(df.time, rpm_norm, 'k-', label='RPM')
+
+        yaw_norm = df.yaw_angle - df.yaw_angle.values[0]
+        yaw_norm /= yaw_norm.values[-1]
+        axs.plot(df.time, yaw_norm, 'y-', label='yaw [deg]', alpha=0.7)
+
+        # fast side case, outer right axis
+        df = _get_fyr_range(gr, df_base, 'fyr_fast')
+        rpm_norm = df.rpm - df.rpm.values[0]
+        rpm_norm /= rpm_norm.values[-1]
+        ax.plot(df.time, rpm_norm, 'b-', label='RPM')
+
+        yaw_norm = df.yaw_angle - df.yaw_angle.values[0]
+        yaw_norm /= yaw_norm.values[-1]
+        axf.plot(df.time, yaw_norm, 'r-', label='yaw [deg]', alpha=0.7)
+
+#    axf.set_ylim([35, -10])
+#    axs.set_ylim([-35, 10])
+    ax.grid()
+
+    for tl in axf.get_yticklabels():
+        tl.set_color('r')
+    for tl in axs.get_yticklabels():
+        tl.set_color('y')
+
+    fig.tight_layout()
+
+    pfig = 'figures/freeyaw/'
+    fig.savefig(os.path.join(pfig, 'allfreeyaw'))
+
+
+def plot_fyr_yaw(col):
+
+    db = ojfdb.MeasureDb()
+    db.load_stats()
+    # select all fyr cases
+    isel = db.index[db.index['run_type'].str.startswith('fyr')]
+
+    # the normalized plots
+    fig, axes = plotting.subplots(nrows=1, ncols=1, figsize=(7,2), dpi=120)
+    axes = axes.flatten()
+    ax = axes[0]
+
+    # original values
+    fig2, axes2 = plotting.subplots(nrows=1, ncols=1, figsize=(7,2), dpi=120)
+    axes2 = axes2.flatten()
+    ax2 = axes2[0]
+    if col == 'yaw_angle':
+        ax3 = ax2.twinx()
+    else:
+        ax3 = ax2
+
+    for runid, gr in isel.groupby(isel['runid']):
+        # just take the first entry, it is the same result file
+        df_base = db.load_measurement_fromindex(gr.iloc[0])
+        dff = _get_fyr_range(gr, df_base, 'fyr_fast')
+        dfs = _get_fyr_range(gr, df_base, 'fyr_slow')
+
+        if gr['blades'].iloc[0][:3] == 'sam':
+            c1, c2 = 'r-^', 'b-v'
+            kw = {'markevery':300}
+        else:
+            c1, c2 = 'r-', 'b-'
+            kw = {}
+
+        norm = dff[col] - dff[col].values[0]
+        norm /= norm.values[-1]
+        ax.plot(dff.time, norm, c1, alpha=0.7, **kw)
+
+        norm = dfs[col] - dfs[col].values[0]
+        norm /= norm.values[-1]
+        ax.plot(dfs.time, norm, c2, alpha=0.7, **kw)
+
+        ax2.plot(dff.time, dff[col], c1, alpha=0.7, **kw)
+        ax3.plot(dfs.time, dfs[col], c2, alpha=0.7, **kw)
+
+    ax.grid()
+    fig.tight_layout()
+
+    ax2.grid()
+    fig2.tight_layout()
+
+    if col == 'yaw_angle':
+        ax2.set_ylim([35, -10])
+        ax3.set_ylim([-35, 10])
+        for tl in ax2.get_yticklabels():
+            tl.set_color('r')
+        for tl in ax3.get_yticklabels():
+            tl.set_color('b')
+
+    pfig = 'figures/freeyaw/'
+    fig.savefig(os.path.join(pfig, 'allfreeyaw_%s_norm.png' % col))
+    fig.savefig(os.path.join(pfig, 'allfreeyaw_%s_norm.eps' % col))
+
+    pfig = 'figures/freeyaw/'
+    fig2.savefig(os.path.join(pfig, 'allfreeyaw_%s.png' % col))
+    fig2.savefig(os.path.join(pfig, 'allfreeyaw_%s.eps' % col))
 
 
 def freeyaw_april_timings():
@@ -1278,9 +1491,12 @@ if __name__ == '__main__':
 #    db = add_freeyaw_steady_steps()
 
     # plot free yaw response unified way, save init/end to index/stats
-#    fyr = FreeyawRespons()
+    fyr = FreeyawRespons(interactive=False)
+    fyr.do_all_runs(save_stats_index=False)
 #    fyr.run_325()
 #    fyr.run_326()
 #    fyr.run_330()
 #    fyr.do_all_runs(save_stats_index=False)
 #    fyr.save_all_runs(complib='zlib')
+#    plot_fyr_yaw('rpm')
+#    plot_fyr_yaw('yaw_angle')

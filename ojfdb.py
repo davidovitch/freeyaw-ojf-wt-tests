@@ -714,8 +714,9 @@ class MeasureDb(object):
     """
 
     def __init__(self, prefix='symlinks_all', path_db='database/',
-                 load_index=True):
+                 load_index=True, path_res='data/calibrated/DataFrame/'):
         self.path_db = path_db
+        self.path_res = path_res
         if load_index:
             self.index_fname = os.path.join(path_db, 'db_index_%s.h5' % prefix)
             self.load_index()
@@ -752,6 +753,42 @@ class MeasureDb(object):
             return pd.read_excel(fname)
         else:
             raise ValueError('Provide either h5, csv, xls, or xlsx file.')
+
+    def load_measurement_fromindex(self, res, cut=False):
+        """Load a measurement from the index. If run_type is stair_step or
+        fyr_*, only load that section from the measurement.
+
+        Parameters
+        ----------
+
+        resfile : either str or row from index database.
+
+        cut : boolean, default=False
+            If True, only the range i0:i1 will be returned as defined in
+            sweepid for stair_step and fyr.
+
+        """
+
+        if not isinstance(res, pd.core.series.Series):
+            resrow = self.index.loc[res]
+            resfile = res
+        else:
+            resrow = res
+            resfile = resrow.name
+
+        resfile = resfile.split('_slowside_t0_')[0]
+        resfile = resfile.split('_fastside_t0_')[0]
+        resfile = resfile.split('_step_')[0]
+
+        fname = os.path.join(self.path_res, resfile + '.h5')
+        df = pd.read_hdf(fname, 'table')
+
+        if cut and (resrow['run_type'][:4] in ['fyr_', 'stai']):
+            i0, i1 = [int(k) for k in resrow['sweepid'].split('_')]
+            df = df[i0:i1]
+            df['time'] -= df['time'].values[0]
+
+        return df
 
     def _init_df_dict_stats(self):
         """Initialize all columns for the stats DataFrames
@@ -1998,16 +2035,16 @@ if __name__ == '__main__':
 #    plot_rpm_vs_blade(prefix, 'stiff')
 
     # just load the database components
-#    prefix = 'symlinks_all'
-#    db = MeasureDb(prefix='symlinks_all', path_db='database/')
-#    db.load_stats()
-#    dfm = db.mean
-#    dfs = db.std
-#    index = db.index
+    prefix = 'symlinks_all'
+    db = MeasureDb(prefix='symlinks_all', path_db='database/')
+    db.load_stats()
+    dfm = db.mean
+    dfs = db.std
+    index = db.index
 
     # current df db format: MeasureDb
 #    plot_voltage_current()
-    plot_rpm_wind()
+#    plot_rpm_wind()
 #    plot_ct_vs_lambda(blades='straight')
 #    plot_ct_vs_lambda(blades='swept')
 #    plot_yawerr_vs_lambda(blades='straight')

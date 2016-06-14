@@ -1286,7 +1286,7 @@ def plot_fyr_all_normalized():
     # select all fyr cases
     isel = db.index[db.index['run_type'].str.startswith('fyr')]
 
-    fig, axes = plotting.subplots(nrows=1, ncols=1, figsize=(7,4), dpi=120)
+    fig, axes = plotting.subplots(nrows=1, ncols=1, figsize=(5,2), dpi=120)
     axes = axes.flatten()
     ax = axes[0]
 
@@ -1332,6 +1332,8 @@ def plot_fyr_all_normalized():
 #    axf.set_ylim([35, -10])
 #    axs.set_ylim([-35, 10])
     ax.grid()
+    ax.set_xlabel('time [s]')
+#    ax.set_title('time [s]')
 
     for tl in axf.get_yticklabels():
         tl.set_color('r')
@@ -1344,7 +1346,10 @@ def plot_fyr_all_normalized():
     fig.savefig(os.path.join(pfig, 'allfreeyaw'))
 
 
-def plot_fyr_yaw(col):
+def plot_fyr_respons(col):
+    """col is the channel name to be plotted of all the selected free yaw
+    respons intervals in the index database.
+    """
 
     db = ojfdb.MeasureDb()
     db.load_stats()
@@ -1352,12 +1357,12 @@ def plot_fyr_yaw(col):
     isel = db.index[db.index['run_type'].str.startswith('fyr')]
 
     # the normalized plots
-    fig, axes = plotting.subplots(nrows=1, ncols=1, figsize=(7,2), dpi=120)
+    fig, axes = plotting.subplots(nrows=1, ncols=1, figsize=(6,3), dpi=120)
     axes = axes.flatten()
     ax = axes[0]
 
     # original values
-    fig2, axes2 = plotting.subplots(nrows=1, ncols=1, figsize=(7,2), dpi=120)
+    fig2, axes2 = plotting.subplots(nrows=1, ncols=1, figsize=(6,3), dpi=120)
     axes2 = axes2.flatten()
     ax2 = axes2[0]
     if col == 'yaw_angle':
@@ -1390,6 +1395,18 @@ def plot_fyr_yaw(col):
         ax3.plot(dfs.time, dfs[col], c2, alpha=0.7, **kw)
 
     ax.grid()
+    ax.set_xlabel('time [s]')
+    ax2.set_xlabel('time [s]')
+    if col == 'rpm':
+        ax.set_title('Normalized rotor speed')
+        ax.set_ylabel('[-]')
+        ax2.set_title('Rotor speed [rpm]')
+        ax2.set_ylabel('[rpm]')
+    else:
+        ax.set_title('Normalized yaw angle')
+        ax.set_ylabel('[-]')
+        ax2.set_title('Yaw angle [deg]')
+        ax2.set_ylabel('[deg]')
     fig.tight_layout()
 
     ax2.grid()
@@ -1410,6 +1427,92 @@ def plot_fyr_yaw(col):
     pfig = 'figures/freeyaw/'
     fig2.savefig(os.path.join(pfig, 'allfreeyaw_%s.png' % col))
     fig2.savefig(os.path.join(pfig, 'allfreeyaw_%s.eps' % col))
+
+
+def deltas_fyr_yaw_rpm():
+    """Visualize the yaw/rpm differences as function of delta TSR.
+    """
+    db = ojfdb.MeasureDb()
+    db.load_stats()
+    # select all fyr cases
+    isel = db.index[db.index['run_type'].str.startswith('fyr')]
+    msel = db.mean[db.mean.index.isin(isel.index.tolist())]
+
+#    dt_table = pd.DataFrame(columns=['d_rpm', 'rpm_0', 'rpm_1', 'd_yaw',
+#                                     'yaw_0', 'yaw_1', 'tsr_0', 'tsr_1', 'ws'])
+    cols = ['d_rpm', 'rpm_0', 'rpm_1', 'd_yaw', 'yaw_angle_0', 'yaw_angle_1',
+            'd_tsr', 'tsr_0', 'tsr_1', 'wind_speed', 'blades', 'side']
+    df_dict = {col:[] for col in cols}
+    index = []
+    for runid, gr in isel.groupby(isel['runid']):
+#        # corresponding means
+#        grm = msel[msel.index.isin(gr.index.tolist())]
+        # slow/fast
+        fs0 = gr[gr['run_type']=='fyr_fastside_init']
+        fs1 = gr[gr['run_type']=='fyr_fastside_end']
+        ss0 = gr[gr['run_type']=='fyr_slowside_init']
+        ss1 = gr[gr['run_type']=='fyr_slowside_end']
+        blades = gr['blades'].iloc[0]
+
+        # delta's
+        for xs0, xs1 in zip([fs0, ss0], [fs1, ss1]):
+            xs0_m = msel.loc[xs0.iloc[0].name]
+            xs1_m = msel.loc[xs1.iloc[0].name]
+            fs_index = xs0.iloc[0].name.replace('_init', '')
+            index.append(fs_index)
+            df_dict['side'].append(fs_index.split('_')[-3])
+            df_dict['blades'].append(blades)
+            df_dict['wind_speed'].append(xs1_m['wind_speed'])
+            df_dict['d_rpm'].append(xs1_m['rpm'] - xs0_m['rpm'])
+            df_dict['d_yaw'].append(xs1_m['yaw_angle'] - xs0_m['yaw_angle'])
+            df_dict['rpm_0'].append(xs0_m['rpm'])
+            df_dict['rpm_1'].append(xs1_m['rpm'])
+            df_dict['yaw_angle_0'].append(xs0_m['yaw_angle'])
+            df_dict['yaw_angle_1'].append(xs1_m['yaw_angle'])
+            df_dict['tsr_0'].append(ojfdb.tsr(xs0_m))
+            df_dict['tsr_1'].append(ojfdb.tsr(xs1_m))
+            df_dict['d_tsr'].append(df_dict['tsr_1'][-1] - df_dict['tsr_0'][-1])
+    df = pd.DataFrame(df_dict, index=index)
+
+#    # They show similar trends, but:
+#    plt.figure('d rpm, d yaw')
+#    plt.plot(df.d_rpm, np.abs(df.d_yaw), 'bo')
+#    plt.figure('d tsr, d yaw')
+#    plt.plot(df.d_tsr, np.abs(df.d_yaw), 'rs')
+#
+#    # this is the best, nice and linear
+#    plt.figure('d tsr, d rpm')
+#    plt.plot(df.d_tsr, df.d_rpm, 'k>')
+
+    fig1, axes1 = plotting.subplots(nrows=1, ncols=1, figsize=(4.3,2.3), dpi=120)
+    ax1 = axes1.flatten()[0]
+    fig2, axes2 = plotting.subplots(nrows=1, ncols=1, figsize=(4.3,2.3), dpi=120)
+    ax2 = axes2.flatten()[0]
+    colors = {'fastside':'r', 'slowside':'b'}
+    symbols = {'samoerai':'x', 'flexies':'v'}
+    mps_blade = {'samoerai':'swept', 'flexies':'straight'}
+    mps_side = {'fastside':'A', 'slowside':'B'}
+    units = {'yaw':'[deg]', 'rpm':''}
+
+    for side, gr in df.groupby('side'):
+        col = colors[side]
+        for blade, sel in gr.groupby('blades'):
+            symb = symbols[blade]
+            label = '%s, %s' % (mps_side[side], mps_blade[blade])
+            ax1.plot(sel.d_rpm, sel.d_tsr, col+symb, label=label)
+            ax2.plot(sel.d_yaw.abs(), sel.d_tsr, col+symb, label=label)
+
+    for chan, ax, fig in zip(['rpm', 'yaw'], [ax1, ax2], [fig1, fig2]):
+        ax.grid()
+        ax.set_ylabel('$\\Delta$ TSR [-]')
+        ax.set_xlabel('$\\Delta$ %s %s' % (chan, units[chan]))
+#        leg = ax.legend(loc='lower right', ncol=2, labelspacing=0, columnspacing=0)
+        leg = ax.legend(loc='best', labelspacing=0, columnspacing=0)
+        leg.get_frame().set_alpha(0.6)
+        fig.tight_layout()
+        pfig = 'figures/freeyaw/'
+        fig.savefig(os.path.join(pfig, 'freeyaw_deltas_tsr_%s.png' % chan))
+        fig.savefig(os.path.join(pfig, 'freeyaw_deltas_tsr_%s.eps' % chan))
 
 
 def freeyaw_april_timings():
@@ -1491,12 +1594,12 @@ if __name__ == '__main__':
 #    db = add_freeyaw_steady_steps()
 
     # plot free yaw response unified way, save init/end to index/stats
-    fyr = FreeyawRespons(interactive=False)
-    fyr.do_all_runs(save_stats_index=False)
+#    fyr = FreeyawRespons(interactive=False)
+#    fyr.do_all_runs(save_stats_index=False)
 #    fyr.run_325()
 #    fyr.run_326()
 #    fyr.run_330()
 #    fyr.do_all_runs(save_stats_index=False)
 #    fyr.save_all_runs(complib='zlib')
-#    plot_fyr_yaw('rpm')
-#    plot_fyr_yaw('yaw_angle')
+    plot_fyr_respons('rpm')
+    plot_fyr_respons('yaw_angle')

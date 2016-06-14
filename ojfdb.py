@@ -26,6 +26,7 @@ import plotting
 import ojf_post
 import misc
 from ojfdb_dict import ojf_db
+import generator
 
 PATH_DB = 'database/'
 OJFPATH_RAW = 'data/raw/'
@@ -1009,6 +1010,40 @@ def ct(df):
     return thrust / (0.5*rho*V*V*ojf_post.model.A)
 
 
+def pq_rpm2torque(df):
+    # we're assuming here that R=11 and R=28 correspond to dc1 and dc0 resp.
+    rdc1, rdc0 = 11, 28
+    ohm = rdc0 - (df['duty_cycle'].values*(rdc0-rdc1))
+    qs, ps, efs = generator.rpm2torque(df['rpm'].values, ohm)
+    return qs, ps, efs
+
+
+def pmech_rpm2torque(df):
+    qs, ps, efs = pq_rpm2torque(df)
+    return qs*df['rpm']*np.pi/30.0
+
+
+def pe_rpm2torque(df):
+    qs, ps, efs = pq_rpm2torque(df)
+    return ps
+
+
+def peff_rpm2torque(df):
+    qs, ps, efs = pq_rpm2torque(df)
+    return efs
+
+
+def cp(power, df):
+    rho = 1.225
+    V = df.wind_speed.values
+    return power / (0.5*rho*V*V*V*ojf_post.model.A)
+
+
+def cp_mech_rpm2torque(df):
+    qs, ps, efs = pq_rpm2torque(df)
+    ps2 = qs*df['rpm']*np.pi/30.0
+    return cp(ps2, df)
+
 ###############################################################################
 ### PLOTS
 ###############################################################################
@@ -1326,10 +1361,97 @@ def plot_rpm_wind():
         label = '$%i m/s$' % k
         ax1.plot(dc.duty_cycle, dc.rpm, colors[k-5], label=label)
 
-    ax1.legend(bbox_to_anchor=(1.05,1.1), ncol=3)
+    ax1.legend(bbox_to_anchor=(1.04,1.12), ncol=3)
     ax1.set_xlabel('duty cycle [-]]')
     ax1.set_ylabel('Rotor speed [RPM]')
     ax1.set_xlim([-0.1, 1.1])
+    ax1.grid(True)
+    pa4.save_fig()
+
+    # --------------------------------------------------------------------
+    # and now for each wind speed, see the dc-vs-pe-measured plot
+
+    figfile = '%s-pe-measured-vs-dc-all' % prefix
+    pa4 = plotting.A4Tuned(scale=scale)
+    pa4.setup(figpath+figfile, nr_plots=1, hspace_cm=2., figsize_x=8,
+              grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
+              wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
+    ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
+
+    colors = ['rs', 'bo', 'g*', 'y^', 'gd', 'm*', 'ys', '', '']
+
+    for k in range(5,12):
+        low = k - 0.2
+        up = k + 0.2
+        idc = iyaw0[(iyaw0.windspeed>=low) & (iyaw0.windspeed<up)]
+        print(low, up, len(idc))
+        dc = myaw0[myaw0.index.isin(idc.index.tolist())]
+        label = '$%i m/s$' % k
+        ax1.plot(dc.duty_cycle, dc.power, colors[k-5], label=label)
+
+    ax1.legend(bbox_to_anchor=(1.04,1.12), ncol=3)
+    ax1.set_xlabel('duty cycle [-]]')
+    ax1.set_ylabel('$P_e$ Measured electrical power [W]')
+    ax1.set_xlim([-0.1, 1.1])
+    ax1.set_ylim([0.0, 220])
+    ax1.grid(True)
+    pa4.save_fig()
+
+    # --------------------------------------------------------------------
+    # and now for each wind speed, see the dc-vs-pe-measured plot
+
+    figfile = '%s-pe-rpm2torque-vs-dc-all' % prefix
+    pa4 = plotting.A4Tuned(scale=scale)
+    pa4.setup(figpath+figfile, nr_plots=1, hspace_cm=2., figsize_x=8,
+              grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
+              wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
+    ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
+
+    colors = ['rs', 'bo', 'g*', 'y^', 'gd', 'm*', 'ys', '', '']
+
+    for k in range(5,12):
+        low = k - 0.2
+        up = k + 0.2
+        idc = iyaw0[(iyaw0.windspeed>=low) & (iyaw0.windspeed<up)]
+        print(low, up, len(idc))
+        dc = myaw0[myaw0.index.isin(idc.index.tolist())]
+        label = '$%i m/s$' % k
+        ax1.plot(dc.duty_cycle, pe_rpm2torque(dc), colors[k-5], label=label)
+
+    ax1.legend(bbox_to_anchor=(1.04,1.12), ncol=3)
+    ax1.set_xlabel('duty cycle [-]]')
+    ax1.set_ylabel('$P_e$ from RPM-torque estimate [W]')
+    ax1.set_xlim([-0.1, 1.1])
+    ax1.set_ylim([0.0, 220])
+    ax1.grid(True)
+    pa4.save_fig()
+
+    # --------------------------------------------------------------------
+    # and now for each wind speed, see the dc-vs-pe-measured plot
+
+    figfile = '%s-peff-rpm2torque-vs-dc-all' % prefix
+    pa4 = plotting.A4Tuned(scale=scale)
+    pa4.setup(figpath+figfile, nr_plots=1, hspace_cm=2., figsize_x=8,
+              grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
+              wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
+    ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
+
+    colors = ['rs', 'bo', 'g*', 'y^', 'gd', 'm*', 'ys', '', '']
+
+    for k in range(5,12):
+        low = k - 0.2
+        up = k + 0.2
+        idc = iyaw0[(iyaw0.windspeed>=low) & (iyaw0.windspeed<up)]
+        print(low, up, len(idc))
+        dc = myaw0[myaw0.index.isin(idc.index.tolist())]
+        label = '$%i m/s$' % k
+        ax1.plot(dc.duty_cycle, peff_rpm2torque(dc), colors[k-5], label=label)
+
+    ax1.legend(bbox_to_anchor=(1.04,1.12), ncol=3)
+    ax1.set_xlabel('duty cycle [-]]')
+    ax1.set_ylabel('Generator efficiency from RPM-torque estimate [-]')
+    ax1.set_xlim([-0.1, 1.1])
+#    ax1.set_ylim([0.0, 220])
     ax1.grid(True)
     pa4.save_fig()
 
@@ -1693,6 +1815,112 @@ def plot_ct_vs_lambda(blades='straight'):
     ax1.grid(True)
     pa4.save_fig()
 
+    # --------------------------------------------------------------------
+    # Measured electrical power-LAMBDA
+    # --------------------------------------------------------------------
+    figfile = '%s-pe-meas-vs-lambda-april-blades-%s' % (prefix, blades)
+    pa4 = plotting.A4Tuned(scale=scale)
+    pa4.setup(figpath+figfile, nr_plots=1, hspace_cm=2., figsize_x=8,
+                   grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
+                   wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
+    ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
+
+    ax1.plot(tsr(apr10), apr10.power, 'bo', label='10 m/s')
+    ax1.plot(tsr(apr9), apr9.power, 'rs', label='9 m/s')
+    ax1.plot(tsr(apr8), apr8.power, 'gv', label='8 m/s')
+    ax1.plot(tsr(apr7), apr7.power, 'm<', label='7 m/s')
+    ax1.plot(tsr(apr6), apr6.power, 'c^', label='6 m/s')
+    ax1.plot(tsr(apr5), apr5.power, 'y>', label='5 m/s')
+
+    leg = ax1.legend(loc='best')
+    leg.get_frame().set_alpha(0.5)
+    ax1.set_title('April, zero yaw, %s blades' % blades, size=14*scale)
+    ax1.set_xlabel('tip speed ratio $\lambda$')
+    ax1.set_ylabel('Measured electrical power [W]')
+    ax1.set_xlim([0, 9])
+    ax1.set_ylim([0, 220])
+    ax1.grid(True)
+    pa4.save_fig()
+
+    # --------------------------------------------------------------------
+    # electrical-power-rpm2torque-LAMBDA
+    # --------------------------------------------------------------------
+    figfile = '%s-pe-rpm2torque-vs-lambda-april-blades-%s' % (prefix, blades)
+    pa4 = plotting.A4Tuned(scale=scale)
+    pa4.setup(figpath+figfile, nr_plots=1, hspace_cm=2., figsize_x=8,
+                   grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
+                   wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
+    ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
+
+    ax1.plot(tsr(apr10), pe_rpm2torque(apr10), 'bo', label='10 m/s')
+    ax1.plot(tsr(apr9), pe_rpm2torque(apr9), 'rs', label='9 m/s')
+    ax1.plot(tsr(apr8), pe_rpm2torque(apr8), 'gv', label='8 m/s')
+    ax1.plot(tsr(apr7), pe_rpm2torque(apr7), 'm<', label='7 m/s')
+    ax1.plot(tsr(apr6), pe_rpm2torque(apr6), 'c^', label='6 m/s')
+    ax1.plot(tsr(apr5), pe_rpm2torque(apr5), 'y>', label='5 m/s')
+
+    leg = ax1.legend(loc='best')
+    leg.get_frame().set_alpha(0.5)
+    ax1.set_title('April, zero yaw, %s blades' % blades, size=14*scale)
+    ax1.set_xlabel('tip speed ratio $\lambda$')
+    ax1.set_ylabel('$P_{e}$ from RPM-torque estimate [W]')
+    ax1.set_xlim([0, 9])
+    ax1.set_ylim([0, 220])
+    ax1.grid(True)
+    pa4.save_fig()
+
+    # --------------------------------------------------------------------
+    # cp-rpm2torque-LAMBDA
+    # --------------------------------------------------------------------
+    figfile = '%s-cp-rpm2torque-vs-lambda-april-blades-%s' % (prefix, blades)
+    pa4 = plotting.A4Tuned(scale=scale)
+    pa4.setup(figpath+figfile, nr_plots=1, hspace_cm=2., figsize_x=8,
+                   grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
+                   wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
+    ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
+
+    ax1.plot(tsr(apr10), cp_mech_rpm2torque(apr10), 'bo', label='10 m/s')
+    ax1.plot(tsr(apr9), cp_mech_rpm2torque(apr9), 'rs', label='9 m/s')
+    ax1.plot(tsr(apr8), cp_mech_rpm2torque(apr8), 'gv', label='8 m/s')
+    ax1.plot(tsr(apr7), cp_mech_rpm2torque(apr7), 'm<', label='7 m/s')
+    ax1.plot(tsr(apr6), cp_mech_rpm2torque(apr6), 'c^', label='6 m/s')
+    ax1.plot(tsr(apr5), cp_mech_rpm2torque(apr5), 'y>', label='5 m/s')
+
+    leg = ax1.legend(loc='best')
+    leg.get_frame().set_alpha(0.5)
+    ax1.set_title('April, zero yaw, %s blades' % blades, size=14*scale)
+    ax1.set_xlabel('tip speed ratio $\lambda$')
+    ax1.set_ylabel('$C_P$ from RPM-torque estimate [-]')
+    ax1.set_xlim([0, 9])
+    ax1.grid(True)
+    pa4.save_fig()
+
+    # --------------------------------------------------------------------
+    # mechpower-rpm2torque-LAMBDA
+    # --------------------------------------------------------------------
+    figfile = '%s-pmech-rpm2torque-vs-lambda-april-blades-%s' % (prefix, blades)
+    pa4 = plotting.A4Tuned(scale=scale)
+    pa4.setup(figpath+figfile, nr_plots=1, hspace_cm=2., figsize_x=8,
+                   grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
+                   wstop_cm=1.0, figsize_y=8., wsbottom_cm=1.)
+    ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
+
+    ax1.plot(tsr(apr10), pmech_rpm2torque(apr10), 'bo', label='10 m/s')
+    ax1.plot(tsr(apr9), pmech_rpm2torque(apr9), 'rs', label='9 m/s')
+    ax1.plot(tsr(apr8), pmech_rpm2torque(apr8), 'gv', label='8 m/s')
+    ax1.plot(tsr(apr7), pmech_rpm2torque(apr7), 'm<', label='7 m/s')
+    ax1.plot(tsr(apr6), pmech_rpm2torque(apr6), 'c^', label='6 m/s')
+    ax1.plot(tsr(apr5), pmech_rpm2torque(apr5), 'y>', label='5 m/s')
+
+    leg = ax1.legend(loc='best')
+    leg.get_frame().set_alpha(0.5)
+    ax1.set_title('April, zero yaw, %s blades' % blades, size=14*scale)
+    ax1.set_xlabel('tip speed ratio $\lambda$')
+    ax1.set_ylabel('$P_{mech}$ from RPM-torque estimate [W]')
+    ax1.set_xlim([0, 9])
+    ax1.grid(True)
+    pa4.save_fig()
+
 
 def plot_blade_vs_lambda(prefix, blade):
     """
@@ -1871,7 +2099,7 @@ def plot_yawerr_vs_lambda(blades='straight'):
     # add some cos or cos**2 fits
     angles = np.arange(-40.0, 40.0, 0.1)
     angles_rad = angles.copy() * np.pi/180.0
-    max_up = ct(tsr89).max()
+    max_up = ct(tsr78).max()
     max_mid = ct(tsr56).max()
 #    max_low = ct(tsr05)
 #    max_low = np.sort(max_low)[-3]
@@ -1885,6 +2113,61 @@ def plot_yawerr_vs_lambda(blades='straight'):
     ax1.set_ylabel('thrust coefficient $C_T$')
     leg = ax1.legend(loc='center')
     leg.get_frame().set_alpha(0.5)
+
+    ax1.set_title('April, forced yaw error,\n%s blade' % blades, size=14*scale)
+    ax1.grid(True)
+    pa4.save_fig()
+
+    # --------------------------------------------------------------------
+    # CP mech-rpm2torque-LAMBDA as function of yaw error
+    # --------------------------------------------------------------------
+
+    scale = 1.5
+    figfile = '%s-yawerror-vs-cp-rpm2torque-april-%s-blades' % (prefix, blades)
+    pa4 = plotting.A4Tuned(scale=scale)
+    pa4.setup(figpath+figfile, nr_plots=1, hspace_cm=2., figsize_x=8,
+              grandtitle=False, wsleft_cm=1.5, wsright_cm=0.4,
+              wstop_cm=1.5, figsize_y=8.5, wsbottom_cm=1.)
+    ax1 = pa4.fig.add_subplot(pa4.nr_rows, pa4.nr_cols, 1)
+
+    # or bin on TSR instead of wind speed
+    tsr04 = mbase[(mbase_tsr < 4.0)]
+    tsr45 = mbase[(mbase_tsr >= 4.0) & (mbase_tsr < 5.0)]
+    tsr56 = mbase[(mbase_tsr >= 5.0) & (mbase_tsr < 6.0)]
+    tsr67 = mbase[(mbase_tsr >= 6.0) & (mbase_tsr < 7.0)]
+    tsr78 = mbase[(mbase_tsr >= 7.0) & (mbase_tsr < 8.0)]
+    tsr89 = mbase[(mbase_tsr >= 8.0) & (mbase_tsr <= 9.0)]
+
+    ax1.plot(tsr89.yaw_angle, cp_mech_rpm2torque(tsr89), 'rs',
+             label='$8<\lambda<9$')
+    ax1.plot(tsr78.yaw_angle, cp_mech_rpm2torque(tsr78), 'gv',
+             label='$7<\lambda<8$')
+    ax1.plot(tsr67.yaw_angle, cp_mech_rpm2torque(tsr67), 'b<',
+             label='$6<\lambda<7$')
+    ax1.plot(tsr56.yaw_angle, cp_mech_rpm2torque(tsr56), 'k^',
+             label='$5<\lambda<6$')
+    ax1.plot(tsr45.yaw_angle, cp_mech_rpm2torque(tsr45), marker='o',
+             label='$4<\lambda<5$', color='grey', ls='')
+    ax1.plot(tsr04.yaw_angle, cp_mech_rpm2torque(tsr04), 'y>',
+             label='$\lambda<4$')
+
+    # add some cos or cos**2 fits
+    angles = np.arange(-40.0, 40.0, 0.1)
+    angles_rad = angles.copy() * np.pi/180.0
+    max_up = cp_mech_rpm2torque(tsr78).max()
+    max_mid = 0.27
+#    max_low = ct(tsr05)
+#    max_low = np.sort(max_low)[-3]
+    max_low = 0.16
+    cos = np.cos(angles_rad)
+    ax1.plot(angles, cos*cos*max_up, 'g--')
+    ax1.plot(angles, cos*cos*max_mid, 'b--')
+    ax1.plot(angles, cos*cos*max_low, 'k--')
+
+    ax1.set_xlabel('yaw angle $\psi$')
+    ax1.set_ylabel('$C_{P_{mech}}$ from RPM-torque estimate [-]')
+#    leg = ax1.legend(loc='center')
+#    leg.get_frame().set_alpha(0.5)
 
     ax1.set_title('April, forced yaw error,\n%s blade' % blades, size=14*scale)
     ax1.grid(True)
@@ -2044,7 +2327,7 @@ if __name__ == '__main__':
 
     # current df db format: MeasureDb
 #    plot_voltage_current()
-#    plot_rpm_wind()
+    plot_rpm_wind()
 #    plot_ct_vs_lambda(blades='straight')
 #    plot_ct_vs_lambda(blades='swept')
 #    plot_yawerr_vs_lambda(blades='straight')

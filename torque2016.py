@@ -40,7 +40,7 @@ import ojf_post
 #import towercal
 #import bladecal
 #import yawcal
-#from ojfdb import MeasureDb
+import ojfdb
 
 plt.rc('font', family='serif')
 plt.rc('xtick', labelsize=10)
@@ -161,6 +161,13 @@ def power():
 
     plt.figure(3)
     plt.plot(sel_mean.duty_cycle, sel_mean.tower_strain_ss, 'rx')
+
+    q, power = ojfdb.power(sel_mean)
+    cp_ = ojfdb.cp(power, sel_mean)
+
+    plt.figure(4)
+    plt.plot(sel_mean.rpm, sel_mean.power, 'rs')
+    plt.plot(sel_mean.rpm, power, 'bx')
 
 
 def rpm_vs_tower_ss():

@@ -40,13 +40,18 @@ but has to be downloaded separately due to its size. The current version of the
 data set is [v2015-11-26](https://data.deic.dk/shared/62ffdf2d57c8a0133a7f3a43671d0e23)
 and contains the following:
 
-* unedited, raw result files: [data/raw](https://data.deic.dk/shared/2d9ae456b8cbefd0b399f9f1403f4497) (5.5GB)
-* calibrated, unified result files, in pandas.DataFrame HDF5 format:
-[calibrated/DataFrame](https://data.deic.dk/shared/98ff753fd65e9ee589a5e11d837a20a1) (5.4GB)
-* calibrated, unified result files, in CSV format (plain text):
-[calibrated/CSV](https://data.deic.dk/shared/bcccf37b2adf03cd56652974603c541b) (3.8GB)
-* plots of the calibrated result files, in PNG format:
-[database/figures](https://data.deic.dk/shared/38fbad00d00057c3834c17bdbabf7b66) (117.2 MB)
+* [data/model/cross-sections](https://data.deic.dk/shared/34d18938b18e204f72bf182b0d913ef2) (67.3 MB):
+blade cross section profile coordinates from root to tip (tabulated and plots)
+* [data/raw](https://data.deic.dk/shared/2d9ae456b8cbefd0b399f9f1403f4497) (5.5GB):
+unedited, raw result files
+* [calibrated/DataFrame](https://data.deic.dk/shared/98ff753fd65e9ee589a5e11d837a20a1) (5.4GB):
+calibrated, unified result files, in pandas.DataFrame HDF5 format
+* [calibrated/CSV](https://data.deic.dk/shared/bcccf37b2adf03cd56652974603c541b) (3.8GB):
+calibrated, unified result files, in CSV format (plain text)
+* [database/figures](https://data.deic.dk/shared/38fbad00d00057c3834c17bdbabf7b66) (117.2 MB):
+plots of the calibrated result files, in PNG format
+* [media/pictures](https://data.deic.dk/shared/32990785caddb7f704bd4384cf03429c) (720.4 MB):
+pictures of various phases of the experiment
 
 These data files are compressed with [7zip](http://www.7-zip.org/) and the
 archives are split in parts of maximum 1000MB.
@@ -66,9 +71,9 @@ Channel header names:
 * ```rpm``` : rotor speed [rpm]
 * ```yaw_angle``` : yaw inflow angle [deg]
 * ```tower_strain_fa``` : tower base for-aft (FA) bending moment in [Nm], based on tower
-base straing gauges
+base straing gauges. Calibrated results only available for April campaign.
 * ```tower_strain_ss``` : tower base side-side (SS) bending moment in [Nm], based on tower
-base straing gauges
+base straing gauges. Calibrated results only available for April campaign.
 * ```towertop_acc_fa``` : acceleration in for-aft direction, measured from an
 accelerometer placed in the nacelle
 * ```towertop_acc_ss``` : acceleration in side-side direction, measured from an

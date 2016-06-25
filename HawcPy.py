@@ -800,7 +800,7 @@ class ModelData:
             print 'saved:', figpath + '.eps'
             fig.savefig(figpath +  '.png')
             print 'saved:', figpath + '.png'
-            canvas.close()
+#            canvas.close()
             fig.clear()
 
 
@@ -847,7 +847,7 @@ class ModelData:
 
         figpath = self.save_path+self.ae_file +'_set' + str(ae_set)
         fig.savefig(figpath +  '.png')
-        canvas.close()
+#        canvas.close()
         fig.clear()
 
         if self.debug:
@@ -1033,7 +1033,7 @@ class ModelData:
 
             figpath = self.save_path+self.st_file +'_plot_' + tmp
             fig.savefig(figpath +  '.png', orientation='landscape')
-            canvas.close()
+#            canvas.close()
             fig.clear()
 
             if self.debug:

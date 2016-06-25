@@ -875,16 +875,16 @@ def damping(time, data, checkplot=False, offset_start=100, offset_end=200,
     return i_peaks, i_bloks, damp_blocks, fit_blocks, fn5, psd_blocks
 
 
-def _linear_distr_blade(blade):
+def _linear_distr_blade(blade, nr_points=None):
     """
     Interpolate the blade.dat data onto linearly distributed radial
     positions
     """
-
-    nr_points = blade.shape[0]
+    if nr_points is None:
+        nr_points = blade.shape[0]
     # make a linear distribution of radial positions
     radius = np.linspace(blade[0,0], blade[-1,0], num=nr_points)
-    blade_new = sp.zeros(blade.shape)
+    blade_new = sp.zeros((nr_points, blade.shape[1]))
     blade_new[:,0] = radius
     # and interpolate all points from the hawtopt result on a linear grid
     for k in range(1,blade.shape[1]):

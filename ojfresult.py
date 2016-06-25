@@ -23,7 +23,7 @@ import scipy.interpolate as interpolate
 import scipy as sp
 from scipy.cluster import vq
 #from matplotlib.figure import Figure
-#from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigCanvas
+#from matplotlib.backends.backend_agg import FigureCanvasAgg as FigCanvas
 #import matplotlib.font_manager as mpl_font
 #from matplotlib.ticker import FormatStrFormatter
 import matplotlib as mpl

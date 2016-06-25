@@ -15,7 +15,7 @@ import numpy as np
 import scipy.io
 import scipy.integrate as integrate
 #from matplotlib.figure import Figure
-#from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigCanvas
+#from matplotlib.backends.backend_agg import FigureCanvasAgg as FigCanvas
 #import matplotlib.font_manager as mpl_font
 #from matplotlib.ticker import FormatStrFormatter
 import matplotlib as mpl

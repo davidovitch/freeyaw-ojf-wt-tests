@@ -13,7 +13,7 @@ import math
 import warnings
 
 import pylab as plt
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigCanvas
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigCanvas
 from matplotlib.figure import Figure
 import matplotlib as mpl
 
@@ -179,7 +179,8 @@ def coord_continuous(coord, res=100000, method=None):
 
 
 # TODO: implement the list of float on t_new
-def interp_airfoils(coord1, t1, coord2, t2, t_new, verplot=False, verbose=False):
+def interp_airfoils(coord1, t1, coord2, t2, t_new, res=100000, verplot=False,
+                    verbose=False):
     """
     Interpolate two airfoils with respect to thickness
     ==================================================
@@ -205,6 +206,12 @@ def interp_airfoils(coord1, t1, coord2, t2, t_new, verplot=False, verbose=False)
         Necessary condition for t_new: t1 > t_new > t2 (root-mid-tip).
         For each list entry a new weighted airfoil will be created.
 
+    res : int, default=100000
+        Integer specifying how many x/c points should be maintained for
+        the higher resultion coord array. Value ignored when method=None.
+        Note that a leading edge usually already has a high resolution
+        hence the relative high default resultion.
+
     """
     # TODO: also allow array input, so you could interpollate any airfoil
     # not in the database as well
@@ -216,8 +223,8 @@ def interp_airfoils(coord1, t1, coord2, t2, t_new, verplot=False, verbose=False)
     # coord_continuous will split up in 2 continuous functions, one
     # for lower and one for upper surface. Next it will interpolate
     # the grid to a uni-spaced high resolution grid
-    coord1_up, coord1_low = coord_continuous(coord1, method='linear')
-    coord2_up, coord2_low = coord_continuous(coord2, method='linear')
+    coord1_up, coord1_low = coord_continuous(coord1, method='linear', res=res)
+    coord2_up, coord2_low = coord_continuous(coord2, method='linear', res=res)
 
     # and now interpolate with respect to thickness, meaning for each
     # x/c point we have a pair of (t1,y1) and (t2,y2) -> (t_new,y_new)
@@ -662,11 +669,21 @@ class Blade:
         fig.savefig(figpath + '.eps')
 #        fig.savefig(figpath + '.jpg')
 #        fig.savefig(figpath + '.svg')
-        canvas.close()
+#        canvas.close()
         fig.clear()
 
+        # save as text file
+        tmp = np.append(self.coord_up, self.coord_low[::-1], axis=0)
+        np.savetxt(figpath+'.txt', tmp)
+        tmp = np.append(self.coord_up_nodim[::-1], self.coord_low_nodim, axis=0)
+        np.savetxt(figpath+'_nodim.txt', tmp)
+#        ax1.plot(self.coord_up[:,0], self.coord_up[:,1],
+#                 'k-', label='upper', linewidth=1.1)
+#        ax1.plot(self.coord_low[:,0],  self.coord_low[:,1],
+#                 'k-', label='lower', linewidth=1.1)
+
     def build(self, blade, airfoils, res=None, step=None, plate=False,
-              tw1_t=0, tw2_t=0, st_arr_tw=None):
+              tw1_t=0, tw2_t=0, st_arr_tw=None, res_chord=100000):
         """
         Create a blade
         ==============
@@ -704,6 +721,12 @@ class Blade:
 
         tw1_t : float, default=0
             Thickness of the thin walled structural part
+
+        res_chord : int, default=100000
+            Integer specifying how many x/c points should be maintained for
+            the higher resultion coord array. Value ignored when method=None.
+            Note that a leading edge usually already has a high resolution
+            hence the relative high default resultion.
 
         Returns
         -------
@@ -830,7 +853,9 @@ class Blade:
             chord = blade_hr[k,1]
             coord1, t1, = airfoils[1], airfoils[2]
             coord2, t2, = airfoils[4], airfoils[5]
-            coord_up, coord_low = interp_airfoils(coord1, t1, coord2, t2, self.tc)
+            coord_up, coord_low = interp_airfoils(coord1, t1, coord2, t2,
+                                                  self.tc, res=res_chord)
+            self.coord_up_nodim, self.coord_low_nodim = coord_up, coord_low
             self.airfoil1 = airfoils[0]
             self.airfoil2 = airfoils[3]
 
@@ -1516,7 +1541,7 @@ class AirfoilProperties:
             ax1.set_ylabel('$C_{D90}$', size=labelsize)
             # save and clear the figure
             fig.savefig(figdir + figname +  '.eps')
-            canvas.close()
+#            canvas.close()
             fig.clear()
             print 'saved C_d90 radial distribution in a figure:'
             print figdir + figname +  '.eps'

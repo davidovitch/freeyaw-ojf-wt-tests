@@ -48,6 +48,10 @@ unedited, raw result files
 calibrated, unified result files, in pandas.DataFrame HDF5 format
 * [calibrated/CSV](https://data.deic.dk/shared/bcccf37b2adf03cd56652974603c541b) (3.8GB):
 calibrated, unified result files, in CSV format (plain text)
+* [database](https://data.deic.dk/shared/2bc207f4173783e95878d868e780c2fb)
+Index of all the measurements, including various labels to distinguish between the
+different measurement runs (such as blade type, wind speed, etc). Also includes
+mean, max, min and standard deviations for each run and all channels.
 * [database/figures](https://data.deic.dk/shared/38fbad00d00057c3834c17bdbabf7b66) (117.2 MB):
 plots of the calibrated result files, in PNG format
 * [media/pictures](https://data.deic.dk/shared/32990785caddb7f704bd4384cf03429c) (720.4 MB):
@@ -84,7 +88,8 @@ accelerometer placed in the nacelle
 * ```current_filt``` : current measurement
 * ```rotor_azimuth``` : rotor azimuth position, where 180 degrees refers to
 blade 3 pointing down (in tower shadow)
-* ```duty_cycle``` :
+* ```duty_cycle``` : generator dump load setting, where 0 refers to lower generator
+torque, and 1 refers to a higher generator torque setting.
 * ```power``` : amount of power being dissipated in the resistance. Note that
 this excludes the losses in the generator, the PWM module, cabling, and the mechanical
 losses (bearings). This sensor can not be used for reliable rotor power measurements.

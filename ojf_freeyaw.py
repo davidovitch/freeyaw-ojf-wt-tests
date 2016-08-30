@@ -1357,18 +1357,20 @@ def plot_fyr_respons(col):
     isel = db.index[db.index['run_type'].str.startswith('fyr')]
 
     # the normalized plots
-    fig, axes = plotting.subplots(nrows=1, ncols=1, figsize=(6,3), dpi=120)
+    fig, axes = plotting.subplots(nrows=1, ncols=1, figsize=(8,3), dpi=120)
     axes = axes.flatten()
     ax = axes[0]
 
     # original values
-    fig2, axes2 = plotting.subplots(nrows=1, ncols=1, figsize=(6,3), dpi=120)
+    fig2, axes2 = plotting.subplots(nrows=1, ncols=1, figsize=(8,3), dpi=120)
     axes2 = axes2.flatten()
     ax2 = axes2[0]
     if col == 'yaw_angle':
         ax3 = ax2.twinx()
     else:
         ax3 = ax2
+
+    legh, legh2, legh3 = {}, {}, {}
 
     for runid, gr in isel.groupby(isel['runid']):
         # just take the first entry, it is the same result file
@@ -1385,16 +1387,17 @@ def plot_fyr_respons(col):
 
         norm = dff[col] - dff[col].values[0]
         norm /= norm.values[-1]
-        ax.plot(dff.time, norm, c1, alpha=0.7, **kw)
+        legh[c1] = ax.plot(dff.time, norm, c1, alpha=0.7, **kw)
 
         norm = dfs[col] - dfs[col].values[0]
         norm /= norm.values[-1]
-        ax.plot(dfs.time, norm, c2, alpha=0.7, **kw)
+        legh[c2] = ax.plot(dfs.time, norm, c2, alpha=0.7, **kw)
 
-        ax2.plot(dff.time, dff[col], c1, alpha=0.7, **kw)
-        ax3.plot(dfs.time, dfs[col], c2, alpha=0.7, **kw)
+        legh2[c1] = ax2.plot(dff.time, dff[col], c1, alpha=0.7, **kw)
+        legh3[c2] = ax3.plot(dfs.time, dfs[col], c2, alpha=0.7, **kw)
 
     ax.grid()
+    ax2.grid()
     ax.set_xlabel('time [s]')
     ax2.set_xlabel('time [s]')
     if col == 'rpm':
@@ -1403,13 +1406,23 @@ def plot_fyr_respons(col):
         ax2.set_title('Rotor speed [rpm]')
         ax2.set_ylabel('[rpm]')
     else:
-        ax.set_title('Normalized yaw angle')
+        ax.set_title('Normalized yaw angle $\psi$')
         ax.set_ylabel('[-]')
-        ax2.set_title('Yaw angle [deg]')
+        ax2.set_title('Yaw angle $\psi$ [deg]')
         ax2.set_ylabel('[deg]')
-    fig.tight_layout()
 
-    ax2.grid()
+    labels = ['swept, $\psi_{init} > 0$',
+              'swept, $0 > \psi_{init}$',
+              'straight, $\psi_{init} > 0$',
+              'straight, $0 > \psi_{init}$']
+    handles = [legh[u'r-^'][0], legh[u'b-v'][0],legh[u'r-'][0], legh[u'b-'][0]]
+    ax.legend(handles, labels, loc='best')
+
+    handles23 = [legh2[u'r-^'][0], legh3[u'b-v'][0],
+                 legh2[u'r-'][0], legh3[u'b-'][0]]
+    ax3.legend(handles23, labels, loc='best')
+
+    fig.tight_layout()
     fig2.tight_layout()
 
     if col == 'yaw_angle':

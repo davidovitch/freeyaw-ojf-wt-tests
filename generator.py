@@ -16,6 +16,19 @@ import matplotlib as mpl
 from matplotlib import pyplot as plt
 import pandas as pd
 
+import plotting
+
+plt.rc('font', family='serif')
+plt.rc('xtick', labelsize=10)
+plt.rc('ytick', labelsize=10)
+plt.rc('axes', labelsize=12)
+plt.rc('text', usetex=True)
+plt.rc('legend', fontsize=11)
+plt.rc('legend', numpoints=1)
+plt.rc('legend', borderaxespad=0)
+mpl.rcParams['text.latex.unicode'] = True
+#plt.rc('text', usetex=True)
+
 
 def torque_power_at_ohm(Rset):
     qlist, rpmlist, plist, efflist = [], [], [], []
@@ -76,24 +89,85 @@ def plot_windbluepower_st_540():
     rpm = df['W [rpm]'].values
     Qc = df['tau_input [N-m]']
     R = df['Rsetting [ohm]']
-
+    eff = df['Eff [-]']*100.0
+    # the torque-rpm grid
     xi = np.linspace(rpm.min(), rpm.max(), 200)
     yi = np.linspace(Qc.min(), Qc.max(), 200)
+    cmap = mpl.cm.get_cmap('jet', 8)
+
+    # -------------------------------------------------------------------------
+    # iso-lines: dump load resistance value in Ohm
     # grid the data
     zi = mpl.mlab.griddata(rpm, Qc, R, xi, yi, interp='linear')
     # consider switching to: matplotlib.tri.Triangulation or
     # matplotlib.tri.TriInterpolator, see: matplotlib.org/api/tri_api.html
+    fig, axes = plotting.subplots(nrows=1, ncols=1, figsize=(4,2), dpi=120)
+    ax = axes.flatten()[0]
+    cnt = ax.contour(xi, yi, zi,8, colors=None, cmap=cmap) #, vmax=35, vmin=0)
+    ax.clabel(cnt, inline=1, fontsize=10, fmt='%1.0f')
+    ax.set_xlabel('rotor speed [rpm]')
+    ax.set_ylabel('input torque [Nm]')
+    ax.grid()
+#    clb = fig.colorbar(cnt)
+#    clb.set_label('color bar label')
+#    leg = ax.legend(loc='best', labelspacing=0, columnspacing=0)
+#    leg.get_frame().set_alpha(0.6)
+    fig.tight_layout()
+    fig.savefig('figures/generator-st-540-contour.png')
+    fig.savefig('figures/generator-st-540-contour.eps')
+    # -------------------------------------------------------------------------
 
-    plt.figure()
+    # -------------------------------------------------------------------------
+    # iso-lines: efficiency
+    # grid the data
+    zi = mpl.mlab.griddata(rpm, Qc, eff, xi, yi, interp='linear')
+    # consider switching to: matplotlib.tri.Triangulation or
+    # matplotlib.tri.TriInterpolator, see: matplotlib.org/api/tri_api.html
+    fig, axes = plotting.subplots(nrows=1, ncols=1, figsize=(4,2), dpi=120)
+    ax = axes.flatten()[0]
+    cnt = ax.contour(xi, yi, zi,8, colors=None, cmap=cmap) #, vmax=35, vmin=0)
+    ax.clabel(cnt, inline=1, fontsize=10, fmt='%1.0f')
+    ax.set_xlabel('rotor speed [rpm]')
+    ax.set_ylabel('input torque [Nm]')
+    ax.grid()
+    fig.tight_layout()
+    fig.savefig('figures/generator-st-540-contour-eff.png')
+    fig.savefig('figures/generator-st-540-contour-eff.eps')
+    # -------------------------------------------------------------------------
+
+    # -------------------------------------------------------------------------
+    fig, axes = plotting.subplots(nrows=1, ncols=1, figsize=(5,3), dpi=120)
+    ax = axes.flatten()[0]
+
+#    plt.figure()
 #    plt.contour(xi, yi, zi,6, colors='k') #, vmax=35, vmin=0)
 
-    for r in range(5, 30, 1):
-        q_, p_, rpm_ = torque_power_at_ohm(r)
-        plt.plot(rpm_, q_, 'k--+', alpha=0.6)
+    N = len(range(5, 30, 1))
+    # select a color map
+    cmap = mpl.cm.get_cmap('jet', N) # hot
+    # convert to array
+    cmap_arr = cmap(np.arange(N))
+    # and now you have each color as an RGB tuple as
+#    for i in cmap_arr:
+#        coltuple = tuple(i[0:3])
 
-    plt.plot(rpm_rmax, q_rmax, 'r-', label='R=28 (dc0)')
-    plt.plot(rpm_rmin, q_rmin, 'b-', label='R=11 (dc1)')
-    plt.legend(loc='best')
+    for r, color in zip(range(5, 30, 1), cmap_arr):
+        c = tuple(color[0:3])
+        q_, p_, rpm_, eff_ = torque_power_at_ohm(r)
+        ax.plot(rpm_, q_, ls='-', alpha=0.6, color=c, marker='+')
+
+#    plt.plot(rpm_rmax, q_rmax, 'r-', label='R=28 (dc0)')
+#    plt.plot(rpm_rmin, q_rmin, 'b-', label='R=11 (dc1)')
+#    plt.legend(loc='best')
+    ax.set_xlabel('rotor speed [rpm]')
+    ax.set_xlabel('input torque [Nm]')
+    ax.grid()
+#    leg = ax.legend(loc='best', labelspacing=0, columnspacing=0)
+#    leg.get_frame().set_alpha(0.6)
+    fig.tight_layout()
+    fig.savefig('figures/generator-st-540.png')
+    fig.savefig('figures/generator-st-540.eps')
+    # -------------------------------------------------------------------------
 
     # slope, intercept, r_value, p_value, std_err
     # regress : ndarray(len(x)-samples, 5)

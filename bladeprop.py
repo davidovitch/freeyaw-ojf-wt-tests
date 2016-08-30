@@ -5,24 +5,37 @@ Created on Thu Jun  9 10:56:21 2011
 @author: dave
 """
 
+import os
+import math
+import warnings
+
 import numpy as np
 import scipy
 import scipy.interpolate
 import scipy.integrate as integrate
-import math
-import warnings
-
-import pylab as plt
+from matplotlib import pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigCanvas
 from matplotlib.figure import Figure
 import matplotlib as mpl
+
+plt.rc('font', family='serif')
+plt.rc('xtick', labelsize=10)
+plt.rc('ytick', labelsize=10)
+plt.rc('axes', labelsize=12)
+plt.rc('text', usetex=True)
+plt.rc('legend', fontsize=11)
+plt.rc('legend', numpoints=1)
+plt.rc('legend', borderaxespad=0)
+mpl.rcParams['text.latex.unicode'] = True
 
 import HawcPy
 from crosssection import properties as crosprop
 import materials
 import Simulations as sim
-from misc import find0
+from misc import find0, _linear_distr_blade
 import plotting
+
+
 
 sti = HawcPy.ModelData.st_headers
 
@@ -2478,6 +2491,111 @@ class AirfoilProperties:
             plt.grid(True)
             plt.show()
 
-if __name__ == '__main__':
 
+def plot_blade_sections(blade_source='blade.dat'):
+    """
+    Plot blade cross sections and save coordinates to text
+
+    """
+
+    quasi_dat = os.path.join('data/model/blade_hawtopt/', blade_source)
+    blade = np.loadtxt(quasi_dat)
+    blade[:,0] = blade[:,0] - blade[0,0]
+    blade = _linear_distr_blade(blade, nr_points=30)
+#    twist = blade[:,2]
+
+#    bl = bladeprop.Blade(figpath='data/mode/blade_hawtopt/cross-sections',
+#                         plot=True, linewidth=0.8)
+#    # blade: [r, chord, t/c, twist]
+#    blade_hr, volume, area, x_na, y_na, Ixx, Iyy, st_arr, strainpos \
+#        = bl.build(blade[:,[0,1,3,2]], ['S823', 'S822'], res=None,
+#                   step=0.012, plate=True)
+#    print 'volume:', volume
+
+    figpath = 'data/model/blade_hawtopt/cross-sections/'
+    bl = Blade(figpath=figpath, plot=True)
+    # blade: [r, chord, t/c, twist]
+    s822, t822 = S822_coordinates()
+    s823, t823 = S823_coordinates()
+    airfoils = ['S823', s823, t823, 'S822', s822, t822]
+    blade_hr, volume, area, x_na, y_na, Ixx, Iyy, st_arr, strainpos \
+            = bl.build(blade[:,[0,1,3,2]], airfoils, res=None, step=None,
+                       plate=False, tw1_t=0, tw2_t=0, res_chord=50000)
+
+
+def plot_blade_stiffness():
+    """Compare the derived blade stiffness
+    """
+    fname = 'data/model/hawc2/data/ojf.st'
+    md = HawcPy.ModelData()
+    md.data_path = os.path.join(os.path.dirname(fname), '')
+    md.st_file = os.path.basename(fname)
+    md.load_st()
+
+    b1_stiff = md.st_dict['07-18-data']
+    b1_stiff_com = md.st_dict['07-18-comments']
+    b2_stiff = md.st_dict['07-19-data']
+    b2_stiff_com = md.st_dict['07-19-comments']
+
+    fig, axes = plotting.subplots(nrows=1, ncols=1, figsize=(4,2), dpi=120)
+    axes = axes.flatten()
+    ax = axes[0]
+    EI = b1_stiff[:,md.st_headers.Ixx] * b1_stiff[:,md.st_headers.E]
+    rrel = b1_stiff[:,md.st_headers.r]/b1_stiff[-1,md.st_headers.r]
+    ax.plot(rrel, EI, 'k-s', label='set A: stiff')
+
+    b1_flex = md.st_dict['07-22-data']
+    b1_flex_com = md.st_dict['07-22-comments']
+    b2_flex = md.st_dict['07-22-data']
+    b2_flex_com = md.st_dict['07-22-comments']
+    EI = b1_flex[:,md.st_headers.Ixx] * b1_flex[:,md.st_headers.E]
+    rrel = b1_stiff[:,md.st_headers.r]/b1_stiff[-1,md.st_headers.r]
+    ax.plot(rrel, EI, 'r-^', label='set B: flexible')
+
+    ax.set_xlabel('blade length [-]')
+    ax.set_ylabel('EI$_{flap}$ [Nm$^2$]')
+    ax.set_xlim([0, 1.0])
+
+    ax.grid()
+    ax.legend(loc='best')
+    fig.tight_layout()
+    fig.subplots_adjust(top=0.92)
+#    fig.suptitle('windspeed 9 m/s')
+    figname = 'h2-blade-stiffness-flex-vs-stiff'
+    fdir = 'figures/model/'
+    print('saving: %s' % os.path.join(fdir, figname))
+    fig.savefig(os.path.join(fdir, figname + '.png'))
+    fig.savefig(os.path.join(fdir, figname + '.eps'))
+
+
+def plot_blade_aero_layout():
+    """
+    """
+    fname = 'data/model/blade_hawtopt/blade.dat'
+    blade = np.loadtxt(fname)
+    radiu = (blade[:,0]-blade[0,0])/(blade[-1,0]-blade[0,0])
+    chord = blade[:,1]*100.0
+    twist = blade[:,2]
+
+    fig, axes = plotting.subplots(nrows=1, ncols=1, figsize=(4,2), dpi=120)
+    axes = axes.flatten()
+    ax = axes[0]
+    ax.plot(radiu, chord, 'k-s', label='chord [cm]')
+    ax.plot(radiu, twist, 'r-^', label='twist [deg]')
+    ax.set_xlabel('blade length [-]')
+    ax.set_ylabel('[cm], [deg]')
+    ax.set_xlim([0, 1.0])
+    ax.grid()
+    ax.legend(loc='lower left')
+    fig.tight_layout()
+#    fig.subplots_adjust(top=0.85)
+    figname = 'aero-blade-layout-hawtopt_blade.dat'
+    fdir = 'figures/model/'
+    print('saving: %s' % os.path.join(fdir, figname))
+    fig.savefig(os.path.join(fdir, figname + '.png'))
+    fig.savefig(os.path.join(fdir, figname + '.eps'))
+
+
+if __name__ == '__main__':
     dummy = 0
+#    plot_blade_sections(blade_source='blade.dat')

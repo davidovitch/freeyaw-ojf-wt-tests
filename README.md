@@ -1,11 +1,11 @@
 
-freeyaw-ojf-wt-tests
-====================
+# freeyaw-ojf-wt-tests
 
-```This repository is still a work-in-progress (WIP). The documentation is
+```
+This repository is still a work-in-progress (WIP). The documentation is
 incomplete at this point and not all of the scripts to reproduce the results are
-in the repository yet. During the months March and May 2016 the missing links
-will be added.```
+in the repository yet. Please contact the author for more information.
+```
 
 This repository holds the post-processing utilities that have been used to
 process wind tunnel measurements performed at the TU Delft Open Jet Facility.
@@ -62,8 +62,7 @@ These data files are compressed with [7zip](http://www.7-zip.org/) and the
 archives are split in parts of maximum 1000MB.
 
 
-Description of the channels
----------------------------
+## Description of the channels
 
 Channel names as used in the calibrated and unified result files as used in:
 

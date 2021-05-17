@@ -1,0 +1,1260 @@
+begin simulation;
+    time_stop    15.0;
+    solvertype   1 ;    (newmark)
+    on_no_convergence continue ;
+    convergence_limits  1e-5  1e-6  7e-7 ;
+;    1. epsresq, residual on internal-external forces,
+;    default=10.0
+;    2. epsresd, residual on increment, default=1.0
+;    3. epsresg, residual on constraint equations,
+;    default=0.7
+    logfile ./logfiles/ojf_post_example.log ;
+;    animation ./animation/ojf_post_example.dat;
+;
+    begin newmark;
+        deltat    0.00075;
+    end newmark;
+end simulation;
+;
+begin new_htc_structure;
+; Optional - Calculated beam properties of the bodies are written to file
+; beam_output_file_name  ./eigenfreq/ojf_post_example_beam.dat;
+; Optional - Body initial position and orientation are written to file
+; body_output_file_name  ./eigenfreq/ojf_post_example_body.dat;
+; body_eigenanalysis_file_name ./eigenfreq/ojf_post_example_eigen_body.dat;
+; structure_eigenanalysis_file_name ./eigenfreq/ojf_post_example_eigen_strc.dat;
+;
+; ------------------------------------------------------------------------------
+; Definition of the bodies
+; ------------------------------------------------------------------------------
+;
+; ------------------------------------------------------------------------------
+begin main_body;
+    name tower_support_p1;
+    type timoshenko;
+    nbodies 1;
+    node_distribution c2_def;
+    damping_posdef 0.0e-00   0.0e-00   0.0e-00   1.0e-08   1.0e-08   1.0e-08;
+    begin timoschenko_input;
+        filename ./data/ojf.st ;
+        set 5 3;
+    end timoschenko_input;
+    begin c2_def;
+        nsec 2;
+        sec 1  0.0  0.0   0.0   0.0 ;  x,y,z,twist
+        sec 2  0.0  0.0  -0.15  0.0 ;
+    end c2_def ;
+end main_body;
+;
+; ------------------------------------------------------------------------------
+begin main_body;
+    name tower_support_p12;
+    type timoshenko;
+    nbodies 1;
+    node_distribution c2_def;
+    damping_posdef 0.0e-00   0.0e-00   0.0e-00   3.0e-08   3.0e-08   3.0e-08;
+    begin timoschenko_input;
+        filename ./data/ojf.st ;
+        set 5 3;
+    end timoschenko_input;
+    begin c2_def;
+        nsec 2;
+        sec 1  0.0  0.0   0.0   0.0 ;  x,y,z,twist
+        sec 2  0.0  0.0  -0.4   0.0 ;
+    end c2_def ;
+end main_body;
+;
+; ------------------------------------------------------------------------------
+begin main_body;
+    name tower_support_p2;
+    type timoshenko;
+    nbodies 1;
+    node_distribution c2_def;
+    damping_posdef 0.0e-00   0.0e-00   0.0e-00   5.0e-09   5.0e-09   5.0e-09;
+    begin timoschenko_input;
+        filename ./data/ojf.st ;
+        set 5 3;
+    end timoschenko_input;
+    begin c2_def;
+        nsec 2;
+        sec 1  0.0  0.0   0.0   0.0 ;  x,y,z,twist
+        sec 2  0.0  0.0  -0.1   0.0 ;
+    end c2_def ;
+end main_body;
+;
+; ------------------------------------------------------------------------------
+begin main_body;
+    name tower_support_addendum;
+    type timoshenko;
+    nbodies 1;
+    node_distribution c2_def;
+    damping_posdef 0.0e-00   0.0e-00   0.0e-00   5.0e-09   5.0e-09   5.0e-09;
+    begin timoschenko_input;
+        filename ./data/ojf.st ;
+        set 5 3;
+    end timoschenko_input;
+    begin c2_def;
+        nsec 2;
+        sec 1  0.0  0.0   0.0   0.0 ;  x,y,z,twist
+        sec 2  0.0  0.0  -0.1   0.0 ;
+    end c2_def ;
+end main_body;
+;
+; ------------------------------------------------------------------------------
+;begin main_body;
+;    name tower_base;
+;    type timoshenko;
+;    nbodies 1;
+;    node_distribution c2_def;
+;    damping_posdef 0.0e-00   0.0e-00   0.0e-00   1.0e-01   1.0e-01   1.0e-01;
+;    begin timoschenko_input;
+;        filename ./data/ojf.st ;
+;        set 5 3;
+;    end timoschenko_input;
+;    begin c2_def;
+;        nsec 2;
+;        sec 1  0.0  0.0   0.0   0.0 ;  x,y,z,twist
+;        sec 2  0.0  0.0  -0.01  0.0 ;
+;    end c2_def ;
+;end main_body;
+;
+; ------------------------------------------------------------------------------
+begin main_body;
+    name        tower ;
+    type        timoschenko ;
+    nbodies     3 ;
+;    node_distribution    uniform [nr_nodes_tower];
+    node_distribution   c2_def;
+;    damping_posdef   1.5E-00 1.5E-00 8.8E-01 5.0E-03 5.0E-03 4.5E-04;
+    damping_posdef   0.0e-00   0.0e-00   0.0e-00   0.85e-03   0.85e-03   0.85e-03;
+    ; damping coefficients in x direction, y direction and
+    ; torsion related to masses, and related to stiffness
+    ; we don't know the exact damping
+    begin timoschenko_input;
+        filename ./data/ojf.st ;
+        set 3 12;
+    end timoschenko_input;
+    begin c2_def;
+        nsec 4;
+        sec 1  0.0  0.0   0.0     0.0 ;  x,y,z,twist
+        sec 2  0.0  0.0  -0.115   0.0 ;  TOWER STRAIN GAUGES
+        sec 3  0.0  0.0  -0.4     0.0 ;  x,y,z,twist
+        sec 4  0.0  0.0  -1.755     0.0 ;
+    end c2_def ;
+end main_body;
+;
+; ------------------------------------------------------------------------------
+begin main_body;
+    name        tower_addendum ;
+    type        timoschenko ;
+    nbodies     1;
+    node_distribution   c2_def;
+    damping_posdef   0.0e-00   0.0e-00   0.0e-00   4.5e-05   4.5e-05   4.5e-05;
+    ; damping coefficients in x direction, y direction and
+    ; torsion related to masses, and related to stiffness
+    begin timoschenko_input;
+        filename ./data/ojf.st ;
+        set 3 12;
+    end timoschenko_input;
+    begin c2_def;
+        nsec 2;
+        sec 1  0.0  0.0   0.0   0.0 ;  x,y,z,twist
+        sec 2  0.0  0.0   0.4   0.0 ;
+    end c2_def ;
+end main_body;
+;
+; ------------------------------------------------------------------------------
+begin main_body;
+    name        nacelle;
+    type        timoschenko ;
+    nbodies     1 ;
+    node_distribution     c2_def ;
+    damping_posdef   0.0e-00   0.0e-00   0.0e-00   2.0e-08   2.0e-08   2.0e-08;
+    begin timoschenko_input;
+        filename ./data/ojf.st ;
+        set 4 5;
+    end timoschenko_input;
+    begin c2_def;
+        nsec 4;
+        sec 1  0.0  0.0   0.0    0.0 ;  x,y,z,twist
+        sec 2  0.0  0.0  -0.05   0.0 ;
+        sec 3  0.0  0.0  -0.051  0.0 ;
+        sec 4  0.0  0.0  -0.15   0.0 ;
+    end c2_def ;
+end main_body;
+;
+begin main_body;
+    name        nacelle_aft;
+    type        timoschenko ;
+    nbodies     1 ;
+    node_distribution     c2_def ;
+    damping_posdef   0.0e-00   0.0e-00   0.0e-00   2.0e-08   2.0e-08   2.0e-08;
+    begin timoschenko_input;
+        filename ./data/ojf.st ;
+        set 4 3;
+    end timoschenko_input;
+    begin c2_def;
+        nsec 3;
+        sec 1  0.0  0.0   0.0    0.0 ;  x,y,z,twist
+        sec 2  0.0  0.0   0.07   0.0 ;
+        sec 3  0.0  0.0   0.135  0.0 ;
+    end c2_def ;
+end main_body;
+;
+; ------------------------------------------------------------------------------
+begin main_body;
+    name        shaft;
+    type        timoschenko ;
+    nbodies     1 ;
+    node_distribution     c2_def ;
+    damping_posdef   0.0e-00   0.0e-00   0.0e-00   2.5e-05   2.5e-05   2.5e-05;
+    ; Add a concentrated mass for the generator, otherwise the bearing
+    ; is in the middle of the body and that doesn't work very well
+    ;  node nr attached  x  y    z    mass  Ix kgm2  Iy kgm2  Iz kgm2
+    concentrated_mass 1  0  0  0.04   2.4   0.00283  0.00283  0.00566;
+    begin timoschenko_input;
+        filename ./data/ojf.st ;
+        set 6 4;
+    end timoschenko_input;
+    begin c2_def;
+        nsec 4;
+        sec 1  0.0  0.0   0.0    0.0 ;  x,y,z,twist
+        sec 2  0.0  0.0  -0.01   0.0 ;
+        sec 3  0.0  0.0  -0.011  0.0 ;
+        sec 4  0.0  0.0  -0.03   0.0 ;
+    end c2_def ;
+end main_body;
+;
+; ------------------------------------------------------------------------------
+begin main_body;
+    name        nose_cone ;
+    type        timoschenko ;
+    nbodies     1 ;
+    node_distribution     c2_def ;
+    damping_posdef   0.0e-00   0.0e-00   0.0e-00   5.5e-07   5.5e-07   5.5e-07;
+    begin timoschenko_input;
+        filename ./data/ojf.st ;
+        set 5 5 ;
+    end timoschenko_input;
+    begin c2_def;              Definition of centerline (main_body coordinates)
+        nsec 2;
+        sec 1  0.0  0.0  0.0   0.0 ;
+        sec 2  0.0  0.0 -0.1   0.0 ;
+    end c2_def ;
+end main_body;
+;
+; ------------------------------------------------------------------------------
+begin  main_body;
+    name  hub1  ;
+    type  timoschenko  ;
+    nbodies  1  ;
+    node_distribution  c2_def  ;
+    damping_posdef   0.0e-00   0.0e-00   0.0e-00   7.0e-07   7.0e-07   7.0e-07;
+    begin  timoschenko_input;
+        filename ./data/ojf.st ;
+        set  5  4  ;
+    end  timoschenko_input;
+    begin  c2_def;  Definition  of  centerline  (main_body  coordinates)
+        nsec  2;
+        sec 1  0.0   0.0   0.00   0.0 ;
+        sec 2  0.0   0.0  0.245  0.0 ;
+    end  c2_def  ;
+end  main_body;
+;
+; ------------------------------------------------------------------------------
+begin  main_body;
+    name  hub2  ;
+    copy_main_body hub1;
+end  main_body;
+;
+; ------------------------------------------------------------------------------
+begin  main_body;
+    name  hub3  ;
+    copy_main_body hub1;
+end  main_body;
+;
+; ------------------------------------------------------------------------------
+begin main_body;
+    name        blade1 ;
+    type        timoschenko ;
+    nbodies     11 ;
+    node_distribution     c2_def ;
+;    damping_posdef   3.0e-2 2.2e-2 4.0e-2 5.9e-4 1.9e-3 5.0e-4;
+    damping_posdef     0.0    0.0    0.0    2.880e-04   2.880e-04   2.880e-03;
+    begin timoschenko_input;
+        filename ./data/ojf.st ;
+        set 7 22 ;
+    end timoschenko_input;
+    begin c2_def;              Definition of centerline (main_body coordinates)
+        nsec 12;
+        sec  1      0.000      0.000      0.000     -9.562 ;
+        sec  2      0.000      0.000      0.020     -9.693 ;
+        sec  3      0.000      0.000      0.073     -8.006 ;
+        sec  4      0.000      0.000      0.127     -6.402 ;
+        sec  5      0.000      0.000      0.180     -5.623 ;
+        sec  6      0.000      0.000      0.234     -5.263 ;
+        sec  7      0.000      0.000      0.287     -4.958 ;
+        sec  8      0.000      0.000      0.341     -4.497 ;
+        sec  9      0.000      0.000      0.394     -3.825 ;
+        sec 10      0.000      0.000      0.448     -2.958 ;
+        sec 11      0.000      0.000      0.501     -2.055 ;
+        sec 12      0.000      0.000      0.555     -0.813 ;
+        ;
+    end c2_def ;
+end main_body;
+;
+; ------------------------------------------------------------------------------
+begin main_body;
+    name        blade2 ;
+    type        timoschenko ;
+    nbodies     11 ;
+    node_distribution     c2_def ;
+;    damping_posdef   3.0e-2 2.2e-2 4.0e-2 5.9e-4 1.9e-3 5.0e-4;
+    damping_posdef     0.0    0.0    0.0    2.976e-04   2.976e-04   2.976e-03;
+    begin timoschenko_input;
+        filename ./data/ojf.st ;
+        set 7 22 ;
+    end timoschenko_input;
+    begin c2_def;              Definition of centerline (main_body coordinates)
+        nsec 12;
+        sec  1      0.000      0.000      0.000     -9.562 ;
+        sec  2      0.000      0.000      0.020     -9.693 ;
+        sec  3      0.000      0.000      0.073     -8.006 ;
+        sec  4      0.000      0.000      0.127     -6.402 ;
+        sec  5      0.000      0.000      0.180     -5.623 ;
+        sec  6      0.000      0.000      0.234     -5.263 ;
+        sec  7      0.000      0.000      0.287     -4.958 ;
+        sec  8      0.000      0.000      0.341     -4.497 ;
+        sec  9      0.000      0.000      0.394     -3.825 ;
+        sec 10      0.000      0.000      0.448     -2.958 ;
+        sec 11      0.000      0.000      0.501     -2.055 ;
+        sec 12      0.000      0.000      0.555     -0.813 ;
+    end c2_def ;
+end main_body;
+;
+; ------------------------------------------------------------------------------
+begin main_body;
+    name        blade3 ;
+    type        timoschenko ;
+    nbodies     11 ;
+    node_distribution     c2_def ;
+;    damping_posdef   3.0e-2 2.2e-2 4.0e-2 5.9e-4 1.9e-3 5.0e-4;
+    damping_posdef     0.0    0.0    0.0    2.751e-04   2.751e-04   2.751e-03;
+    begin timoschenko_input;
+        filename ./data/ojf.st ;
+        set 7 23 ;
+    end timoschenko_input;
+    begin c2_def;              Definition of centerline (main_body coordinates)
+        nsec 12;
+        sec  1      0.000      0.000      0.000     -9.562 ;
+        sec  2      0.000      0.000      0.020     -9.693 ;
+        sec  3      0.000      0.000      0.073     -8.006 ;
+        sec  4      0.000      0.000      0.127     -6.402 ;
+        sec  5      0.000      0.000      0.180     -5.623 ;
+        sec  6      0.000      0.000      0.234     -5.263 ;
+        sec  7      0.000      0.000      0.287     -4.958 ;
+        sec  8      0.000      0.000      0.341     -4.497 ;
+        sec  9      0.000      0.000      0.394     -3.825 ;
+        sec 10      0.000      0.000      0.448     -2.958 ;
+        sec 11      0.000      0.000      0.501     -2.055 ;
+        sec 12      0.000      0.000      0.555     -0.813 ;
+    end c2_def ;
+end main_body;
+;
+;
+;
+; ------------------------------------------------------------------------------
+; Orientations of the bodies
+; ------------------------------------------------------------------------------
+;
+; ** From the manual : The global coordinate system is located with the z-axis
+; pointing vertical downwards. The x and y axes are horizontal to the side.
+; When wind is submitted, the default direction is along the global y-axes.
+; Within the wind system meteorological u,v,w coordinates are used, where u is
+; the mean wind speed direction, v is horizontal and w vertical upwards.
+; When x,y,z notation is used within the wind coo. this refers directly to the
+; u,v,w definition.
+;
+; Every substructure and body (normally the same) is equipped with its own
+; coordinate system with origo in node1 of this structure. The structure can be
+; arbitrarily defined regarding orientation within this coordinate system.
+; Within a body a number of structural elements are present. The orientation of
+; coordinate systems for these elements are chosen automatically by the program.
+; The local z axis is from node 1 to 2 on the element.
+;
+; The coordinate system for the blade structures must be defined with the z
+; axis pointing from the blade root and outwards, x axis in the tangential
+; direction of rotation and y axis from the pressure side towards the suction
+; side of the blade profiles. This is in order to make the linkage between
+; aerodynamics and structure function.
+;
+begin orientation;
+    ; ----------------------------------------------------------
+;    ; simple tower
+;    begin base;
+;        mbdy              tower_base;
+;        inipos            0.0  0.0  0.0;
+;        mbdy_eulerang     0.0  0.0  0.0;
+;    end base;
+;    ;
+;    begin relative;
+;        mbdy1             tower_base last;
+;        mbdy2             tower 1;
+;        mbdy2_eulerang     0.0  0.0  0.0;
+;    end relative;
+    ; ----------------------------------------------------------
+;
+    ; ----------------------------------------------------------
+    ; tower with the free yawing support structure
+    begin base;
+        mbdy              tower_support_p1;
+        inipos            0.0  0.0  0.0;
+        mbdy_eulerang     0.0  0.0  0.0;
+    end base;
+    ;
+    begin relative;
+        mbdy1  tower_support_p1 last;
+        mbdy2  tower_support_p12 1;
+        mbdy2_eulerang    0.0  0.0  0.0;
+    end relative;
+    ;
+    begin relative;
+        mbdy1  tower_support_p12 last;
+        mbdy2  tower_support_p2 1;
+        mbdy2_eulerang    90.0  0.0  0.0;
+    end relative;
+    ;
+    begin relative;
+        mbdy1  tower_support_p1 last;
+        mbdy2  tower_support_addendum 1;
+        mbdy2_eulerang    90.0  0.0  0.0;
+    end relative;
+    ;
+    begin relative;
+        mbdy1  tower_support_p2 last;
+        mbdy2  tower 1;
+        mbdy2_eulerang    -90.0  0.0  0.0;
+        ; name bearing : yaw_rot
+        ; bearing_vector tower  0  0  1
+        ; for fixed yaw cases, set the yaw misalignment
+        mbdy2_eulerang    0.0  0.0  26.1659392271;
+    end relative;
+    ;
+    begin relative;
+        mbdy1  tower 1;
+        mbdy2  tower_addendum 1;
+        mbdy2_eulerang    0.0  0.0  0.0;
+    end relative;
+    ; ----------------------------------------------------------
+;
+    begin relative;
+        mbdy1  tower last;
+        mbdy2  nacelle 1;
+        mbdy2_eulerang   90.0  0.0  0.0;
+    end relative;
+;
+    begin relative;
+        mbdy1  nacelle 1;
+        mbdy2  nacelle_aft 1;
+        mbdy2_eulerang    0.0  0.0  0.0;
+    end relative;
+;
+    ; =========================================================================
+    ; ---------------------------------------
+    ; BEARING nacelle-nose_cone
+    ; ---------------------------------------
+;    begin relative;
+;        mbdy1  nacelle last;
+;        mbdy2  nose_cone 1;
+;        mbdy2_eulerang  0   0   0;
+;        ; initial rotor speed, in rad/s
+;        ; mbdy2_ini_rotvec_d1   0  0  -1   0;
+;        ; optionally define an other rotor start position
+;        mbdy2_eulerang    0  0  0;
+;    end relative;
+    ; ---------------------------------------
+    ; ---------------------------------------
+;
+    ; ---------------------------------------
+    ; BEARING shaft-nose_cone
+    ; ---------------------------------------
+    begin relative;
+        mbdy1  nacelle last;
+        mbdy2  shaft  1;
+        mbdy2_eulerang     0.0  0.0  0.0;
+        ; optionally define an other rotor start position
+        mbdy2_eulerang    0  0  0;
+        ; initial rotor speed, in rad/s
+        mbdy2_ini_rotvec_d1   0  0  -1  7.41382773972;
+    end relative;
+;
+    begin relative;
+        mbdy1  shaft last;
+        mbdy2  nose_cone  1;
+        mbdy2_eulerang  0   0   0;
+    end relative;
+    ; ---------------------------------------
+    ; ---------------------------------------
+    ; =========================================================================
+;
+    ; =========================================================================
+    ; all hubs are attached to the first node of the nose_cone
+    begin relative;
+        mbdy1 nose_cone 1;
+        mbdy2 hub1 1;
+        mbdy2_eulerang  -90    0   0;
+        ; default blade 1 pointing upwards (12 o clock)
+        ; aero azi blade 1 = 0 = blade 1 down
+        ; in standard rotation mode, z-axis is spanwise, from 0 to hub length
+        ; in non standard OJF mode, z-axis is going from 0 -hub length
+        mbdy2_eulerang    0  180   0;
+    end relative;
+;
+    begin relative;
+        mbdy1 nose_cone 1;
+        mbdy2 hub2 1;
+        mbdy2_eulerang  -90    0   0;
+        ; default blade 1 pointing upwards (12 o clock)
+        ; in standard rotation mode, z-axis is spanwise, from 0 to hub length
+        ; in non standard OJF mode, z-axis is going from 0 -hub length
+        mbdy2_eulerang    0  180   0;
+        ; and for blade 2, 8 o'clock (standard rotation scenario)
+        mbdy2_eulerang    0  120   0;
+    end relative;
+;
+    begin relative;
+        mbdy1 nose_cone 1;
+        mbdy2 hub3 1;
+        mbdy2_eulerang  -90    0   0;
+        ; default blade 1 pointing upwards (12 o clock)
+        ; in standard rotation mode, z-axis is spanwise, from 0 to hub length
+        ; in non standard OJF mode, z-axis is going from 0 -hub length
+        mbdy2_eulerang    0  180   0;
+        ; and for blade 3, 4 o'clock (standard rotation scenario)
+        ; aero azi = 60 = 4 o'clock
+        mbdy2_eulerang    0  240   0;
+    end relative;
+;
+    ; =========================================================================
+    ; Hub-Blade orientations
+    begin relative;
+        mbdy1  hub1 last;
+        mbdy2  blade1 1;
+        ; in standard rotation mode, z-axis is spanwise, from 0 to blade length
+        ; in non standard OJF mode, z-axis is going from 0 -blade length
+        ; blade coning angle (if downwind config, negative values = downwind)
+        mbdy2_eulerang 0   0   0;
+        ; blade pitch (positive = pitch to stall, negative = pitch to feather)
+        mbdy2_eulerang 0   0   -2.4;
+    end relative;
+;
+    begin relative;
+        mbdy1  hub2 last;
+        mbdy2  blade2 1;
+        ; in standard rotation mode, z-axis is spanwise, from 0 to blade length
+        ; in non standard OJF mode, z-axis is going from 0 -blade length
+        ; blade coning angle (if downwind config, negative values = downwind)
+        mbdy2_eulerang 0   0   0;
+        ; blade pitch (positive = pitch to stall, negative = pitch to feather)
+        mbdy2_eulerang 0   0   -2.4;
+     end relative;
+;
+    begin relative;
+        mbdy1  hub3 last;
+        mbdy2  blade3 1;
+        ; in standard rotation mode, z-axis is spanwise, from 0 to blade length
+        ; in non standard OJF mode, z-axis is going from 0 -blade length
+        ; blade coning angle (if downwind config, negative values = downwind)
+        mbdy2_eulerang 0.8   0   0;
+        ; blade pitch (positive = pitch to stall, negative = pitch to feather)
+        mbdy2_eulerang 0   0   -1.9;
+    end relative;
+;
+end orientation;
+;
+; ------------------------------------------------------------------------------
+; Constraints on the bodies (bearings, fixations, ...)
+; ------------------------------------------------------------------------------
+;
+begin constraint;
+;
+    ; ==========================================================================
+    ; TOWER SIMPLE
+    ;
+;    begin fix0;
+;        mbdy tower_base;
+;    end fix0;
+    ;
+    ; tower_base/tower fixed
+;    begin fix1;
+;        mbdy1 tower_base last;
+;        mbdy2 tower 1;
+;    end fix1;
+    ;
+    ; free yaw bearing at the tower base
+;;    begin bearing1;
+;;        name  yaw_rot ;
+;;        mbdy1 tower_base last;
+;;        mbdy2 tower 1;
+;;        ; coordinate system (0=global,1=mbdy1,2=mbdy2)
+;;        ; and 3D bearing vector
+;;        bearing_vector 1  0  0  1;
+;;    end bearing1;
+    ;
+    ; ==========================================================================
+    ; TOWER WITH SUPPORT STRUCTURE
+    ;
+    begin fix0;
+        mbdy tower_support_p1;
+    end fix0;
+    ;
+    begin fix1;
+        mbdy1 tower_support_p1 last;
+        mbdy2 tower_support_p12 1;
+    end fix1;
+    ;
+    begin fix1;
+        mbdy1 tower_support_p12 last;
+        mbdy2 tower_support_p2 1;
+    end fix1;
+    ;
+    begin fix1;
+        mbdy1 tower_support_p1 last;
+        mbdy2 tower_support_addendum 1;
+    end fix1;
+    ;
+    begin fix1;
+        mbdy1 tower 1;
+        mbdy2 tower_addendum 1;
+    end fix1;
+    ;
+    ; --------------------------------------------------------------------------
+    ; FREE YAWING NO CONTROL
+;    begin bearing1;
+;        name  yaw_rot ;
+;        mbdy1 tower_support_p2 last;
+;        mbdy2 tower 1;
+;        ; coordinate system (0=global,1=mbdy1,2=mbdy2)
+;        ; and 3D bearing vector
+;        bearing_vector 2  0  0  1;
+;    end bearing1;
+    ;
+;    begin bearing1;
+;        name  yaw_rot_down ;
+;        mbdy1 tower_support_addendum last;
+;        mbdy2 tower_addendum last;
+;        ; coordinate system (0=global,1=mbdy1,2=mbdy2)
+;        ; and 3D bearing vector
+;        bearing_vector 2  0  0  1;
+;    end bearing1;    ;
+    ; --------------------------------------------------------------------------
+    ; FREE YAWING WITH CONTROL
+;    begin bearing1;
+;        name  yaw_rot ;
+;        mbdy1 tower_support_p2 last;
+;        mbdy2 tower 1;
+;        ; coordinate system (0=global,1=mbdy1,2=mbdy2)
+;        ; and 3D bearing vector
+;        bearing_vector 2  0  0  1;
+;    end bearing1;
+    ;
+;    begin bearing1;
+;        name  yaw_rot_down ;
+;        mbdy1 tower_support_addendum last;
+;        mbdy2 tower_addendum last;
+;        ; coordinate system (0=global,1=mbdy1,2=mbdy2)
+;        ; and 3D bearing vector
+;        bearing_vector 2  0  0  1;
+;    end bearing1;
+    ; --------------------------------------------------------------------------
+    ; FIX YAWING
+    begin fix1;
+        mbdy1 tower_support_p2 last;
+        mbdy2 tower 1;
+    end fix1;
+    ;
+    begin fix1;
+        mbdy1 tower_support_addendum last;
+        mbdy2 tower_addendum last;
+    end fix1;
+    ;
+    ; ==========================================================================
+    ; tower/nacelle fixed
+    begin fix1;
+        mbdy1 tower last;
+        mbdy2 nacelle 1;
+    end fix1;
+    ;
+    begin fix1;
+        mbdy1 nacelle 1;
+        mbdy2 nacelle_aft 1;
+    end fix1;
+    ;
+    ; ==========================================================================
+    ;
+    ; NACELLE - NOSE_CONE
+    ; fixed rotor speed
+;    begin bearing3;
+;         name shaft_nacelle;
+;         mbdy1 nacelle last;
+;         mbdy2 nose_cone 1;
+;         bearing_vector 2  0  0  -1;
+;         ; 300 RPM = 31.41 rad/s, 400 RPM = 41.89 rad/s,
+;         ; 600 RPM = 62.83 rad/s, 800 RPM = 83.78 rad/s
+;         omegas 7.41382773972 ;
+;    end bearing3;
+    ;
+    ; SHAFT - NOSE_CONE
+    ; fixed rotor speed
+    begin bearing3;
+         name shaft_nacelle;
+         mbdy1 nacelle last;
+         mbdy2 shaft 1;
+         bearing_vector 2  0  0  -1;
+         ; 300 RPM = 31.41 rad/s, 400 RPM = 41.89 rad/s,
+         ; 600 RPM = 62.83 rad/s, 800 RPM = 83.78 rad/s
+         omegas 7.41382773972 ;
+    end bearing3;
+;
+;    ; SHAFT - NOSE_CONE
+;    ; free rotation with torque controller in generatorerator
+;    begin bearing1;
+;         name shaft_nacelle;
+;         mbdy1 nacelle last;
+;         mbdy2 shaft 1;
+;         bearing_vector 2  0  0  -1;
+;    end bearing1;
+;
+;
+    begin fix1;
+        mbdy1 shaft last;
+        mbdy2 nose_cone 1;
+    end fix1;
+    ;
+    ; ==========================================================================
+    ; all hubs are fixed to the first node of the nose_cone
+    begin fix1;
+        mbdy1 nose_cone 1;
+        mbdy2 hub1 1;
+    end fix1;
+;
+    begin fix1;
+        mbdy1 nose_cone 1;
+        mbdy2 hub2 1;
+    end fix1;
+;
+    begin fix1;
+        mbdy1 nose_cone 1;
+        mbdy2 hub3 1;
+    end fix1;
+    ;
+    ; ==========================================================================
+    ; Blades fixed to the hub
+    begin fix1;
+        mbdy1 hub1 last;
+        mbdy2 blade1 1;
+    end fix1;
+;
+    begin fix1;
+        mbdy1 hub2 last;
+        mbdy2 blade2 1;
+    end fix1;
+;
+    begin fix1;
+        mbdy1 hub3 last;
+        mbdy2 blade3 1;
+    end fix1;
+;
+end constraint;
+;
+end new_htc_structure;
+;
+;
+; ------------------------------------------------------------------------------
+; Wind section
+; ------------------------------------------------------------------------------
+;
+begin wind ;
+    density                 1.225 ;
+    wsp                     7.48459848485  ;
+    tint                    0.01 ; +- 0.5 and 1.0% for OJF according to Fanzhong
+    horizontal_input        1     ; 0=false, 1=true
+    windfield_rotations     0  0  0.0 ; yaw, tilt, rotation
+    ; global coordinates for the centre start point of the turbulence box
+    center_pos0             0  0   -2.305 ;
+    ;0=none,1=constant (vertically uniform wind speed) ,2=log, 3=power, 4=linear
+    shear_format            1  0 ;
+    turb_format             0  ; 0=none, 1=mann, 2=flex
+    tower_shadow_method     4 ; 0=none, 1=pot flow, 2=jet, 4=jet_2
+;    wind_ramp_factor   0.0 8 0 1.0 ;
+;    wind_ramp_abs   5 80 0 8 ;
+;
+    begin mann;
+    ; L, alfaeps, gamma, seed, highfrq compensation
+    create_turb_parameters 29.4 1.0 3.7 0 1.0 ;
+        filename_u    ./turb/turb_s0_7.48u.bin ;      keyword25
+        filename_v    ./turb/turb_s0_7.48v.bin ;
+        filename_w    ./turb/turb_s0_7.48w.bin ;
+        box_dim_u    4096  0.0274094182795 ;
+        box_dim_v    8 0.2;
+        box_dim_w    8 0.2;
+    std_scaling   1.0 0.8 0.5 ;
+    end mann;
+;
+    begin tower_shadow_jet_2;
+        tower_mbdy_link tower;
+        nsec  2;
+        ; z-coord of tower section (m), radius of section (m), drag coefficient
+        radius   0.25  0.021  0.5;
+        ; z is always positive (going from node 1 to the last)
+        ; tower length above yaw bearing is 1.755, streamtube starts at 0.33,
+        ; but make a bit lower to allow for some flow expansion
+        radius   1.755   0.021  0.5;
+    end tower_shadow_jet_2;
+;
+end wind;
+;
+; ------------------------------------------------------------------------------
+; Section Aero
+; ------------------------------------------------------------------------------
+;
+; Main command block - aero
+; This module set up parameters for the aerodynamic specification of the rotor.
+; It is also possible to submit aerodynamic forces to other structures
+; as example the tower or nacelle, but see chapter (Aerodrag) regarding this.
+;
+begin aero ;
+    nblades  3;
+    ; hub vector (nose_cone componant from pressure to suction side)
+    ; NOTE TO SELF: this is not the rotation vector! It indicates suction and
+    ; pressure side to link aero and structural frames of reference
+;    hub_vec nose_cone -3 ;
+    hub_vec nose_cone -3 ;
+    link 1 mbdy_c2_def blade1;
+    link 2 mbdy_c2_def blade2;
+    link 3 mbdy_c2_def blade3;
+    ae_filename        ./data/ojf.ae;
+    pc_filename        ./data/s822_s823_2e5.pc;
+    induction_method   1 ; 0=none, 1=normal, 2=near weake
+    aerocalc_method    1 ;     0=ingen aerodynamic, 1=med aerodynamic
+    aerosections       15 ;
+    ; assign ae-file sets to various blades
+    ae_sets            1 1 1 ;
+    tiploss_method     1 ;     0=none, 1=prandtl
+    dynstall_method    2 ;    0=none, 1=stig øye method,2=mhh method
+    ;
+;    begin bemwake_method;
+        ; number of azimuthal points on the induction grid
+;        nazi 64; defaults to 16
+        ; near wake dynamic time constants, if k is lower, load response quicker
+        ; k3 will have bigger effect on tip region, k1
+        ; mixing ratio,      k3,     k2,     k1,     k0
+;        nw         0.6   0.0000 -0.4783  0.1025  0.6125 ; default values
+;        nw 0.6 0.0 -0.4783 0.1025 0.6125;
+;    end bemwake_method;
+end aero ;
+;
+begin aerodrag;
+    ; tower drag forces
+    begin aerodrag_element;
+        mbdy_name tower;
+        ; 1.755/0.11=15.95 -> to catch 0.22, 0.33 position, nsections is 16
+        aerodrag_sections uniform 16;
+        update_states 1;
+        nsec 4;
+        ; Distance in [m] along the main_body c2_def line.
+        ; Positive directed from node 1 to node “last”.
+        sec   1   0.00    0.0   0.00;
+        sec   2   0.25    0.0   0.00;
+        sec   3   0.33    0.5   0.041;
+        sec   4   1.755    0.5   0.041;
+    end aerodrag_element;
+    begin aerodrag_element;
+        mbdy_name hub1;
+        aerodrag_sections uniform 20;
+        update_states 1;
+        nsec 4;
+        ; Distance in [m] along the main_body c2_def line.
+        ; Positive directed from node 1 to node “last”.
+        sec   1   0.00    0.0   0.00;
+        sec   2   0.0829  0.0   0.00;
+        sec   3   0.0830  2.0   0.03;
+        sec   4   0.245   2.0   0.03;
+    end aerodrag_element;
+    begin aerodrag_element;
+        mbdy_name hub2;
+        aerodrag_sections uniform 20;
+        update_states 1;
+        nsec 4;
+        ; Distance in [m] along the main_body c2_def line.
+        ; Positive directed from node 1 to node “last”.
+        sec   1   0.00    0.0   0.00;
+        sec   2   0.0829  0.0   0.00;
+        sec   3   0.0830  2.0   0.03;
+        sec   4   0.245   2.0   0.03;
+    end aerodrag_element;
+    begin aerodrag_element;
+        mbdy_name hub3;
+        aerodrag_sections uniform 20;
+        update_states 1;
+        nsec 4;
+        ; Distance in [m] along the main_body c2_def line.
+        ; Positive directed from node 1 to node “last”.
+        sec   1   0.00    0.0   0.00;
+        sec   2   0.0829  0.0   0.00;
+        sec   3   0.0830  2.0   0.03;
+        sec   4   0.245   2.0   0.03;
+    end aerodrag_element;
+end aerodrag;
+;
+; ------------------------------------------------------------------------------
+; CONTROL
+; ------------------------------------------------------------------------------
+;
+begin dll;
+;    begin type2_dll;
+;        name yaw_control;
+;        filename ./control/yaw_control.dll ;
+;        dll_subroutine_init   init;
+;        dll_subroutine_update update;
+;        ; array size of outgoing (wrt HAWC2) and ingoing data
+;        arraysizes_init 8 1 ;
+;        arraysizes_update 3 1 ;
+;        begin init;
+;            constant 1 10 ;  time stop
+;            constant 2 1.0  ;  f_0       low pass cut off freq [Hz]
+;            constant 3 0.7  ;  ksi critical damping ratio filter
+;            ; when tuning, maintain the ratio between prop and int gain
+;            ; start from very low value and increase until good
+;            ; performance (holds for both propertianal as integral gain)
+;            constant 4 0.002 ; Proportional gain
+;            constant 5 0.0014 ; Integral gain
+;            constant 6 0.002 ; Differential gain
+;            constant 7 -2.0 ; Minimum applied yaw moment [Nm]
+;            constant 8 2.0 ; Maximum applied yaw moment [Nm]
+;        end init;
+;        begin output;
+;            ; put time first! when having it as last in the list, the
+;            ; value was not passed on correctly to DLL, WHY????
+;            general time;
+;            ; 5: units are convert to degrees
+;            ; only 1: only the angle is transferred
+;            constraint bearing1 yaw_rot 5 only 1;
+;            general constant 0; the reference yaw angle
+;        end output;
+;        ;
+;        begin actions;
+;            ; input vector, input for HAWC2, output for DLL
+;            mbdy moment_ext tower 1 -3 tower;  moment to apply to tower
+;        end actions;
+;    end type2_dll;
+;
+;    begin type2_dll;
+;        name ojf_generator;
+;        filename ./control/ojf_generator.dll ;
+;        dll_subroutine_init   init;
+;        dll_subroutine_update update;
+;        ; array size of outgoing (wrt HAWC2) and ingoing data
+;        arraysizes_init 11 1 ;
+;        arraysizes_update 2 1 ;
+;        begin init;
+;            ; if time does not fall between the boundaries set in t0 t1,
+;            ; K2 is always set as the fallback torque constant
+;            constant  1 0 ; K0, Torque constant t<=t0
+;            constant  2 6.2 ; t1
+;            constant  3 0.0 ; K1, Torque constant t0<t<=t1
+;            constant  4 8.0 ; t2
+;            constant  5 0 ; K2, Torque constant t1<t
+;            constant  6 0 ; min allowable output Torque [Nm]
+;            constant  7 10 ; max allowable output Torque [Nm]
+;            constant  8 0; 0=no filt, 1=1st filt, 2=2nd
+;            constant  9 5.0; 1 filt:
+;            constant 10 100.0 ; 2 filt: low pass cut-off freq
+;            constant 11 0.7; 2 filt: critical damping ratio
+;        end init;
+;        begin output;
+;            ; put time first! when having it as last in the list, the
+;            ; value was not passed on correctly to DLL, WHY????
+;            general time;
+;            ; 1: units: rad, vel=rad/s
+;            ; 5: units are convert to degrees, vel=deg/s
+;            ; only 1: only the angle is transferred
+;            ; only 2: only the rotation speed
+;            ; DLL input rotor speed
+;            constraint bearing1 shaft_nacelle 1 only 2;
+;        end output;
+;        ;
+;        begin actions;
+;            ; input vector, input for HAWC2, output for DLL
+;            mbdy moment_ext shaft 1 3 shaft; gen torque [Nm]
+;        end actions;
+;    end type2_dll;
+end dll;
+;
+; ------------------------------------------------------------------------------
+; Output definition
+; ------------------------------------------------------------------------------
+;
+begin output;
+    filename results/ojf_post_example;
+    time 0.0 15.0;
+    buffer 10000 ;
+    general time ;
+    data_format  gtsdf;
+    ; ==========================================================================
+    ; DASHBOARD OUTPUTS
+    ; ==========================================================================
+    ; ------------------------------------------------
+    ; GLOBAL TURBINE PERFORMANCE
+    ; ------------------------------------------------
+    aero omega # Rotor speed [rad/s] ;
+;    aero torque # Aerodynamic torque [kNm] ;
+;    aero power # Aerodynamic power [kW] ;
+;    ; Integrated aerodynamic forces of all blades to rotor thrust. Unit [kN].
+;    aero thrust # Aerodynamic thrust [kN] ;
+    aero azimuth 1;
+    ; ------------------------------------------------
+    ; WIND GLOBAL
+    ; ------------------------------------------------
+    wind free_wind     1 0  0 -2.305 only 2 # Free Wind Speed [m/s] ;
+    wind free_wind_hor 1 0  0 -2.305 only 2 # Wind direction [deg] ;
+    ; ------------------------------------------------
+    ; Blade
+    ; ------------------------------------------------
+    aero vrel 1 0.04;
+    aero vrel 1 0.111;
+    aero vrel 1 0.167;
+    aero vrel 1 0.278;
+    aero vrel 1 0.51;
+    ;
+    aero alfa 1 0.04;
+    aero alfa 1 0.111;
+    aero alfa 1 0.167;
+    aero alfa 1 0.278;
+    aero alfa 1 0.51;
+    ;
+    aero cl   1 0.04;
+    aero cl   1 0.111;
+    aero cl   1 0.167;
+    aero cl   1 0.278;
+    aero cl   1 0.51;
+    ; pitching, coning frames of reference
+    ; refer to node number 0 or 1, not 1 and 2 because they are the same
+    ; difference between local and blade1/2 frame of reference is small.
+    ; Further, I don't know exactly what the difference is between the airfoil
+    ; pitch angle and the beam pitch orientation. The difference is small anyway
+    ; and the difference between blade1/2 and local (a very small offset)
+    ; is also much smaller than the big difference we see with the measurements.
+    mbdy momentvec blade1 1 1 blade1 # blade1 root strain gauge;
+    mbdy momentvec blade1 4 1 blade1 # blade1 30% strain gauge ;
+    mbdy momentvec blade2 1 1 blade2 # blade2 root strain gauge;
+    mbdy momentvec blade2 4 1 blade2 # blade2 30% strain gauge ;
+    ; forces
+    mbdy forcevec  blade1 1 1 blade1 # blade1 root strain gauge;
+    mbdy forcevec  blade1 4 1 blade1 # blade1 30% strain gauge ;
+    mbdy forcevec  blade2 1 1 blade2 # blade2 root strain gauge;
+    mbdy forcevec  blade2 4 1 blade2 # blade2 30% strain gauge ;
+    ; blade tip displacements
+    mbdy state pos blade1 11 1.0 hub1 # blade1 tip;
+    mbdy state pos blade2 11 1.0 hub2 # blade2 tip;
+    ; blade tip rotation
+    aero rotation 1   3   0.555  1;
+    aero rotation 2   3   0.555  1;
+    ; ------------------------------------------------
+    ; YAW angle
+    ; ------------------------------------------------
+;    constraint bearing1 yaw_rot 5 only 1 # Yaw angle [deg];
+;    constraint bearing2 yaw_rot 5 only 1 # Yaw angle  [deg];
+;;    constraint bearing2 yaw_rot 5 only 2 # Yaw rate  [deg/s];
+    ; make sure all channels in the output remain in the same place
+    ; add zero channels as replacement for yaw angle and speed
+;    general constant 0 ;
+;    general constant 0 ;
+    ; ------------------------------------------------
+    ; TOWER
+    ; ------------------------------------------------
+    ; rotating (free yaw) and non rotating frames of reference
+    mbdy momentvec tower  1 1 tower  # node_nr_2 tower base strain gauges ;
+    mbdy momentvec tower  1 1 global # node_nr_2 tower base strain gauges ;
+    ; forces
+    mbdy forcevec  tower  1 1 tower  # node_nr_2 tower base strain gauges ;
+    mbdy forcevec  tower  1 1 global # node_nr_2 tower base strain gauges ;
+    ; tower top accelerations
+    mbdy state acc tower  3 1.0 tower # tower top accelerations;
+    ;
+    ; ==========================================================================
+    ; DLL I/O
+    ; ==========================================================================
+    ;
+;    dll type2_dll yaw_control inpvec 1 # yaw_con_m yaw control moment;
+;;    dll type2_dll yaw_control outvec 1 # time;
+;    dll type2_dll yaw_control outvec 2 # yaw_angle yaw angle;
+;    dll type2_dll yaw_control outvec 3 # yaw_ref yaw reference angle;
+;
+;    dll type2_dll ojf_generator inpvec 1 # gen_tor generator torque;
+;    dll type2_dll ojf_generator inpvec 2 # gen_K torque constant;
+;;    dll type2_dll ojf_generator outvec 1 # time;
+;    dll type2_dll ojf_generator outvec 2 # rads rotor speed;
+    ; DLL number, array index number
+;    dll inpvec 1 0;
+;    dll inpvec 1 1;
+;    dll inpvec 1 2;
+;    dll inpvec 1 3;
+;    dll inpvec 1 4;
+;    dll inpvec 1 5;
+;    dll inpvec 1 6;
+;    dll outvec 1 0;
+;    dll outvec 1 1;
+    ;
+    ; ==========================================================================
+    ; FOR MECHANICAL POWER CALCULATIONS
+    ; ==========================================================================
+    mbdy momentvec shaft 1 1 shaft # shaft ending;
+    mbdy forcevec shaft 1 1 shaft # shaft ending;
+    mbdy forcevec nacelle 2 1 nacelle # nacelle ending;
+;    constraint bearing1 shaft_nacelle 2 only 2; rotor speed in RPM
+    constraint bearing3 shaft_nacelle 2 only 2; rotor speed in RPM
+    ; ==========================================================================
+    ; OTHER
+    ; ==========================================================================
+    ;
+;    mbdy state_rot eulerang_xyz tower  3 1 tower # tower top rotations;
+;    mbdy state pos tower 3 1.0 tower # tower top position;
+;    mbdy state_rot eulerang_xyz shaft  1 1 shaft # shaft rotations;
+;    mbdy state pos hub1 1 1.0 hub1 # hub1 tip position;
+;    mbdy state_rot eulerang_xyz hub1  1 1 hub1 # shaft rotations;
+    ; ------------------------------------------------
+    ; Tower shadow deficit
+    ; ------------------------------------------------
+;
+    ; coordinate syst (3=global), blade nr, DOF, radius
+    ; to accomodate different blade radii, force far out position
+;    aero windspeed 3  1  2  10 ;
+;    aero windspeed 3  1  2  0.50 ;
+;    aero windspeed 3  1  2  0.45 ;
+;    aero windspeed 3  1  2  0.40 ;
+;    aero windspeed 3  1  2  0.35 ;
+;    aero windspeed 3  1  2  0.30 ;
+;    aero windspeed 3  1  2  0.25 ;
+;    aero windspeed 3  1  2  0.20 ;
+;    aero windspeed 3  1  2  0.15 ;
+;    aero windspeed 3  1  2  0.10 ;
+;    aero windspeed 3  1  2  0.05 ;
+;    aero windspeed 3  1  2  0.00 ;
+;
+    ; y-direction: positive downwind
+    ; x-direction: lateral distance from tower centre
+;    wind free_wind_shadow 1 -0.21 0.1 -0.5;
+;    wind free_wind_shadow 1 -0.18 0.1 -0.5;
+;    wind free_wind_shadow 1 -0.19 0.1 -0.5;
+;    wind free_wind_shadow 1  0.15 0.1 -0.5;
+;    wind free_wind_shadow 1 -0.12 0.1 -0.5;
+;    wind free_wind_shadow 1 -0.09 0.1 -0.5;
+;    wind free_wind_shadow 1 -0.03 0.1 -0.5;
+;    wind free_wind_shadow 1  0.00 0.1 -0.5;
+;    wind free_wind_shadow 1  0.06 0.1 -0.5;
+;    wind free_wind_shadow 1  0.09 0.1 -0.5;
+;    wind free_wind_shadow 1  0.12 0.1 -0.5;
+;    wind free_wind_shadow 1  0.15 0.1 -0.5;
+;    wind free_wind_shadow 1  0.18 0.1 -0.5;
+;    wind free_wind_shadow 1  0.21 0.1 -0.5;
+;    ;end
+;    wind free_wind_shadow 1 -0.21 0.5 -0.5;
+;    wind free_wind_shadow 1 -0.18 0.5 -0.5;
+;    wind free_wind_shadow 1 -0.19 0.5 -0.5;
+;    wind free_wind_shadow 1  0.15 0.5 -0.5;
+;    wind free_wind_shadow 1 -0.12 0.5 -0.5;
+;    wind free_wind_shadow 1 -0.09 0.5 -0.5;
+;    wind free_wind_shadow 1 -0.03 0.5 -0.5;
+;    wind free_wind_shadow 1  0.00 0.5 -0.5;
+;    wind free_wind_shadow 1  0.06 0.5 -0.5;
+;    wind free_wind_shadow 1  0.09 0.5 -0.5;
+;    wind free_wind_shadow 1  0.12 0.5 -0.5;
+;    wind free_wind_shadow 1  0.15 0.5 -0.5;
+;    wind free_wind_shadow 1  0.18 0.5 -0.5;
+;    wind free_wind_shadow 1  0.21 0.5 -0.5;
+;    ;
+;    wind free_wind_shadow 1 -0.21 1.0 -0.5;
+;    wind free_wind_shadow 1 -0.18 1.0 -0.5;
+;    wind free_wind_shadow 1 -0.19 1.0 -0.5;
+;    wind free_wind_shadow 1  0.15 1.0 -0.5;
+;    wind free_wind_shadow 1 -0.12 1.0 -0.5;
+;    wind free_wind_shadow 1 -0.09 1.0 -0.5;
+;    wind free_wind_shadow 1 -0.03 1.0 -0.5;
+;    wind free_wind_shadow 1  0.00 1.0 -0.5;
+;    wind free_wind_shadow 1  0.06 1.0 -0.5;
+;    wind free_wind_shadow 1  0.09 1.0 -0.5;
+;    wind free_wind_shadow 1  0.12 1.0 -0.5;
+;    wind free_wind_shadow 1  0.15 1.0 -0.5;
+;    wind free_wind_shadow 1  0.18 1.0 -0.5;
+;    wind free_wind_shadow 1  0.21 1.0 -0.5;
+    ; ------------------------------------------------
+    ; BLADE 1 AERODYNAMICS
+    ; ------------------------------------------------
+    ;
+;    aero vrel 1 0.2;
+;    aero vrel 1 0.3;
+;    aero vrel 1 0.4;
+;    aero vrel 1 0.5;
+;    aero vrel 1 0.55;
+;    aero vrel 1 0.6;
+;    ;
+;    aero alfa 1 0.2;
+;    aero alfa 1 0.3;
+;    aero alfa 1 0.4;
+;    aero alfa 1 0.5;
+;    aero alfa 1 0.55;
+;    aero alfa 1 0.6;
+;    ;
+;    aero cl   1 0.2;
+;    aero cl   1 0.3;
+;    aero cl   1 0.4;
+;    aero cl   1 0.5;
+;    aero cl   1 0.55;
+;    aero cl   1 0.6;
+    ; ------------------------------------------------
+    ; POSITIONS
+    ; ------------------------------------------------
+;    mbdy state pos tower   4 1.0 tower  # tower top;
+;    mbdy state pos nose_cone 1 0 nose_cone # rotor centre;
+;    mbdy state pos blade1  1 0.0 blade1 # node_nr_1 blade1 root;
+;    mbdy state pos blade1 10 0.0 blade1 # node_nr_10;
+;    mbdy state pos blade1 11 1.0 blade1 # blade1 tip;
+    ; ------------------------------------------------
+    ; ROTATIONS
+    ; ------------------------------------------------
+;;   constraint bearing1 yaw_rot 5 only 1 # Yaw angle [deg];
+;;   constraint bearing1 yaw_rot 5 only 2 # Yaw rate  [deg/s];
+    ; make sure all channels in the output remain in the same place
+    ; add zero channels as replacement for yaw angle and speed
+;    general constant 0 ;
+;    general constant 0 ;
+    ;
+;    mbdy state_rot eulerang_xyz tower   4 1 tower # tower top;
+    ;
+;    mbdy state_rot eulerang_xyz blade1  1 0 blade1 # blade1 root eulerang;
+;    mbdy state_rot eulerang_xyz blade1 10 0 blade1 # blade1 70% eulerang;
+;    mbdy state_rot eulerang_xyz blade1 11 1 blade1 # blade1 tip eulerang;
+    ;
+    ; Orientation of calculation point. Unit [deg].
+    ;    1. Blade number
+    ;    2. Dof number (1=θx, 2=θy, 3=θz)
+    ;    3. Radius [m] (nearest inner calculation point is used)
+    ;    4. Coordinates system (1=blade_ref. coo, 2=rotor polar coo.)
+;    aero rotation 1   3   0.2  1;
+;    aero rotation 1   3   0.3  1;
+;    aero rotation 1   3   0.4  1;
+;    aero rotation 1   3   0.5  1;
+;    aero rotation 1   3   0.6  1;
+;    ;
+;    aero rotation 1   2   0.2  1;
+;    aero rotation 1   2   0.4  1;
+;    aero rotation 1   2   0.6  1;
+;    ;
+;    aero rotation 1   1   0.2  1;
+;    aero rotation 1   1   0.4  1;
+;    aero rotation 1   1   0.6  1;
+;    aero rotation 1   2   0.6  1;
+;    aero rotation 1   3   0.6  1;
+end output;
+exit;

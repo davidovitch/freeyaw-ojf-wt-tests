@@ -62,7 +62,27 @@ These data files are compressed with [7zip](http://www.7-zip.org/) and the
 archives are split in parts of maximum 1000MB.
 
 
-## Description of the channels
+## Wind turbine aeroelastic description
+
+The aeroelastic description of the wind turbine that was used for this campaign 
+is included under [data/model](data/model):
+
+* The blade mass properties for all 6 blades are given under [data/model/blademassproperties](data/model/blademassproperties)
+* The airfoil shapes are given under [data/model/S822.dat](data/model/S822.dat)
+and [data/model/S823.dat](data/model/S823.dat)
+* The full HAWC2 model description is filed under [data/model/hawc2](data/model/hawc2),
+users looking for a single example to run can use
+[data/model/hawc2/htc/ojf_post_example.htc](data/model/hawc2/htc/ojf_post_example.htc)
+* Generator torque source code:
+[data/model/hawc2/control/ojf_generator](data/model/hawc2/control/ojf_generator)
+* Yaw control source code (for simulating a fixed-yaw-free-yaw transition):
+[data/model/hawc2/control/yaw_control](data/model/hawc2/control/yaw_control)
+* The control DLLs are under [data/model/hawc2/control](data/model/hawc2/control).
+Note that the control DLL source can be compiled with the open source compiler
+[Lazarus](https://www.lazarus-ide.org/).
+
+
+## Description of the measurement channels
 
 Channel names as used in the calibrated and unified result files as used in:
 
